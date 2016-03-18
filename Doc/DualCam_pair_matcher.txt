@@ -1,0 +1,55 @@
+﻿Stereopair matcher
+Functionality:
+- Detect pairing of out-of-camera RAW or JPEG images using timestamps from EXIF; allow creation-time as backup
+- Print list of matched out-of-camera images into a text file
+- If requested, build SBS images
+- If requested, rename/sort images to suit StereoPhotoMaker batch LR-images loading
+- If requested, hide non-matched RAW or JPEG images
+- Optionally utilize user-provided list of matched out-of-camera images
+- It would be desirable to auto-align the pairs, but StereoPhotoMaker lacks command-line options
+
+Inputs:
+- Two directories with RAW or camera-JPEG files	- mandatory
+- Two directories with RAW-processed standard image files (TIFF, JPEG, etc.)	- optional
+- Time difference between two cameras	- optional; default=0
+- Output directory	- mandatory even if creating SBS images not requested
+- list of matched out-of-camera images	- optional; if given, skip time-based pair matching
+- TODO: think about getting partial list of matches and extending it if possible
+- Directory for hiding unmatched images	- optional
+
+Switches:
+-time_diff <VAL,?msec?>	: time difference between the 2nd and 1st cameras; default = 0
+-create_sbs	: join matched pairs into SBS images; requires the two directories with standard images
+-rename_lr	: rename left-right images to be recognizable by StereoPhotoMaker batch loading
+(-align	: auto-align the resulting  SBS images)
+-use_pairs_list <PATH>	: provides pre-built pair matches
+-out_dir <PATH>	: output directory
+-move_unmatched <PATH>	: directory to move unmatched inputs to; if not given, don't move those
+-time_from <exif|create>	: source of shots' timestamps; default==exif - requires external tool (dcraw?)
+
+The algorithm:
+- If using exif as timestamp source, verify that dcraw is available; abort if missing
+-? How to read exif from a JPEG; is it possible with dcraw?
+- The main challenge: process bursts. These are badly synchronized, so try to find closest (time-wise) left/right
+shots
+- Use per-camera inter-frame time threshold to detect bursts: MAX_BURST_GAP
+- Detect beginnings and ends of all the bursts in each sequence
+- Match shots outside of burst ranges by taking closest peer shot within +-MAX_BURST_GAP
+- Match each shot inside of burst range to one or two peers
+-- one peer if it has smallest time-difference
+-- two peers if their time-difference is equal
+-- burst matching applies when and only when the candidate peers are inside burst range
+- Save a text file with the matches:
+-- A line per a match
+--- 1 bidirectional line for single-shot match
+--- 2 unidirectional lines instead of 1 bidirectional for bursts - for simplicity
+-- Match-line format: {shot-L} (<)(>) {shot-R}
+--- Match-line example - no burst: {dsc01} <> {dsc13}
+--- Match-lines example - burst L>R1: {dsc01} > {dsc12}
+--- Match-lines example - burst L>R2: {dsc01} > {dsc13}
+--- Match-lines example - burst R>L1: {dsc01} < {dsc13}
+--- Match-lines example - burst R>L1: {dsc02} < {dsc13}
+- SBS creation relies on ImageMagic, not StereoPhotoMaker
+- If SBS creation requested, make SBS images for all matches under the output directory
+- If renaming of left-right images requested, do it
+(-- If requested, auto-align the resulting  SBS images)

@@ -1,0 +1,16 @@
+@REM make 2x2 4*6cm horizontal(!) prints for 10x15 picture. 
+@REM Width ~ 1800 = 709*2 + 30*2 + 342 
+@REM Height ~ 1200 = 473*2 + 30*2 + 214 
+set CNV="c:\Program Files\ImageMagick-6.7.1-Q16\convert.exe"
+set MNT="c:\Program Files\ImageMagick-6.7.1-Q16\montage.exe"
+set TOPDIR=%CD%
+for /D %d in (C*) DO ( 
+  cd %d
+  md Small 
+  md Ready
+  for %f in (*.tif) DO  %CNV% %f -density 300 -adaptive-resize 709x473 -depth 8 -compress LZW Small\%~nf_sm.tif 
+  %MNT% Small\*_sm.tif -background black -bordercolor black -tile 2x2 -geometry +80+80 -density 300 ppm: | %CNV%  ppm: -background black -bordercolor black -border 17x17 -splice 210x0 -quality 98 Ready\ToPri_%d_2x2_b.jpg 
+  copy Ready\ToPri_%d_2x2_b.jpg  %TOPDIR%\
+  cd %TOPDIR%
+)
+
