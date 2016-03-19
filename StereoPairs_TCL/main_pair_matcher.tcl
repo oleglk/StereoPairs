@@ -528,6 +528,14 @@ proc _read_all_images_timestamps_or_complain {origPathsLeft origPathsRight \
 }
 
 
+# Returns dictionary mapping original (both left and right) image paths
+# to lists of renamed left/right stereopair member path.
+## Example: assuming 'matchList' includes f01<->f37, f02<->f37 and f04<->f38,
+## the returned dict should have:
+##    <dirL>/f01::{<dirL>/f01-f37_l}, <dirL>/f02::{<dirL>/f02-f37_l}
+##    <dirL>/f04::{<dirL>/f04-f38_l},
+##    <dirR>/f37::{<dirR>/f01-f37_r <dirR>/f02-f37_r},
+##    <dirR>/f38::{<dirR>/f04-f38_r}
 proc _make_rename_dict_from_match_list {imgPathsLeft imgPathsRight matchList} {
   set renameDict [dict create] 
   set pureNameToPathLeft [dict create];   set pureNameToPathRight [dict create]
@@ -562,7 +570,8 @@ proc _make_rename_dict_from_match_list {imgPathsLeft imgPathsRight matchList} {
 
 
 # origPureName=dsc003, dstPairName=dsc003-045, descr=left
-# adds to renameDictVar <dir>/dsc003 => <dir>/dsc003-045_l
+# adds to renameDictVar <dir>/dsc003 =>{ <dir>/dsc003-045_l}
+# A mapping is from orig path to LIST of one or more destination paths.
 proc _set_src_and_dest_lr_paths {origPureNameToPathDict origPureName \
                                  dstPairName descr renameDictVar}  {
   upvar $renameDictVar renameDict
