@@ -570,7 +570,7 @@ proc _make_rename_dict_from_match_list {imgPathsLeft imgPathsRight matchList} {
 
 
 # origPureName=dsc003, dstPairName=dsc003-045, descr=left
-# adds to renameDictVar <dir>/dsc003 =>{ <dir>/dsc003-045_l}
+# adds to renameDictVar <dir>/dsc003 =>{<dir>/dsc003-045_l}
 # A mapping is from orig path to LIST of one or more destination paths.
 proc _set_src_and_dest_lr_paths {origPureNameToPathDict origPureName \
                                  dstPairName descr renameDictVar}  {
@@ -598,7 +598,41 @@ proc _build_spm_right_purename  {basePurename} {
   return  [format "%s_r" $basePurename] }
 
 
-proc _rename_images_by_match_list {imgPathsLeft imgPathsRight matchList}  {
+# 'renameDict' holds pairs <srcPath> => {list of <dstPath>-s}
+# Returns number of errors encountered
+proc _rename_images_by_rename_dict {renameDict} {
+  set errCnt 0
+  set srcPaths [dict keys $renameDict}
+  ok_info_msg "Start renaming [llength $srcPaths] original image(s)"
+  foreach srcPath $srcPaths {
+    set dstPaths [dict get $renameDict $srcPath]
+    # if >1 destination images, the source should be replicated
+    for {set i 1} {$i < [llength $dstPaths]} {incr i}  {
+      set dstPath [lindex $dstPaths $i]
+      ok_info_msg "Making replica #$i of '$srcPath': '$dstPath'"
+      set tclExecResult [catch {
+                          file copy -- $srcPath $dstPath } execResult]
+      if { $tclExecResult != 0 } {
+        ok_warn_msg "Failed replicating image '$srcPath' into '$dstPath'."
+        incr errCnt 1
+      }
+    }
+    set dstPath [lindex $dstPaths $0]
+    ok_info_msg "Renaming '$srcPath': '$dstPath'"
+    set tclExecResult [catch {
+                        file rename -- $srcPath $dstPath } execResult]
+    if { $tclExecResult != 0 } {
+      ok_warn_msg "Failed renaming image '$srcPath' into '$dstPath'."
+      incr errCnt 1
+    }
+  }
+  #TODO: report nm of replications
+  ok_info_msg "Done renaming [llength $srcPaths] original image(s); $errCnt error(s) occured"
+  return  $errCnt
+}
+
+
+proc UNUSED___rename_images_by_match_list {imgPathsLeft imgPathsRight matchList}  {
   set pureNameToPathLeft [dict create];   set pureNameToPathRight [dict create]
   foreach p $imgPathsLeft {
     set purename [AnyFileNameToPurename [file tail $p]]
