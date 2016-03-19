@@ -28,6 +28,7 @@ set STS(doCreateSBS)      0
 set STS(doRenameLR)       0
 set STS(doUseExifTime)    1
 set STS(maxBurstGap)      0
+set STS(doSimulateOnly)   0
 ################################################################################
 
 set ORIG_EXT              "" ;  # extension of original out-of-camera images
@@ -67,20 +68,24 @@ proc pair_matcher_main {cmdLineAsStr}  {
   set matchRateDescr "$matchedPrc% of the potential stereopairs are matched; $::STS(minSuccessRate)% required to proceed"
   if { ($::STS(doCreateSBS) == 1) || ($::STS(doRenameLR) == 1) }  {
     if { $matchedPrc < $::STS(minSuccessRate) }   {
-      ok_err_msg "Only $matchRateDescr. Aborting."
+      ok_err_msg "Only $matchRateDescr. Aborting"
       return  0;
     }
   }
-  ok_info_msg "$matchRateDescr."
+  ok_info_msg "$matchRateDescr"
   #TODO: if building SBS requested, do it before renaming
   if { $::STS(doRenameLR) == 1 }  {
     if { 0 == [set renameDict [_make_rename_dict_from_match_list \
                                 $origPathsLeft $origPathsRight $matchList]] }  {
       return  0;  # error already printed
     }
-    #~ if { 0 == [_rename_images_by_rename_dict $renameDict] }  {
-      #~ return  0;  # error already printed
-    #~ }
+    if { 0 == $::STS(doSimulateOnly) }  {
+      if { 0 != [_rename_images_by_rename_dict $renameDict] }  {
+        return  0;  # error already printed
+      }
+    } else {
+      ok_warn_msg "Simulation-only mode; no file changes made"
+    }
   }
   return  1
 }
@@ -103,7 +108,8 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   -out_dir {val	"output directory"} \
   -move_unmatched_to {val "directory to move unmatched inputs to; if not given, don't move those"} \
   -time_from {val "<exif|create>	: source of shots' timestamps; using exif requires external tool (dcraw and identify)"} \
-  -max_burst_gap {val "max time difference between consequent frames to be considered a burst, sec"} ]
+  -max_burst_gap {val "max time difference between consequent frames to be considered a burst, sec"} \
+  -simulate_only {""	"if specified, no file changes performed, only decide and report what should be done"} ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
   # create dummy command line with the default parameters and copy it
@@ -237,6 +243,9 @@ proc _parse_cmdline {cmlArrName}  {
     incr errCnt 1
   } else {
      set ::STS(maxBurstGap) $cml(-max_burst_gap)
+  }
+  if { 1 == [info exists cml(-simulate_only)] }  {
+    set ::STS(doSimulateOnly) 1
   }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
@@ -569,14 +578,14 @@ proc _make_rename_dict_from_match_list {imgPathsLeft imgPathsRight matchList} {
 }
 
 
-# origPureName=dsc003, dstPairName=dsc003-045, descr=left
+# origPureName=dsc003, dstPairPurename=dsc003-045, descr=left
 # adds to renameDictVar <dir>/dsc003 =>{<dir>/dsc003-045_l}
 # A mapping is from orig path to LIST of one or more destination paths.
 proc _set_src_and_dest_lr_paths {origPureNameToPathDict origPureName \
-                                 dstPairName descr renameDictVar}  {
+                                 dstPairPurename descr renameDictVar}  {
   upvar $renameDictVar renameDict
-  if { 1 == [dict exists $renameDict $dstPairName] }  {
-    set targetsList [dict get $renameDict $dstPairName]
+  if { 1 == [dict exists $renameDict $dstPairPurename] }  {
+    set targetsList [dict get $renameDict $dstPairPurename]
   } else {      set targetsList [list]     }
   if { 0 == [dict exists $origPureNameToPathDict $origPureName] }  {
     ok_err_msg "No source path for $descr image '$origPureName'"
@@ -584,6 +593,8 @@ proc _set_src_and_dest_lr_paths {origPureNameToPathDict origPureName \
   }
   set srcPath [dict get $origPureNameToPathDict $origPureName]
   set srcDir  [file dirname $srcPath]
+  set srcExt  [file extension $srcPath]
+  set dstPairName "$dstPairPurename$srcExt"
   set n [expr 1 + [llength $targetsList]]
   ok_info_msg "Target #$n for '$srcPath':\t'$dstPairName'"
   lappend targetsList [file join $srcDir $dstPairName]
@@ -601,15 +612,16 @@ proc _build_spm_right_purename  {basePurename} {
 # 'renameDict' holds pairs <srcPath> => {list of <dstPath>-s}
 # Returns number of errors encountered
 proc _rename_images_by_rename_dict {renameDict} {
-  set errCnt 0
-  set srcPaths [dict keys $renameDict}
-  ok_info_msg "Start renaming [llength $srcPaths] original image(s)"
+  set errCnt 0;   set replCnt 0
+  set srcPaths [dict keys $renameDict]
+  ok_info_msg "Start renaming [llength $srcPaths] original image(s) under '$::STS(origImgRootPath)'"
   foreach srcPath $srcPaths {
     set dstPaths [dict get $renameDict $srcPath]
     # if >1 destination images, the source should be replicated
     for {set i 1} {$i < [llength $dstPaths]} {incr i}  {
       set dstPath [lindex $dstPaths $i]
       ok_info_msg "Making replica #$i of '$srcPath': '$dstPath'"
+      incr replCnt 1
       set tclExecResult [catch {
                           file copy -- $srcPath $dstPath } execResult]
       if { $tclExecResult != 0 } {
@@ -617,7 +629,7 @@ proc _rename_images_by_rename_dict {renameDict} {
         incr errCnt 1
       }
     }
-    set dstPath [lindex $dstPaths $0]
+    set dstPath [lindex $dstPaths 0]
     ok_info_msg "Renaming '$srcPath': '$dstPath'"
     set tclExecResult [catch {
                         file rename -- $srcPath $dstPath } execResult]
@@ -626,8 +638,7 @@ proc _rename_images_by_rename_dict {renameDict} {
       incr errCnt 1
     }
   }
-  #TODO: report nm of replications
-  ok_info_msg "Done renaming [llength $srcPaths] original image(s); $errCnt error(s) occured"
+  ok_info_msg "Done renaming [llength $srcPaths] original image(s) under '$::STS(origImgRootPath)'; $replCnt file replication(s) made; $errCnt error(s) occured"
   return  $errCnt
 }
 
