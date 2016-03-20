@@ -14,21 +14,26 @@ namespace import -force ::ok_utils::*
 
 ###################### Global variables ############################
 array unset STS ;   # array for global settings
-set STS(timeDiff)         0
-set STS(minSuccessRate)   0
-set STS(origImgRootPath)  ""
-set STS(origImgDirLeft)   ""
-set STS(origImgDirRight)  ""
-set STS(stdImgRootPath)   ""
-set STS(outDirPath)       ""
-set STS(outPairlistPath)  ""
-set STS(inPairlistPath)   ""
-set STS(dirForUnmatched)  ""
-set STS(doCreateSBS)      0
-set STS(doRenameLR)       0
-set STS(doUseExifTime)    1
-set STS(maxBurstGap)      0
-set STS(doSimulateOnly)   0
+
+proc _set_defaults {}  {
+  set ::STS(timeDiff)         0
+  set ::STS(minSuccessRate)   0
+  set ::STS(origImgRootPath)  ""
+  set ::STS(origImgDirLeft)   ""
+  set ::STS(origImgDirRight)  ""
+  set ::STS(stdImgRootPath)   ""
+  set ::STS(outDirPath)       ""
+  set ::STS(outPairlistPath)  ""
+  set ::STS(inPairlistPath)   ""
+  set ::STS(dirForUnmatched)  ""
+  set ::STS(doCreateSBS)      0
+  set ::STS(doRenameLR)       0
+  set ::STS(doUseExifTime)    1
+  set ::STS(maxBurstGap)      0
+  set ::STS(doSimulateOnly)   0
+}
+################################################################################
+_set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
 set ORIG_EXT              "" ;  # extension of original out-of-camera images
@@ -40,6 +45,7 @@ set FILENAME_TIMES_RIGHT  "times_right.csv"
 proc pair_matcher_main {cmdLineAsStr}  {
   global STS ORIG_EXT
   if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
+  _set_defaults ;  # calling it in a function for repeated invocations
   if { 0 == [pair_matcher_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
@@ -62,7 +68,7 @@ proc pair_matcher_main {cmdLineAsStr}  {
     return  0;  # error already printed
   }
   # check success percentage
-  ok_info_msg "Found [llength $matchList] matches between [dict size $namesToTimesLeft] left- and [dict size $namesToTimesRight] right images"
+  ok_info_msg "Found [llength $matchList] match(es) between [dict size $namesToTimesLeft] left- and [dict size $namesToTimesRight] right image(s)"
   set matchedPrc [expr {round(100.0 * [llength $matchList] / \
     (0.5 * ([dict size $namesToTimesLeft] + [dict size $namesToTimesRight]))) }]
   set matchRateDescr "$matchedPrc% of the potential stereopairs are matched; $::STS(minSuccessRate)% required to proceed"
