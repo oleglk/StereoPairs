@@ -40,6 +40,7 @@ set ORIG_EXT              "" ;  # extension of original out-of-camera images
 
 set FILENAME_TIMES_LEFT   "times_left.csv"
 set FILENAME_TIMES_RIGHT  "times_right.csv"
+set FILENAME_RENAME_SPEC  "rename_spec.csv"
 ################################################################################
 
 proc pair_matcher_main {cmdLineAsStr}  {
@@ -83,6 +84,9 @@ proc pair_matcher_main {cmdLineAsStr}  {
   if { $::STS(doRenameLR) == 1 }  {
     if { 0 == [set renameDict [_make_rename_dict_from_match_list \
                                 $origPathsLeft $origPathsRight $matchList]] }  {
+      return  0;  # error already printed
+    }
+    if { 0 == [_dump_rename_dict $renameDict] }  {
       return  0;  # error already printed
     }
     if { 0 == $::STS(doSimulateOnly) }  {
@@ -666,6 +670,31 @@ proc UNUSED___rename_images_by_match_list {imgPathsLeft imgPathsRight matchList}
     ok_trace_msg "TODO '$nameLeft' + '$nameRight' = '$basePurename'"
     #TODO: build full parh and rename
   }
+}
+
+
+# Saves 'renameDict' in CSV file
+# 'renameDict' holds pairs <srcPath> => {list of <dstPath>-s}
+proc _dump_rename_dict {renameDict}  {
+  set outPath [file join $::STS(outDirPath) $::FILENAME_RENAME_SPEC] 
+  set listOfLists [list]
+  # build and sort list of src-dst pairs by src-then-dst; add header later
+  dict for {srcPath dstPathList} $renameDict {
+    foreach dstPath $dstPathList {
+      lappend listOfLists [list $srcPath $dstPath]
+    }
+  }
+  #ok_trace_msg "Unsorted src-dst list: {$listOfLists}"
+  set listOfLists [lsort -dictionary -increasing $listOfLists]
+  set headerElem [list "source-path" "destination-path"]
+  set topList [concat [list $headerElem] $listOfLists]
+  set wres [ok_write_list_of_lists_into_csv_file $topList $outPath ","]
+  if { $wres == 1 }   {
+    ok_info_msg "Success saving rename spec in '$outPath'"
+  } else {
+    ok_err_msg "Failed saving rename spec in '$outPath'"
+  }
+  return  $wres
 }
 
 
