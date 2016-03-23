@@ -47,9 +47,6 @@ set FILENAME_RENAME_SPEC  "rename_spec.csv"
 proc pair_matcher_main {cmdLineAsStr}  {
   global STS ORIG_EXT
   _set_defaults ;  # calling it in a function for repeated invocations
-  if { ($::STS(doRestoreLR) == 1) }   {
-    return  [_pair_matcher_restore_original_names] ;  # error, if any, printed
-  }
   if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
   if { 0 == [pair_matcher_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
@@ -58,6 +55,10 @@ proc pair_matcher_main {cmdLineAsStr}  {
   if { "" == [set ORIG_EXT [ChooseOrigImgExtensionInDirs \
                       [list $STS(origImgDirLeft) $STS(origImgDirRight)]]] }  {
     return  0;  # error already printed
+  }
+  if { ($STS(doRestoreLR) == 1) }   {
+    return  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
+    # error, if any, printed
   }
   if { 0 == [pair_matcher_find_originals origPathsLeft origPathsRight] }  {
     return  0;  # error already printed
@@ -723,39 +724,45 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
     ok_err_msg "Failed reading rename spec from '$specPath'"
     return  0
   }
+  # TODO: skip rename-spec header
   ok_info_msg "Read rename spec for [array size origPathToDestPathsList] original(s) from '$specPath'"
   set restoredCnt 0;  set missingCnt 0;   set errCnt 0
-  foreach origPath [array keys origPathToDestPathsList] {
+  set origPaths [array names origPathToDestPathsList] 
+  foreach origPath $origPaths {
     if { [file exists $origPath] }  {
       ok_warn_msg "Original image file '$origPath' exists; not overriden"
       continue
     }
     # restore 'origPath' from the first available renamed image
-    set renamedPaths [array get origPathToDestPathsList $origPath]
+    set renamedPaths [lrange [array get origPathToDestPathsList $origPath] 1 end]
     if { 0 == [llength $renamedPaths] }  {
       ok_err_msg "No renamed image paths listed for original '$origPath'"
       incr missingCnt 1;  continue
     }
-    foreach renamedPath $renamedPaths {
+    foreach renamedPath $renamedPaths { ;   # browse all products of '$origPath'
       if { 0 == [file exists $renamedPath] }  {
         ok_warn_msg "Listed renamed image '$renamedPath' inexistent"
         continue
       }
-      ok_info_msg "Going to restore '$srcPath' from '$renamedPath'"
+      ok_info_msg "Going to restore '$origPath' from '$renamedPath'"
       if { $simulateOnly != 0 }  {  continue }
       set tclExecResult [catch {
-                          file rename -- $renamedPath $srcPath } execResult]
+                          file rename -- $renamedPath $origPath } execResult]
       if { $tclExecResult != 0 } {
-        ok_warn_msg "Failed renaming image '$renamedPath' into '$srcPath'."
+        ok_warn_msg "Failed renaming image '$renamedPath' into '$origPath'."
         incr errCnt 1
       } else {
-        ok_info_msg "Success restoring '$srcPath' from '$renamedPath'"
+        ok_info_msg "Success restoring '$origPath' from '$renamedPath'"
         incr restoredCnt 1
         break
       }
     } ;   # foreach renamedPath
   } ;   # foreach origPath
-  TODO
+  set msg "Restored name(s) of $restoredCnt original image(s) out of [llength $origPaths]"
+  if { $missingCnt > 0 }  { append msg "; $missingCnt renamed image(s) missing"}
+  if { $errCnt > 0 }      { append msg "; $errCnt error(s) occured"            }
+  if { $errCnt == 0 }   { ok_info_msg $msg } else { ok_err_msg $msg }
+  return  [expr {($errCnt == 0)? 1 : 0}]
 }
 
 
