@@ -26,6 +26,7 @@ proc _set_defaults {}  {
   set ::STS(outPairlistPath)  ""
   set ::STS(inPairlistPath)   ""
   set ::STS(dirForUnmatched)  ""
+  set ::STS(doRestoreLR)      0
   set ::STS(doCreateSBS)      0
   set ::STS(doRenameLR)       0
   set ::STS(doUseExifTime)    1
@@ -45,8 +46,11 @@ set FILENAME_RENAME_SPEC  "rename_spec.csv"
 
 proc pair_matcher_main {cmdLineAsStr}  {
   global STS ORIG_EXT
-  if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
   _set_defaults ;  # calling it in a function for repeated invocations
+  if { ($::STS(doRestoreLR) == 1) }   {
+    return  [_pair_matcher_restore_original_names] ;  # error, if any, printed
+  }
+  if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
   if { 0 == [pair_matcher_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
@@ -112,6 +116,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
   -create_sbs	{"" "join matched pairs into SBS images; requires the directory with standard images"} \
   -rename_lr	{"" "rename left-right images to be recognizable by StereoPhotoMaker batch loading"} \
+  -restore_lr	{"" "restore original left-right images' names"} \
   -min_success_rate {val "min percentage of successfull matches to permit image-file operations"} \
   -use_pairlist {val "file given provides pre-built pair matches"} \
   -out_pairlist_filename {val "name of file to write pair matches to"} \
@@ -200,6 +205,15 @@ proc _parse_cmdline {cmlArrName}  {
     incr errCnt 1
   } else {
      set ::STS(stdImgRootPath) $cml(-std_img_dir)
+  }
+  if { 1 == [info exists cml(-restore_lr)] }  {
+    if { (1 == [info exists cml(-create_sbs)]) || \
+         (1 == [info exists cml(-rename_lr)]) }   {
+      ok_err_msg "One invocation either renames or restores images"
+      incr errCnt 1
+    } else {
+      set ::STS(doRestoreLR) 1
+    }
   }
   if { 0 == [string is double $cml(-time_diff)] }  {
     ok_err_msg "Time-difference should be a number"
@@ -695,6 +709,53 @@ proc _dump_rename_dict {renameDict}  {
     ok_err_msg "Failed saving rename spec in '$outPath'"
   }
   return  $wres
+}
+
+
+
+# Renames left/right images in the work-area
+# according to rename spec in '$::STS(outDirPath)/$::FILENAME_RENAME_SPEC'
+proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
+  set specPath [file join $::STS(outDirPath) $::FILENAME_RENAME_SPEC]
+  array unset origPathToDestPathsList
+  if { 0 == [ok_read_csv_file_into_array_of_lists origPathToDestPathsList \
+                                                            $specPath "," 0] } {
+    ok_err_msg "Failed reading rename spec from '$specPath'"
+    return  0
+  }
+  ok_info_msg "Read rename spec for [array size origPathToDestPathsList] original(s) from '$specPath'"
+  set restoredCnt 0;  set missingCnt 0;   set errCnt 0
+  foreach origPath [array keys origPathToDestPathsList] {
+    if { [file exists $origPath] }  {
+      ok_warn_msg "Original image file '$origPath' exists; not overriden"
+      continue
+    }
+    # restore 'origPath' from the first available renamed image
+    set renamedPaths [array get origPathToDestPathsList $origPath]
+    if { 0 == [llength $renamedPaths] }  {
+      ok_err_msg "No renamed image paths listed for original '$origPath'"
+      incr missingCnt 1;  continue
+    }
+    foreach renamedPath $renamedPaths {
+      if { 0 == [file exists $renamedPath] }  {
+        ok_warn_msg "Listed renamed image '$renamedPath' inexistent"
+        continue
+      }
+      ok_info_msg "Going to restore '$srcPath' from '$renamedPath'"
+      if { $simulateOnly != 0 }  {  continue }
+      set tclExecResult [catch {
+                          file rename -- $renamedPath $srcPath } execResult]
+      if { $tclExecResult != 0 } {
+        ok_warn_msg "Failed renaming image '$renamedPath' into '$srcPath'."
+        incr errCnt 1
+      } else {
+        ok_info_msg "Success restoring '$srcPath' from '$renamedPath'"
+        incr restoredCnt 1
+        break
+      }
+    } ;   # foreach renamedPath
+  } ;   # foreach origPath
+  TODO
 }
 
 
