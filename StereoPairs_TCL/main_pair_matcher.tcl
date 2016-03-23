@@ -718,21 +718,29 @@ proc _dump_rename_dict {renameDict}  {
 # according to rename spec in '$::STS(outDirPath)/$::FILENAME_RENAME_SPEC'
 proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
   set specPath [file join $::STS(outDirPath) $::FILENAME_RENAME_SPEC]
-  array unset origPathToDestPathsList
-  if { 0 == [ok_read_csv_file_into_array_of_lists origPathToDestPathsList \
-                                                            $specPath "," 0] } {
+  set listOfLists [ok_read_csv_file_into_list_of_lists $specPath "," "#" 0]
+  if { $listOfLists == 0 } {
     ok_err_msg "Failed reading rename spec from '$specPath'"
     return  0
   }
-  # TODO: skip rename-spec header
-  ok_info_msg "Read rename spec for [array size origPathToDestPathsList] original(s) from '$specPath'"
+  # listOfLists == {{origPath productPath} ... {origPath productPath}}
+  # skip rename-spec header, then sort 'listOfLists',
+  #   so that records for one original come in one "burst"
+  set listOfLists [lsort -dictionary [lrange $listOfLists 1 end]]
+  ok_info_msg "Read rename spec of [llength listOfLists] rename-record(s) from '$specPath'"
   set restoredCnt 0;  set missingCnt 0;   set errCnt 0
-  set origPaths [array names origPathToDestPathsList] 
-  foreach origPath $origPaths {
+  set lastRestoredOriginal ""
+  foreach renameRecord $listOfLists {
+    set origPath     [lindex $renameRecord 0]
+    set renamedPath  [lindex $renameRecord 1]
+    if { $origPath == $lastRestoredOriginal }  { continue }; # we restored it
+    TODO
     if { [file exists $origPath] }  {
       ok_warn_msg "Original image file '$origPath' exists; not overriden"
       continue
     }
+    
+    
     # restore 'origPath' from the first available renamed image
     set renamedPaths [lrange [array get origPathToDestPathsList $origPath] 1 end]
     if { 0 == [llength $renamedPaths] }  {
