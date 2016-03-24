@@ -639,7 +639,7 @@ proc _build_spm_right_purename  {basePurename} {
 proc _rename_images_by_rename_dict {renameDict} {
   set errCnt 0;   set replCnt 0
   set srcPaths [dict keys $renameDict]
-  ok_info_msg "Start renaming [llength $srcPaths] original image(s) under '$::STS(origImgRootPath)'"
+  ok_info_msg "Start renaming [llength $srcPaths] original image(s) under '[file normalize $::STS(origImgRootPath)]'"
   foreach srcPath $srcPaths {
     set dstPaths [dict get $renameDict $srcPath]
     # if >1 destination images, the source should be replicated
@@ -663,7 +663,7 @@ proc _rename_images_by_rename_dict {renameDict} {
       incr errCnt 1
     }
   }
-  ok_info_msg "Done renaming [llength $srcPaths] original image(s) under '$::STS(origImgRootPath)'; $replCnt file replication(s) made; $errCnt error(s) occured"
+  ok_info_msg "Done renaming [llength $srcPaths] original image(s) under '[file normalize $::STS(origImgRootPath)]'; $replCnt file replication(s) made; $errCnt error(s) occured"
   return  $errCnt
 }
 
@@ -723,51 +723,54 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
     ok_err_msg "Failed reading rename spec from '$specPath'"
     return  0
   }
-  # listOfLists == {{origPath productPath} ... {origPath productPath}}
+  # listOfLists == {{header} {origPath productPath} ... {origPath productPath}}
   # skip rename-spec header, then sort 'listOfLists',
-  #   so that records for one original come in one "burst"
+  #   so that records for one original appear sequentially
   set listOfLists [lsort -dictionary [lrange $listOfLists 1 end]]
-  ok_info_msg "Read rename spec of [llength listOfLists] rename-record(s) from '$specPath'"
-  set restoredCnt 0;  set missingCnt 0;   set errCnt 0
+  ok_info_msg "Read rename spec of [llength listOfLists] rename-record(s) from '$specPath' - for image(s) under '[file normalize $::STS(origImgRootPath)]"
+  set listedOriginalsCnt 0; set restoredCnt 0
+  set missingCnt 0;   set errCnt 0;   set existedCnt 0
+  set lastListedOriginal ""
   set lastRestoredOriginal ""
   foreach renameRecord $listOfLists {
     set origPath     [lindex $renameRecord 0]
     set renamedPath  [lindex $renameRecord 1]
     if { $origPath == $lastRestoredOriginal }  { continue }; # we restored it
-    TODO
+    if { ($lastListedOriginal != "") && ($origPath != $lastListedOriginal) && \
+         ($lastListedOriginal != $lastRestoredOriginal) }  {
+      ok_warn_msg "Original image file '$lastListedOriginal' not restored"
+    }
+    set lastListedOriginal $origPath ;  # it's the 1st record for 'origPath'
+    incr listedOriginalsCnt 1
     if { [file exists $origPath] }  {
       ok_warn_msg "Original image file '$origPath' exists; not overriden"
-      continue
+      set origPath $lastRestoredOriginal ;  # existed or restored - no matter
+      incr existedCnt 1;      continue
     }
-    
-    
-    # restore 'origPath' from the first available renamed image
-    set renamedPaths [lrange [array get origPathToDestPathsList $origPath] 1 end]
-    if { 0 == [llength $renamedPaths] }  {
-      ok_err_msg "No renamed image paths listed for original '$origPath'"
-      incr missingCnt 1;  continue
+    if { 0 == [file exists $renamedPath] }  {
+      ok_warn_msg "Listed renamed image '$renamedPath' inexistent"
+      incr missingCnt 1;      continue
     }
-    foreach renamedPath $renamedPaths { ;   # browse all products of '$origPath'
-      if { 0 == [file exists $renamedPath] }  {
-        ok_warn_msg "Listed renamed image '$renamedPath' inexistent"
-        continue
-      }
-      ok_info_msg "Going to restore '$origPath' from '$renamedPath'"
-      if { $simulateOnly != 0 }  {  continue }
-      set tclExecResult [catch {
-                          file rename -- $renamedPath $origPath } execResult]
-      if { $tclExecResult != 0 } {
-        ok_warn_msg "Failed renaming image '$renamedPath' into '$origPath'."
-        incr errCnt 1
-      } else {
-        ok_info_msg "Success restoring '$origPath' from '$renamedPath'"
-        incr restoredCnt 1
-        break
-      }
-    } ;   # foreach renamedPath
+    ok_info_msg "Going to restore '$origPath' from '$renamedPath'"
+    if { $simulateOnly != 0 }  {
+      incr restoredCnt 1;  set lastRestoredOriginal $origPath;      continue
+    }
+    set tclExecResult [catch {
+                        file rename -- $renamedPath $origPath } execResult]
+    if { $tclExecResult != 0 } {
+      ok_warn_msg "Failed renaming image '$renamedPath' into '$origPath'"
+      incr errCnt 1
+    } else {
+      ok_info_msg "Success restoring '$origPath' from '$renamedPath'"
+      incr restoredCnt 1
+      set lastRestoredOriginal $origPath
+    }
   } ;   # foreach origPath
-  set msg "Restored name(s) of $restoredCnt original image(s) out of [llength $origPaths]"
+  set actionDescr [expr {($simulateOnly == 0)? \
+                                      "Restored" : "Simulated restoration for"}]
+  set msg "$actionDescr name(s) of $restoredCnt original image(s) out of $listedOriginalsCnt under '[file normalize $::STS(origImgRootPath)]"
   if { $missingCnt > 0 }  { append msg "; $missingCnt renamed image(s) missing"}
+  if { $existedCnt > 0 }  { append msg "; $existedCnt original image(s) pre-existed (not overriden)"}
   if { $errCnt > 0 }      { append msg "; $errCnt error(s) occured"            }
   if { $errCnt == 0 }   { ok_info_msg $msg } else { ok_err_msg $msg }
   return  [expr {($errCnt == 0)? 1 : 0}]
