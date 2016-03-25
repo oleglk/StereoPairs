@@ -1,17 +1,21 @@
 # ext_tools.tcl
 
+set SCRIPT_DIR [file dirname [info script]]
+
 package require ok_utils
 
 #source [file join $SCRIPT_DIR   "debug_utils.tcl"]
 ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
+
+read_ext_tool_paths_from_csv [file join $SCRIPT_DIR "ext_tool_dirs.csv"
 
 # - external program executable paths;
 # - don't forget to add if using more;
 # - COULDN'T PROCESS SPACES (as in "Program Files");
 
 # - ImageMagick:
-#set _IM_DIR [file join {C:/} {Program Files (x86)} {ImageMagick-6.8.7-3}] ; # DT
-set _IM_DIR [file join {C:/} {Program Files} {ImageMagick-6.8.6-8}]  ; # Asus
+set _IM_DIR [file join {C:/} {Program Files (x86)} {ImageMagick-6.8.7-3}] ; # DT
+#set _IM_DIR [file join {C:/} {Program Files} {ImageMagick-6.8.6-8}]  ; # Asus
 #set _IM_DIR [file join {C:/} {Program Files (x86)} {ImageMagick-6.8.6-8}]; # Yoga
 
 set _IMCONVERT [format "{%s}" [file join $_IM_DIR "convert.exe"]]
@@ -25,6 +29,23 @@ set _EXIFTOOL "exiftool.exe" ; #TODO: path
 
 
 ####### Do not change after this line ######
+
+proc read_ext_tool_paths_from_csv {csvPath}  {
+  # TODO: supply line-check CB
+  set listOfPairs [ok_read_csv_file_into_list_of_lists $csvPath "," "#" 0]
+  if { $listOfPairs == 0 }  {
+    ok_err_msg "[info script] failed reading external tool paths from '$csvPath'"
+    return  0
+  }
+  ok_info_msg "Read [llength $listOfPairs] external-tool related line(s) from '$csvPath'"
+  foreach line [lrange $listOfPairs 1 end] {
+    set varName [lindex $line 0];   set varVal [lindex $line 1]
+    global $varName
+    set $varName $varVal
+    ok_info_msg "External-tool setup assigned '$varName' to '$varVal'"
+  }
+  return  1
+}
 
 # Copy-pasted from Lazyconv "::dcraw::is_dcraw_result_ok"
 # Verifies whether dcraw command line ended OK through the test it printed.
