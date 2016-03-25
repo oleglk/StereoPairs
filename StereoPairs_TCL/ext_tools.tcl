@@ -7,30 +7,49 @@ package require ok_utils
 #source [file join $SCRIPT_DIR   "debug_utils.tcl"]
 ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 
-read_ext_tool_paths_from_csv [file join $SCRIPT_DIR "ext_tool_dirs.csv"
+## Better call path-reading function explicitly from another function
+## read_ext_tool_paths_from_csv [file join $SCRIPT_DIR "ext_tool_dirs.csv"]
 
 # - external program executable paths;
 # - don't forget to add if using more;
 # - COULDN'T PROCESS SPACES (as in "Program Files");
 
-# - ImageMagick:
-set _IM_DIR [file join {C:/} {Program Files (x86)} {ImageMagick-6.8.7-3}] ; # DT
-#set _IM_DIR [file join {C:/} {Program Files} {ImageMagick-6.8.6-8}]  ; # Asus
-#set _IM_DIR [file join {C:/} {Program Files (x86)} {ImageMagick-6.8.6-8}]; # Yoga
+#~ # - ImageMagick:
+#~ set _IM_DIR [file join {C:/} {Program Files (x86)} {ImageMagick-6.8.7-3}] ; # DT
+#~ #set _IM_DIR [file join {C:/} {Program Files} {ImageMagick-6.8.6-8}]  ; # Asus
+#~ #set _IM_DIR [file join {C:/} {Program Files (x86)} {ImageMagick-6.8.6-8}]; # Yoga
 
-set _IMCONVERT [format "{%s}" [file join $_IM_DIR "convert.exe"]]
-set _IMIDENTIFY [format "{%s}" [file join $_IM_DIR "identify.exe"]]
-set _IMMONTAGE [format "{%s}" [file join $_IM_DIR "montage.exe"]]
-# - DCRAW:
-#set _DCRAW "dcraw.exe"
-set _DCRAW [format "{%s}" [file join $_IM_DIR "dcraw.exe"]]
-# - ExifTool:
-set _EXIFTOOL "exiftool.exe" ; #TODO: path
+#~ set _IMCONVERT [format "{%s}" [file join $_IM_DIR "convert.exe"]]
+#~ set _IMIDENTIFY [format "{%s}" [file join $_IM_DIR "identify.exe"]]
+#~ set _IMMONTAGE [format "{%s}" [file join $_IM_DIR "montage.exe"]]
+#~ # - DCRAW:
+#~ #set _DCRAW "dcraw.exe"
+#~ set _DCRAW [format "{%s}" [file join $_IM_DIR "dcraw.exe"]]
+#~ # - ExifTool:
+#~ set _EXIFTOOL "exiftool.exe" ; #TODO: path
 
 
 ####### Do not change after this line ######
 
-proc read_ext_tool_paths_from_csv {csvPath}  {
+# Reads the system-dependent paths from 'csvPath',
+# then assigns ultimate tool paths
+proc set_ext_tool_paths_from_csv {csvPath}  {
+  if { 0 == [read_ext_tool_paths_from_csv $csvPath] }  {
+    return  0;  # error already printed
+  }
+  set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
+  set ::_IMIDENTIFY [format "{%s}"  [file join $::_IM_DIR "identify.exe"]]
+  set ::_IMMONTAGE  [format "{%s}"  [file join $::_IM_DIR "montage.exe"]]
+  # - DCRAW:
+  #set _DCRAW "dcraw.exe"
+  set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
+  # - ExifTool:
+  set ::_EXIFTOOL "exiftool.exe" ; #TODO: path
+}
+
+
+# A generic function to read the system-dependent paths from 'csvPath'
+proc _read_ext_tool_paths_from_csv {csvPath}  {
   # TODO: supply line-check CB
   set listOfPairs [ok_read_csv_file_into_list_of_lists $csvPath "," "#" 0]
   if { $listOfPairs == 0 }  {

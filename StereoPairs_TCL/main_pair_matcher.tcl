@@ -45,8 +45,12 @@ set FILENAME_RENAME_SPEC  "rename_spec.csv"
 ################################################################################
 
 proc pair_matcher_main {cmdLineAsStr}  {
-  global STS ORIG_EXT
+  global STS SCRIPT_DIR ORIG_EXT
   _set_defaults ;  # calling it in a function for repeated invocations
+  set extToolPathsFilePath [file join $SCRIPT_DIR "ext_tool_dirs.csv"]
+  if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
+    return  0;  # error already printed
+  }
   if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
   if { 0 == [pair_matcher_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
