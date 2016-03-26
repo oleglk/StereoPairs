@@ -452,6 +452,7 @@ proc _sort_name_to_time_dict_and_detect_bursts {namesToTimesDict descr} {
   }
   #ok_trace_msg "Unsorted name-time list: {$listOfLists}"
   set listOfLists [lsort -command _cmp_file_times $listOfLists]
+  #ok_trace_msg "Sorted name-time list: {$listOfLists}"
   # detect and mark images in bursts
   set burstCnt 0;  set idxInBurst -1
   for {set i 1} {$i < [llength $listOfLists]} {incr i}  {
@@ -466,12 +467,13 @@ proc _sort_name_to_time_dict_and_detect_bursts {namesToTimesDict descr} {
         set idxInBurst 0;   # index for the previous record (start of burst)
         set prevRec [PackNameTimeRecord \
                                     $nameP $timeStrP $globalTimeP $idxInBurst]
-        lreplace listOfLists [expr $i - 1] [expr $i - 1] $prevRec
+        set listOfLists [lreplace $listOfLists [expr $i - 1] [expr $i - 1] \
+                                                $prevRec]
       }
       incr idxInBurst 1 ;   # index for the current record
       set currRec [PackNameTimeRecord \
                                   $nameC $timeStrC $globalTimeC $idxInBurst]
-      lreplace listOfLists $i $i $currRec
+      set listOfLists [lreplace $listOfLists $i $i $currRec]
     } else { set idxInBurst -1 }
   }
   ok_info_msg "Found $burstCnt burst(s) in the set of [llength $listOfLists] $descr"

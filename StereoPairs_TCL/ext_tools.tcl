@@ -34,7 +34,7 @@ ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 # Reads the system-dependent paths from 'csvPath',
 # then assigns ultimate tool paths
 proc set_ext_tool_paths_from_csv {csvPath}  {
-  if { 0 == [read_ext_tool_paths_from_csv $csvPath] }  {
+  if { 0 == [_read_ext_tool_paths_from_csv $csvPath] }  {
     return  0;  # error already printed
   }
   set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
