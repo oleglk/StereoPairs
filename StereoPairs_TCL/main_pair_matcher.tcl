@@ -126,7 +126,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   -use_pairlist {val "file given provides pre-built pair matches"} \
   -out_pairlist_filename {val "name of file to write pair matches to"} \
   -out_dir {val	"output directory"} \
-  -move_unmatched_to {val "directory to move unmatched inputs to; if not given, don't move those"} \
+  -dir_for_unmatched {val "name of subdirectory to move unmatched inputs to"} \
   -time_from {val "<exif|create>	: source of shots' timestamps; using exif requires external tool (dcraw and identify)"} \
   -max_burst_gap {val "max time difference between consequent frames to be considered a burst, sec"} \
   -simulate_only {""	"if specified, no file changes performed, only decide and report what should be done"} ]
@@ -137,8 +137,8 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
    {-time_diff 0} {-min_success_rate 50} \
-   {-out_pairlist_filename "lr_pairs.csv"} {-time_from "exif"} \
-   {-max_burst_gap 0.9} }
+   {-out_pairlist_filename "lr_pairs.csv"} {-dir_for_unmatched "Unmatched"} \
+   {-time_from "exif"} {-max_burst_gap 0.9} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -233,12 +233,8 @@ proc _parse_cmdline {cmlArrName}  {
       incr errCnt 1
     }
   }
-  if { 1 == [info exists cml(-move_unmatched_to)] }  {
-    set ::STS(dirForUnmatched) $cml(-move_unmatched_to)
-    if { 0 == [file isdirectory $::STS(dirForUnmatched) }  {
-      ok_err_msg "Inexistent or invalid directory for unmatched inputs '$::STS(dirForUnmatched)'"
-      incr errCnt 1
-    }
+  if { 1 == [info exists cml(-dir_for_unmatched)] }  {
+    set ::STS(dirForUnmatched) $cml(-dir_for_unmatched)
   }
   if { 1 == [info exists cml(-create_sbs)] }  {
     if { $::STS(stdImgRootPath) == "" }  {
@@ -310,14 +306,12 @@ proc pair_matcher_find_originals {origPathsLeftVar origPathsRightVar}  {
 
 
 proc _arrange_workarea {}  {
-  if { 0 == [file exists $::STS(outDirPath)] }  {
-    if { 0 == [ok_mkdir $::STS(outDirPath)] }  {
-      return  0;  # error already printed
-    }
-    ok_info_msg "Created output directory '$::STS(outDirPath)'"
-    return  1
-  } else {
-    ok_info_msg "Output directory '$::STS(outDirPath)' pre-existed"
+  set unmatchedDirLeft  [file join $::STS(origImgDirLeft) $::STS(dirForUnmatched)]
+  set unmatchedDirRight [file join $::STS(origImgDirRight) $::STS(dirForUnmatched)]
+  if { 0 == [ok_create_absdirs_in_list \
+              [list $::STS(outDirPath) $unmatchedDirLeft $unmatchedDirRight] \
+              [list "output"           "left-unmatched"  "right-unmatched"]] } {
+    return  0;  # error already printed
   }
   if { 0 == [ok_filepath_is_writable $::STS(outPairlistPath)] }  {
     ok_err_msg "Output path for pairlist file '$::STS(outPairlistPath)' is unwritable"

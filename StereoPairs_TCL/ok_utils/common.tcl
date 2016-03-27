@@ -256,30 +256,37 @@ proc ::ok_utils::ok_read_list_from_file {listVarName fullPath} {
 
 
 # If a directory in 'absDirList' doesn't exist, creates it.
-# Returns 0 if failed creating s directory.
-proc ::ok_utils::ok_create_absdirs_in_list {absDirList} {
-    foreach dir $absDirList {
-	if { [file exists $dir] == 1 } {
-	    if { [file isdirectory $dir] == 0 } {
-		ok_err_msg "Correction/conversion input path '$dir' is not a directory!"
-		return  0
-	    }
-	    if { [file readable $dir] == 0 } {
-		ok_err_msg "Correction/conversion input path '$dir' is unreadable!"
-		return  0
-	    }
-	} else {
-	    # create the directory
-	    set tclExecResult [catch { file mkdir $dir } execResult]
-	    if { $tclExecResult != 0 } {
-		ok_err_msg "$execResult!"
-		ok_err_msg "Failed creating correction/conversion input directory '$dir'."
-		return  0
-	    }
-	    ok_info_msg "Created correction/conversion input directory '$dir'."
-	}
+# Returns 0 if failed creating any of the directories.
+proc ::ok_utils::ok_create_absdirs_in_list {absDirList {descrList 0}} {
+  if { ($descrList != 0) && ([llength $absDirList] != [llength $descrList]) }  {
+    ok_err_msg "Number of requested directories differs from number of their descriptions"
+    return  0
+  }
+  for {set i 0} {$i < [llength $absDirList]} {incr i}  {
+    set dir [lindex $absDirList $i]
+    set descr [expr {($descrList != 0)? [lindex $descrList $i] : "requested"}]
+    if { [file exists $dir] == 1 } {
+      if { [file isdirectory $dir] == 0 } {
+        ok_err_msg "$descr directory path '$dir' is not a directory!"
+        return  0
+      }
+      ok_info_msg "$descr directory path '$dir' pre-existed"
+      if { [file readable $dir] == 0 } {
+        ok_err_msg "$descr directory path '$dir' is unreadable!"
+        return  0
+      }
+    } else {
+      # create the directory
+      set tclExecResult [catch { file mkdir $dir } execResult]
+      if { $tclExecResult != 0 } {
+        ok_err_msg "$execResult!"
+        ok_err_msg "Failed creating $descr directory '$dir'."
+        return  0
+      }
+      ok_info_msg "Created $descr directory '$dir'."
     }
-    return  1
+  }
+  return  1
 }
 
 
