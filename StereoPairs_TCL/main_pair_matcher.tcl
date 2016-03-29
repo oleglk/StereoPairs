@@ -102,6 +102,9 @@ proc pair_matcher_main {cmdLineAsStr}  {
       if { 0 != [_rename_images_by_rename_dict $renameDict] }  {
         return  0;  # error already printed
       }
+      if { 0 != [_hide_unmatched_images_by_rename_dict $renameDict] }  {
+        return  0;  # error already printed
+      }
     } else {
       ok_warn_msg "Simulation-only mode; no file changes made"
     }
@@ -665,6 +668,32 @@ proc _rename_images_by_rename_dict {renameDict} {
   }
   ok_info_msg "Done renaming [llength $srcPaths] original image(s) under '[file normalize $::STS(origImgRootPath)]'; $replCnt file replication(s) made; $errCnt error(s) occured"
   return  $errCnt
+}
+
+
+# Moves unmatched originals into subdirectories STS(dirForUnmatched) of their dir-s
+# 'renameDict' holds pairs <srcPath> => {list of <dstPath>-s}
+# Returns number of errors encountered
+proc _hide_unmatched_images_by_rename_dict {origPaths renameDict}  {
+  set hideCnt 0;  set errCnt 0
+  set nOrigs [llength $origPaths]
+  ok_trace_msg "Begin search for unmatched originals out of $nOrigs images"
+  foreach origPath $origPaths {
+    if { 1 == [dict exists $renameDict $origPath] }  {
+      continue;   # matched image
+    }
+    set destDirPath [file join [file dirname $origPath] $::STS(dirForUnmatched)]
+    # 'destDirPath' should exist
+    set tclResult [catch {
+      set res [file rename $origPath $destDirPath] } execResult]
+    if { $tclResult != 0 } {
+      ok_err_msg "$execResult!";  incr errCnt 1
+    } else {
+      incr hideCnt 1
+      ok_warn_msg "Moved unmatched image '$origPath' into '$destDirPath'"
+    }
+    TODO
+  }
 }
 
 
