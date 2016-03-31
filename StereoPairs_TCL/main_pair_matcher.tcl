@@ -62,6 +62,7 @@ proc pair_matcher_main {cmdLineAsStr}  {
   }
   if { ($STS(doRestoreLR) == 1) }   {
     return  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
+    #TODO: unhide unmatched
     # error, if any, printed
   }
   if { 0 == [pair_matcher_find_originals origPathsLeft origPathsRight] }  {
@@ -102,7 +103,8 @@ proc pair_matcher_main {cmdLineAsStr}  {
       if { 0 != [_rename_images_by_rename_dict $renameDict] }  {
         return  0;  # error already printed
       }
-      if { 0 != [_hide_unmatched_images_by_rename_dict $renameDict] }  {
+      if { 0 != [_hide_unmatched_images_by_rename_dict \
+                      [concat $origPathsLeft $origPathsRight] $renameDict] }  {
         return  0;  # error already printed
       }
     } else {
@@ -154,8 +156,9 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "========= Command line parameters (in any order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
-    ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg "TODO"
+    ok_info_msg "========= Examples (note TCL-style directory separators): ======="
+    ok_info_msg " pair_matcher_main \"-max_burst_gap 1.0 -time_diff -84 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./OUT\""
+    ok_info_msg " pair_matcher_main \"-max_burst_gap 1.0 -time_diff -84 -restore_lr -orig_img_dir . -std_img_dir . -out_dir ./OUT\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -675,13 +678,14 @@ proc _rename_images_by_rename_dict {renameDict} {
 # 'renameDict' holds pairs <srcPath> => {list of <dstPath>-s}
 # Returns number of errors encountered
 proc _hide_unmatched_images_by_rename_dict {origPaths renameDict}  {
-  set hideCnt 0;  set errCnt 0
+  set hideCnt 0;  set umCnt 0;  set errCnt 0
   set nOrigs [llength $origPaths]
-  ok_trace_msg "Begin search for unmatched originals out of $nOrigs images"
+  ok_trace_msg "Begin search for unmatched originals out of $nOrigs image(s)"
   foreach origPath $origPaths {
     if { 1 == [dict exists $renameDict $origPath] }  {
       continue;   # matched image
     }
+    incr umCnt 1
     set destDirPath [file join [file dirname $origPath] $::STS(dirForUnmatched)]
     # 'destDirPath' should exist
     set tclResult [catch {
@@ -690,10 +694,15 @@ proc _hide_unmatched_images_by_rename_dict {origPaths renameDict}  {
       ok_err_msg "$execResult!";  incr errCnt 1
     } else {
       incr hideCnt 1
-      ok_warn_msg "Moved unmatched image '$origPath' into '$destDirPath'"
+      ok_info_msg "Moved unmatched image '$origPath' into '$destDirPath'"
     }
-    TODO
   }
+  if { $umCnt == $hideCnt } {
+    ok_info_msg "Found and hided $hideCnt unmatched original image(s)"
+  } else {
+    ok_warn_msg "Found $umCnt unmatched original image(s); hided $hideCnt; $errCnt error(s) occured"
+  }
+  return  $errCnt
 }
 
 
