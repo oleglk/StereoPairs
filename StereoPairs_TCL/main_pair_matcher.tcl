@@ -61,11 +61,12 @@ proc pair_matcher_main {cmdLineAsStr}  {
     return  0;  # error already printed
   }
   if { ($STS(doRestoreLR) == 1) }   {
-    return  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
+    set restoreRes  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
+    set unhideRes   [_pair_matcher_restore_hidden_originals $STS(doSimulateOnly)]
     #TODO: unhide unmatched
     # error, if any, printed
   }
-  if { 0 == [pair_matcher_find_originals origPathsLeft origPathsRight] }  {
+  if { 0 == [pair_matcher_find_originals 0 origPathsLeft origPathsRight] }  {
     return  0;  # error already printed
   }
   if { 0 == [_arrange_workarea] }  { return  0  };  # error already printed
@@ -287,7 +288,11 @@ proc _parse_cmdline {cmlArrName}  {
 }
 
 
-proc pair_matcher_find_originals {origPathsLeftVar origPathsRightVar}  {
+# Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
+#   - original images if 'searchHidden'==0
+#   - hidden original images if 'searchHidden'==1
+proc pair_matcher_find_originals {searchHidden \
+                                  origPathsLeftVar origPathsRightVar}  {
   global STS ORIG_EXT
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
@@ -295,18 +300,29 @@ proc pair_matcher_find_originals {origPathsLeftVar origPathsRightVar}  {
     ok_err_msg "Cannot find originals before their extension is determined"
     return  0
   }
-  set origPathsLeft  [glob -nocomplain -directory $STS(origImgDirLeft)  "*.$ORIG_EXT"]
-  set origPathsRight [glob -nocomplain -directory $STS(origImgDirRight) "*.$ORIG_EXT"]
-  ok_trace_msg "Left originals:   {$origPathsLeft}"
-  ok_trace_msg "Right originals:  {$origPathsRight}"
+  if { $searchHidden == 0}  {
+    set descrSingle "original";   set descrPlural "original(s)"
+    set origPathsLeft  [glob -nocomplain -directory $STS(origImgDirLeft)  "*.$ORIG_EXT"]
+    set origPathsRight [glob -nocomplain -directory $STS(origImgDirRight) "*.$ORIG_EXT"]
+  } else {
+    set descrSingle "hidden-original";   set descrPlural "hidden-original(s)"
+    set origPathsLeft  [glob -nocomplain -directory [file join $STS(origImgDirLeft) $STS(dirForUnmatched)]  "*.$ORIG_EXT"]
+    set origPathsRight [glob -nocomplain -directory [file join $STS(origImgDirRight) $STS(dirForUnmatched)] "*.$ORIG_EXT"]
+  }
+  ok_trace_msg "Left $descrPlural:   {$origPathsLeft}"
+  ok_trace_msg "Right $descrPlural:  {$origPathsRight}"
   set missingStr ""
   if { 0 == [llength $origPathsLeft] }   { append missingStr " left" }
   if { 0 == [llength $origPathsRight] }  { append missingStr " right" }
   if { $missingStr != "" }  {
-    ok_err_msg "Missing original images for:$missingStr"
-    return  0
+    if { $searchHidden == 0}  {
+      ok_err_msg "Missing $descrSingle images for:$missingStr"
+      return  0
+    } else {
+      ok_info_msg "No hidden $descrSingle images for:$missingStr"
+    }
   }
-  ok_info_msg "Found [llength $origPathsLeft] left- and [llength $origPathsRight] right original image(s)"
+  ok_info_msg "Found [llength $origPathsLeft] left- and [llength $origPathsRight] right $descrSingle image(s)"
   return  1
 }
 
@@ -812,6 +828,29 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
   if { $errCnt > 0 }      { append msg "; $errCnt error(s) occured"            }
   if { $errCnt == 0 }   { ok_info_msg $msg } else { ok_err_msg $msg }
   return  [expr {($errCnt == 0)? 1 : 0}]
+}
+
+
+proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
+  global STS
+  if { 0 == [pair_matcher_find_originals 1 hidePathsLeft hidePathsRight] }  {
+    return  0;  # error already printed
+  }
+#  set unmatchedDirLeft  [file join $STS(origImgDirLeft)  $STS(dirForUnmatched)]
+#  set unmatchedDirRight [file join $STS(origImgDirRight) $STS(dirForUnmatched)]
+  set srcPathsAndDestDir [list  [list $hidePathsLeft $STS(origImgDirLeft)] \
+                                [list $hidePathsRight $STS(origImgDirRight)] ]
+
+  foreach rec $srcPathsAndDestDir] {
+    TODO
+    set tclResult [catch {
+      set res [file rename $hiddenImgPath $STS(origImgDirLeft)] } execResult]
+    if { $tclResult != 0 } {
+      ok_err_msg "$execResult!";  incr errCnt 1
+    } else {
+      incr hideCnt 1
+      ok_info_msg "Moved unmatched image '$origPath' into '$destDirPath'"
+    }
 }
 
 
