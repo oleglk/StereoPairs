@@ -63,8 +63,8 @@ proc pair_matcher_main {cmdLineAsStr}  {
   if { ($STS(doRestoreLR) == 1) }   {
     set restoreRes  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
     set unhideRes   [_pair_matcher_restore_hidden_originals $STS(doSimulateOnly)]
-    #TODO: unhide unmatched
     # error, if any, printed
+    return  [expr {(($restoreRes != 0) && ($unhideRes != 0))? 1 : 0}]
   }
   if { 0 == [pair_matcher_find_originals 0 origPathsLeft origPathsRight] }  {
     return  0;  # error already printed
@@ -805,10 +805,11 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
       ok_warn_msg "Listed renamed image '$renamedPath' inexistent"
       incr missingCnt 1;      continue
     }
-    ok_info_msg "Going to restore '$origPath' from '$renamedPath'"
     if { $simulateOnly != 0 }  {
+      ok_info_msg "Would have restored '$origPath' from '$renamedPath'"
       incr restoredCnt 1;  set lastRestoredOriginal $origPath;      continue
     }
+    ok_info_msg "Going to restore '$origPath' from '$renamedPath'"
     set tclExecResult [catch {
                         file rename -- $renamedPath $origPath } execResult]
     if { $tclExecResult != 0 } {
@@ -840,17 +841,33 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
 #  set unmatchedDirRight [file join $STS(origImgDirRight) $STS(dirForUnmatched)]
   set srcPathsAndDestDir [list  [list $hidePathsLeft $STS(origImgDirLeft)] \
                                 [list $hidePathsRight $STS(origImgDirRight)] ]
-
-  foreach rec $srcPathsAndDestDir] {
-    TODO
-    set tclResult [catch {
-      set res [file rename $hiddenImgPath $STS(origImgDirLeft)] } execResult]
-    if { $tclResult != 0 } {
-      ok_err_msg "$execResult!";  incr errCnt 1
-    } else {
-      incr hideCnt 1
-      ok_info_msg "Moved unmatched image '$origPath' into '$destDirPath'"
+  set hideCnt [expr [llength $hidePathsLeft] + [llength $hidePathsRight]]
+  set unhideCnt 0;  set errCnt 0;   set existedCnt 0
+  foreach rec $srcPathsAndDestDir {
+    set hidePaths [lindex $rec 0];   set destDirPath [lindex $rec 1]
+    foreach hiddenImgPath $hidePaths {
+      set origPath [file join $destDirPath [file tail $hiddenImgPath]]
+      if { [file exists $origPath] }  {
+        ok_warn_msg "Original image file '$origPath' exists; not overriden"
+        incr existedCnt 1;      continue
+      }
+      if { $simulateOnly != 0 }  {
+        ok_info_msg "Would have returned unmatched image '$hiddenImgPath' into '$destDirPath'"
+        incr unhideCnt 1;  continue
+      }
+      set tclResult [catch {
+        set res [file rename $hiddenImgPath $destDirPath] } execResult]
+      if { $tclResult != 0 } {
+        ok_err_msg "$execResult!";  incr errCnt 1
+      } else {
+        incr unhideCnt 1
+        ok_info_msg "Returned unmatched image '$hiddenImgPath' into '$destDirPath'"
+      }
     }
+  }
+  set msg "Restored $unhideCnt hidden unmatched image(s) out of $hideCnt; $existedCnt original(s) pre-existed; $errCnt error(s) occured"
+  if { $errCnt == 0 } { ok_info_msg $msg } else { ok_err_msg $msg }
+  return  [expr {($errCnt == 0)? 1 : 0}]s
 }
 
 
