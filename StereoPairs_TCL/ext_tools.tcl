@@ -34,8 +34,12 @@ ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 # Reads the system-dependent paths from 'csvPath',
 # then assigns ultimate tool paths
 proc set_ext_tool_paths_from_csv {csvPath}  {
-  if { 0 == [_read_ext_tool_paths_from_csv $csvPath] }  {
+  if { 0 ==[ok_read_variable_values_from_csv $csvPath "external tool path(s)"]} {
     return  0;  # error already printed
+  }
+  if { 0 == [info exists ::_IM_DIR] }  {
+    ok_err_msg "Imagemagick directory path not assigned to variable _IM_DIR by '$csvPath'"
+    return  0
   }
   set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
   set ::_IMIDENTIFY [format "{%s}"  [file join $::_IM_DIR "identify.exe"]]
@@ -47,24 +51,6 @@ proc set_ext_tool_paths_from_csv {csvPath}  {
   set ::_EXIFTOOL "exiftool.exe" ; #TODO: path
 }
 
-
-# A generic function to read the system-dependent paths from 'csvPath'
-proc _read_ext_tool_paths_from_csv {csvPath}  {
-  # TODO: supply line-check CB
-  set listOfPairs [ok_read_csv_file_into_list_of_lists $csvPath "," "#" 0]
-  if { $listOfPairs == 0 }  {
-    ok_err_msg "[info script] failed reading external tool paths from '$csvPath'"
-    return  0
-  }
-  ok_info_msg "Read [llength $listOfPairs] external-tool related line(s) from '$csvPath'"
-  foreach line [lrange $listOfPairs 1 end] {
-    set varName [lindex $line 0];   set varVal [lindex $line 1]
-    global $varName
-    set $varName $varVal
-    ok_info_msg "External-tool setup assigned '$varName' to '$varVal'"
-  }
-  return  1
-}
 
 # Copy-pasted from Lazyconv "::dcraw::is_dcraw_result_ok"
 # Verifies whether dcraw command line ended OK through the test it printed.

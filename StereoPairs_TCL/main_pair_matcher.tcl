@@ -865,7 +865,8 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
       }
     }
   }
-  set msg "Restored $unhideCnt hidden unmatched image(s) out of $hideCnt; $existedCnt original(s) pre-existed; $errCnt error(s) occured"
+  set actStr [expr {($simulateOnly != 0)? "Would have restored" : "Restored"}]
+  set msg "$actStr $unhideCnt hidden unmatched image(s) out of $hideCnt; $existedCnt original(s) pre-existed; $errCnt error(s) occured"
   if { $errCnt == 0 } { ok_info_msg $msg } else { ok_err_msg $msg }
   return  [expr {($errCnt == 0)? 1 : 0}]s
 }

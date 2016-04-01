@@ -14,6 +14,7 @@ namespace eval ::ok_utils:: {
   ok_check_list_of_lists_lengths        \
   ok_read_csv_file_keys                 \
   ok_read_csv_file_column               \
+  ok_read_variable_values_from_csv      \
   ok_discard_empty_list_elements
 }
 
@@ -250,6 +251,27 @@ proc ::ok_utils::ok_read_csv_file_column {fullPath iColumn sepChar {commentStart
     lappend res [lindex $lnL $iColumn]
   }
   return  $res
+}
+
+
+
+
+# A generic function to read global-variable values from 'csvPath'
+proc ::ok_utils::ok_read_variable_values_from_csv {csvPath descr}  {
+  # TODO: supply line-check CB
+  set listOfPairs [ok_read_csv_file_into_list_of_lists $csvPath "," "#" 0]
+  if { $listOfPairs == 0 }  {
+    ok_err_msg "[info script] failed reading $descr from '$csvPath'"
+    return  0
+  }
+  ok_info_msg "Read [llength $listOfPairs] $descr from '$csvPath'"
+  foreach line [lrange $listOfPairs 1 end] {
+    set varName [lindex $line 0];   set varVal [lindex $line 1]
+    global $varName
+    set $varName $varVal
+    ok_info_msg "Reader of $descr assigned '$varName' to '$varVal'"
+  }
+  return  1
 }
 
 
