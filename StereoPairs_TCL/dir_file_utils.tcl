@@ -22,6 +22,48 @@ proc FindFilePath {dirPath pureName ext descr {checkExist 0}} {
 ################################################################################
 
 
+# Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
+#   - original images if 'searchHidden'==0
+#   - hidden original images if 'searchHidden'==1
+proc dualcam_find_originals {searchHidden origExt \
+              origImgDirLeft origImgDirRight dirForUnmatched \
+              origPathsLeftVar origPathsRightVar}  {
+  upvar $origPathsLeftVar  origPathsLeft
+  upvar $origPathsRightVar origPathsRight
+  if { $origExt == "" }  {
+    ok_err_msg "Cannot find originals before their extension is determined"
+    return  0
+  }
+  if { $searchHidden == 0}  {
+    set descrSingle "original";   set descrPlural "original(s)"
+    set origPathsLeft  [glob -nocomplain -directory $origImgDirLeft  "*.$origExt"]
+    set origPathsRight [glob -nocomplain -directory $origImgDirRight "*.$origExt"]
+  } else {
+    set descrSingle "hidden-original";   set descrPlural "hidden-original(s)"
+    set origPathsLeft  [glob -nocomplain -directory \
+                  [file join $origImgDirLeft $dirForUnmatched]  "*.$origExt"]
+    set origPathsRight [glob -nocomplain -directory \
+                  [file join $origImgDirRight $dirForUnmatched] "*.$origExt"]
+  }
+  ok_trace_msg "Left $descrPlural:   {$origPathsLeft}"
+  ok_trace_msg "Right $descrPlural:  {$origPathsRight}"
+  set missingStr ""
+  if { 0 == [llength $origPathsLeft] }   { append missingStr " left" }
+  if { 0 == [llength $origPathsRight] }  { append missingStr " right" }
+  if { $missingStr != "" }  {
+    if { $searchHidden == 0}  {
+      ok_err_msg "Missing $descrSingle images for:$missingStr"
+      return  0
+    } else {
+      ok_info_msg "No hidden $descrSingle images for:$missingStr"
+    }
+  }
+  ok_info_msg "Found [llength $origPathsLeft] left- and [llength $origPathsRight] right $descrSingle image(s)"
+  return  1
+}
+
+
+
 
 # Detects and returns originals' extension for the work-area
 proc ChooseOrigImgExtensionInDirs {dirParhList}  {

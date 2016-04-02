@@ -17,6 +17,7 @@ array unset STS ;   # array for global settings
 
 proc _set_defaults {}  {
   set ::STS(origImgRootPath)  ""
+  set ::STS(globalImgSettingsDir)  ""
   set ::STS(origImgDirLeft)   ""
   set ::STS(origImgDirRight)  ""
   set ::STS(outDirPath)       ""
@@ -39,11 +40,12 @@ proc settings_copier_main {cmdLineAsStr}  {
     return  0;  # error or help already printed
   }
 
-  if { 0 == [settings_copier_find_originals 0 origPathsLeft origPathsRight] }  {
+  if { 0 == [dualcam_find_originals 0 origPathsLeft origPathsRight] }  {
     return  0;  # error already printed
   }
   if { 0 == [_arrange_workarea] }  { return  0  };  # error already printed
-  # read timestamps from all the images
+  
+  # TODO: find source settings for originals' names, replicate and replace image name(s) inside
 
   if { $::STS(doRenameLR) == 1 }  {
     if { 0 == $::STS(doSimulateOnly) }  {
@@ -68,6 +70,7 @@ proc settings_copier_cmd_line {cmdLineAsStr cmlArrName}  {
   set descrList \
 [list \
   -help {"" "print help"} \
+  -global_img_settings_dir {val	"full path of the directory where the RAW converter keeps all image-settings files - specify if relevant for your converter"} \
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
   -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
   -out_dir {val	"output directory"} \
@@ -112,6 +115,15 @@ proc settings_copier_cmd_line {cmdLineAsStr cmlArrName}  {
 proc _parse_cmdline {cmlArrName}  {
   upvar $cmlArrName      cml
   set errCnt 0
+  
+  if { 1 == [info exists cml(-global_img_settings_dir)] }  {
+    if { 0 == [file isdirectory $cml(-global_img_settings_dir)] }  {
+      ok_err_msg "Non-directory '$cml(-global_img_settings_dir)' specified as the global image-settings directory"
+      incr errCnt 1
+    } else {
+      set ::STS(globalImgSettingsDir) $cml(-global_img_settings_dir)
+    }
+  }  
   if { 0 == [info exists cml(-orig_img_dir)] }  {
     ok_err_msg "Please specify input directory; example: -orig_img_dir D:/Photo/Work"
     incr errCnt 1
@@ -170,7 +182,7 @@ proc _parse_cmdline {cmlArrName}  {
 # Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
 #   - original images if 'searchHidden'==0
 #   - hidden original images if 'searchHidden'==1
-proc settings_copier_find_originals {searchHidden \
+proc dualcam_find_originals {searchHidden \
                                   origPathsLeftVar origPathsRightVar}  {
   global STS ORIG_EXT
   upvar $origPathsLeftVar  origPathsLeft
@@ -713,7 +725,7 @@ proc _settings_copier_restore_original_names {{simulateOnly 0}}  {
 
 proc _settings_copier_restore_hidden_originals {{simulateOnly 0}}  {
   global STS
-  if { 0 == [settings_copier_find_originals 1 hidePathsLeft hidePathsRight] }  {
+  if { 0 == [dualcam_find_originals 1 hidePathsLeft hidePathsRight] }  {
     return  0;  # error already printed
   }
 #  set unmatchedDirLeft  [file join $STS(origImgDirLeft)  $STS(dirForUnused)]
