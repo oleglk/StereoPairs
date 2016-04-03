@@ -3,6 +3,7 @@
 set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR  "ok_utils" "debug_utils.tcl"]
 ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
+source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
 
 package require ok_utils
 namespace import -force ::ok_utils::*
@@ -58,7 +59,13 @@ proc FindSettingsFilesForRawsInDir {dirPath cntMissing {priErr 1}} {
   upvar $cntMissing cntMiss
   set cntMiss 0
   # TODO: check existence of dirPath
-  set rawPaths [FindRawInputs $subdirName] TODO
+  set rawPaths [FindRawInputs $dirPath $priErr]
+  if { 0 == [llength $rawPaths] }  {
+    if { $priErr == 1 }  {
+      ok_err_msg "No relevant RAW files found in '$dirPath'"
+    }
+    return  [list]
+  }
   if { $STS(cnvSettingsDir) != "" }  {
     set settingsDir $STS(cnvSettingsDir) ;   # full path of standard dir
   } else {

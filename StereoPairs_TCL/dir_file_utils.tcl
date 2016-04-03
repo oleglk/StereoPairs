@@ -122,17 +122,23 @@ proc ChooseOrigImgExtensionInDirs {dirParhList}  {
 
 
 proc IsRawImageName {filePath} {
-  global RAW_EXTENSION
+  global ORIG_EXT
   set ext [string range [file extension $filePath] 1 end]; # without leading dot
-  if { 0 == [string compare -nocase $ext $RAW_EXTENSION] }  { return 1
+  if { 0 == [string compare -nocase $ext $ORIG_EXT] }  { return 1
   } else {                                                    return 0  }
 }
 
 
-proc FindRawInputs {rawDir} {
-  global RAW_EXTENSION
+proc FindRawInputs {rawDir {priErr 0}} {
+  global ORIG_EXT
+  if { 0 == [IsRawExtension $ORIG_EXT] }  {
+    if { $priErr }  {
+      ok_err_msg "Non-RAW image type '$ORIG_EXT' used as input"
+    }
+    return  [list]
+  }
   set tclResult [catch {
-    set res [glob [file join $rawDir "*.$RAW_EXTENSION"]] } execResult]
+    set res [glob [file join $rawDir "*.$ORIG_EXT"]] } execResult]
     if { $tclResult != 0 } { ok_err_msg "$execResult!";  return  [list]  }
   return  $res
 }
@@ -150,8 +156,8 @@ proc FindRawInputsOrComplain {rawDir allRawsListVar} {
 
 
 proc FindRawInput {rawDir pureName} {
-  global RAW_EXTENSION
-  set rPath [file join $rawDir "$pureName.$RAW_EXTENSION"]
+  global ORIG_EXT
+  set rPath [file join $rawDir "$pureName.$ORIG_EXT"]
   if { 1 == [file exists $rPath] } {
     return $rPath
   }
@@ -283,16 +289,20 @@ proc CompareFileDates {path1 path2} {
 
 # Returns list of known RAW extensions (no dot) in directory 'dirPath'
 proc FindRawExtensionsInDir {dirPath} {
-  global KNOWN_RAW_EXTENSIONS_DICT
   set allExtensions [FindSingleDotExtensionsInDir $dirPath]
   set rawExtensions [list]
   foreach ext $allExtensions {
-    if { 1 == [dict exists $KNOWN_RAW_EXTENSIONS_DICT $ext] }  {
+    if { 1 == [IsRawExtension $ext] }  {
       lappend rawExtensions $ext
     }
   }
   ok_info_msg "Found [llength $rawExtensions] known RAW file extension(s) in '$dirPath': {$rawExtensions}"
   return  $rawExtensions
+}
+
+
+proc IsRawExtension {ext} {
+  return  [dict exists $::KNOWN_RAW_EXTENSIONS_DICT $ext]
 }
 
 
