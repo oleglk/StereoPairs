@@ -65,17 +65,20 @@ proc dualcam_find_originals {searchHidden origExt \
 
 
 
-# Detects and returns originals' extension for the work-area
-proc ChooseOrigImgExtensionInDirs {dirParhList}  {
+# Detects originals' extensions for the work-area
+# Returns a dict of {dirPath::ext} or 0 on error
+proc ChooseOrigImgExtensionsInDirs {dirPathList}  {
   set allDirsRawExtList [list];   set allDirsStdExtList [list]
   set cntDirsWithRaw 0
-  foreach oneDir $dirParhList {
+  set dirToExt [dict create]
+  foreach oneDir $dirPathList {
     if { 1 < [llength [set rawExtList [FindRawExtensionsInDir $oneDir]]] } {
       ok_err_msg "Directory '$oneDir' has file(s) with [llength $rawExtList] known RAW extension(s): {$rawExtList}; should be exactly one - all images should come from one camera"
-      return  ""
+      return  0
     } elseif { 1 == [llength $rawExtList] } {
       set ext [lindex $rawExtList 0]
       ok_info_msg "RAW extension in directory '$oneDir' is '$ext'"
+      dict set dirToExt $oneDir $ext
       lappend allDirsRawExtList $ext
       incr cntDirsWithRaw 1
       continue
@@ -83,62 +86,73 @@ proc ChooseOrigImgExtensionInDirs {dirParhList}  {
     # no RAWs in 'oneDir'; perform the similar search for standard extensions
     if { 1 < [llength [set stdExtList [FindStdImageExtensionsInDir $oneDir]]] } {
       ok_err_msg "Directory '$oneDir' has file(s) with [llength $stdExtList] known standard-image extension(s): {$stdExtList}; should be exactly one - all images should come from one camera"
-      return  ""
+      return  0
     } elseif { 1 == [llength $stdExtList] } {
       set ext [lindex $stdExtList 0]
-      ok_info_msg "standard-image extension in directory '$oneDir' is '$ext'"
+      ok_info_msg "Standard-image extension in directory '$oneDir' is '$ext'"
+      dict set dirToExt $oneDir $ext
       lappend allDirsStdExtList $ext
       continue
     } elseif { 0 == [llength $stdExtList] } {
       ok_err_msg "Directory '$oneDir' has no known image files, RAW or standard"
-      return  ""
+      return  0
     }
   }
-  if { ($cntDirsWithRaw > 0) && ($cntDirsWithRaw != [llength $dirParhList]) }  {
-    ok_err_msg "Only $cntDirsWithRaw directory(ies) out of [llength $dirParhList] have RAW images. Aborting."
-    return  ""
+  if { ($cntDirsWithRaw > 0) && ($cntDirsWithRaw != [llength $dirPathList]) }  {
+    ok_err_msg "Only $cntDirsWithRaw directory(ies) out of [llength $dirPathList] have RAW images. Aborting."
+    return  0
   }
-  set allDirsRawExtList [lsort -unique $allDirsRawExtList]
-  set allDirsStdExtList [lsort -unique $allDirsStdExtList]
-  set numCandidates [expr {[llength $allDirsRawExtList] + \
-                           [llength $allDirsStdExtList]}]
-  if { 1 == [llength $allDirsRawExtList] }  {
-    set origExt [lindex $allDirsRawExtList 0]
-    ok_info_msg "Original RAW-image extension chosen to be '$origExt'"
-  } elseif { 1 == [llength $allDirsStdExtList] }  {
-    set origExt [lindex $allDirsStdExtList 0]
-    ok_info_msg "Original standard-image extension chosen to be '$origExt'"
-    } elseif { $numCandidates == 0 } {
-      ok_err_msg "Directories {$dirParhList} have no known image files, RAW or standard"
-      return  ""
-    } else {
+  return  $dirToExt
+  #~ set allDirsRawExtList [lsort -unique $allDirsRawExtList]
+  #~ set allDirsStdExtList [lsort -unique $allDirsStdExtList]
+  #~ set numCandidates [expr {[llength $allDirsRawExtList] + \
+                           #~ [llength $allDirsStdExtList]}]
+  #~ if { 1 == [llength $allDirsRawExtList] }  {
+    #~ set origExt [lindex $allDirsRawExtList 0]
+    #~ ok_info_msg "Original RAW-image extension chosen to be '$origExt'"
+  #~ } elseif { 1 == [llength $allDirsStdExtList] }  {
+    #~ set origExt [lindex $allDirsStdExtList 0]
+    #~ ok_info_msg "Original standard-image extension chosen to be '$origExt'"
+    #~ } elseif { $numCandidates == 0 } {
+      #~ ok_err_msg "Directories {$dirPathList} have no known image files, RAW or standard"
+      #~ return  0
+    #~ } else {
 
-    ok_err_msg "Cannot choose original image extension for directories {$dirParhList}: $numCandidates candidate(s) found: {[concat $allDirsRawExtList $allDirsStdExtList]}"
-    return  ""
-  }
-  return  $origExt
+    #~ ok_err_msg "Cannot choose original image extension for directories {$dirPathList}: $numCandidates candidate(s) found: {[concat $allDirsRawExtList $allDirsStdExtList]}"
+    #~ return  0
+  #~ }
+  #~ return  $origExt
 }
 
 
 
-proc IsRawImageName {filePath} {
-  global ORIG_EXT
+# TODO: extract directory,decide whether L/R pick expected extension
+proc IsOrigImageName {filePath dirPathLeft dirPathRight} {
+  global ORIG_EXT_DICT
+  if { [ok_dirpath_equal $filePath $dirPathLeft $dirPathRight] }
+    set expectExt [dict get $ORIG_EXT_DICT "L"]
+  } else {
+    set expectExt [dict get $ORIG_EXT_DICT "R"]
+  }
+  TODO
   set ext [string range [file extension $filePath] 1 end]; # without leading dot
-  if { 0 == [string compare -nocase $ext $ORIG_EXT] }  { return 1
-  } else {                                                    return 0  }
+  foreach rExt [dict values $ORIG_EXT_DICT] {
+    if { 0 == [string compare -nocase $ext $rExt] }  { return 1 }
+  }
+  return 0
 }
 
 
 proc FindRawInputs {rawDir {priErr 0}} {
-  global ORIG_EXT
-  if { 0 == [IsRawExtension $ORIG_EXT] }  {
+  global ORIG_EXT_DICT
+  if { 0 == [IsRawExtension $ORIG_EXT_DICT] }  {
     if { $priErr }  {
-      ok_err_msg "Non-RAW image type '$ORIG_EXT' used as input"
+      ok_err_msg "Non-RAW image type '$ORIG_EXT_DICT' used as input"
     }
     return  [list]
   }
   set tclResult [catch {
-    set res [glob [file join $rawDir "*.$ORIG_EXT"]] } execResult]
+    set res [glob [file join $rawDir "*.$ORIG_EXT_DICT"]] } execResult]
     if { $tclResult != 0 } { ok_err_msg "$execResult!";  return  [list]  }
   return  $res
 }
@@ -156,8 +170,8 @@ proc FindRawInputsOrComplain {rawDir allRawsListVar} {
 
 
 proc FindRawInput {rawDir pureName} {
-  global ORIG_EXT
-  set rPath [file join $rawDir "$pureName.$ORIG_EXT"]
+  global ORIG_EXT_DICT
+  set rPath [file join $rawDir "$pureName.$ORIG_EXT_DICT"]
   if { 1 == [file exists $rPath] } {
     return $rPath
   }

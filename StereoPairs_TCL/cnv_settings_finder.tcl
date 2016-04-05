@@ -104,8 +104,8 @@ proc FindAllSettingsFilesForOneRaw {rawPath {priErr 1}} {
   # the RAW itself could be included; drop it then
   for {set i 0} {$i < [llength $allFilesForOneRaw]} {incr i 1} {
     set filePath [lindex $allFilesForOneRaw $i]
-    #ok_trace_msg "'$filePath' considered [expr {(1 == [IsRawImageName $filePath])? {RAW-file} : {settings-file}}]"
-    if { 1 == [IsRawImageName $filePath] }  {
+    #ok_trace_msg "'$filePath' considered [expr {(1 == [IsOrigImageName $filePath])? {RAW-file} : {settings-file}}]"
+    if { 1 == [IsOrigImageName $filePath] }  {
       set allFilesForOneRaw [lreplace $allFilesForOneRaw $i $i]
       break
     }

@@ -37,7 +37,7 @@ proc _set_defaults {}  {
 _set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
-set ORIG_EXT              "" ;  # extension of original out-of-camera images
+set ORIG_EXT_DICT              "" ;  # extension of original out-of-camera images
 
 set FILENAME_TIMES_LEFT   "times_left.csv"
 set FILENAME_TIMES_RIGHT  "times_right.csv"
@@ -45,7 +45,7 @@ set FILENAME_RENAME_SPEC  "rename_spec.csv"
 ################################################################################
 
 proc pair_matcher_main {cmdLineAsStr}  {
-  global STS SCRIPT_DIR ORIG_EXT
+  global STS SCRIPT_DIR ORIG_EXT_DICT
   _set_defaults ;  # calling it in a function for repeated invocations
   set extToolPathsFilePath [file join $SCRIPT_DIR ".." "ext_tool_dirs.csv"]
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
@@ -56,10 +56,12 @@ proc pair_matcher_main {cmdLineAsStr}  {
     return  0;  # error or help already printed
   }
   # choose type of originals; RAW is preferable
-  if { "" == [set ORIG_EXT [ChooseOrigImgExtensionInDirs \
+  if { 0 == [set dirToExt [ChooseOrigImgExtensionsInDirs \
                       [list $STS(origImgDirLeft) $STS(origImgDirRight)]]] }  {
     return  0;  # error already printed
   }
+  set ORIG_EXT_DICT [dict create "L" [dict get $dirToExt $STS(origImgDirLeft)] \
+                            "R" [dict get $dirToExt $STS(origImgDirRight)] ]
   if { ($STS(doRestoreLR) == 1) }   {
     set restoreRes  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
     set unhideRes   [_pair_matcher_restore_hidden_originals $STS(doSimulateOnly)]
@@ -293,10 +295,10 @@ proc _parse_cmdline {cmlArrName}  {
 #   - hidden original images if 'searchHidden'==1
 proc _pair_matcher_find_originals {searchHidden \
                                   origPathsLeftVar origPathsRightVar}  {
-  global STS ORIG_EXT
+  global STS ORIG_EXT_DICT
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
-  return  [dualcam_find_originals $searchHidden $ORIG_EXT \
+  return  [dualcam_find_originals $searchHidden $ORIG_EXT_DICT \
               $STS(origImgDirLeft) $STS(origImgDirRight) $STS(dirForUnmatched) \
               origPathsLeft origPathsRight]
 }
