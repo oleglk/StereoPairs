@@ -126,19 +126,23 @@ proc ChooseOrigImgExtensionsInDirs {dirPathList}  {
 
 
 
-# TODO: extract directory,decide whether L/R pick expected extension
+# Returns 1 if 'filePath' lies in 'dirPathLeft'/'dirPathRight'
+# and matches its extension
 proc IsOrigImageName {filePath dirPathLeft dirPathRight} {
   global ORIG_EXT_DICT
-  if { [ok_dirpath_equal $filePath $dirPathLeft $dirPathRight] }
+  if { $ORIG_EXT_DICT == 0 }  {
+    ok_err_msg "Cannot recognize originals before their extension(s) chosen"
+    return  0
+  }
+  # extract directory, decide whether L/R pick expected extension
+  set dirPath [file dirname $filePath]
+  if {        [ok_dirpath_equal $dirPath $dirPathLeft] }  {
     set expectExt [dict get $ORIG_EXT_DICT "L"]
-  } else {
+  } elseif {  [ok_dirpath_equal $dirPath $dirPathRight] } {
     set expectExt [dict get $ORIG_EXT_DICT "R"]
-  }
-  TODO
+  } else {  return 0 }
   set ext [string range [file extension $filePath] 1 end]; # without leading dot
-  foreach rExt [dict values $ORIG_EXT_DICT] {
-    if { 0 == [string compare -nocase $ext $rExt] }  { return 1 }
-  }
+  if { 0 == [string compare -nocase $ext $expectExt] }  { return 1 }
   return 0
 }
 

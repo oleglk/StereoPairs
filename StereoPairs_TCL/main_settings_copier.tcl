@@ -24,17 +24,19 @@ proc _set_defaults {}  {
   set ::STS(backupDir)        ""
   set ::STS(copyFromLR)       "" ;  "left" == copy settings from left to right, "right" == from right to left
   set ::STS(doSimulateOnly)   0
+  
+  set ORIG_EXT_DICT    0 
 }
 ################################################################################
 _set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
-set ORIG_EXT              "" ;  # extension of original out-of-camera images
+set ORIG_EXT_DICT    0 ;  # per-dir extensions of original out-of-camera images
 
 ################################################################################
 
 proc settings_copier_main {cmdLineAsStr}  {
-  global STS SCRIPT_DIR ORIG_EXT
+  global STS SCRIPT_DIR ORIG_EXT_DICT
   _set_defaults ;  # calling it in a function for repeated invocations
   if { 0 == [settings_copier_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
@@ -184,21 +186,21 @@ proc _parse_cmdline {cmlArrName}  {
 #   - hidden original images if 'searchHidden'==1
 proc dualcam_find_originals {searchHidden \
                                   origPathsLeftVar origPathsRightVar}  {
-  global STS ORIG_EXT
+  global STS ORIG_EXT_DICT
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
-  if { $ORIG_EXT == "" }  {
+  if { $ORIG_EXT_DICT == "" }  {
     ok_err_msg "Cannot find originals before their extension is determined"
     return  0
   }
   if { $searchHidden == 0}  {
     set descrSingle "original";   set descrPlural "original(s)"
-    set origPathsLeft  [glob -nocomplain -directory $STS(origImgDirLeft)  "*.$ORIG_EXT"]
-    set origPathsRight [glob -nocomplain -directory $STS(origImgDirRight) "*.$ORIG_EXT"]
+    set origPathsLeft  [glob -nocomplain -directory $STS(origImgDirLeft)  "*.$ORIG_EXT_DICT"]
+    set origPathsRight [glob -nocomplain -directory $STS(origImgDirRight) "*.$ORIG_EXT_DICT"]
   } else {
     set descrSingle "hidden-original";   set descrPlural "hidden-original(s)"
-    set origPathsLeft  [glob -nocomplain -directory [file join $STS(origImgDirLeft) $STS(dirForUnused)]  "*.$ORIG_EXT"]
-    set origPathsRight [glob -nocomplain -directory [file join $STS(origImgDirRight) $STS(dirForUnused)] "*.$ORIG_EXT"]
+    set origPathsLeft  [glob -nocomplain -directory [file join $STS(origImgDirLeft) $STS(dirForUnused)]  "*.$ORIG_EXT_DICT"]
+    set origPathsRight [glob -nocomplain -directory [file join $STS(origImgDirRight) $STS(dirForUnused)] "*.$ORIG_EXT_DICT"]
   }
   ok_trace_msg "Left $descrPlural:   {$origPathsLeft}"
   ok_trace_msg "Right $descrPlural:  {$origPathsRight}"

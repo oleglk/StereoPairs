@@ -34,6 +34,7 @@ namespace eval ::ok_utils:: {
 	ok_force_delete_dir \
 	ok_mkdir \
 	ok_is_underlying_filepath \
+  ok_dirpath_equal  \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
   ok_run_silent_os_cmd \
@@ -452,6 +453,13 @@ proc ::ok_utils::ok_is_underlying_filepath {loPath hiPath} {
     } else {
 	return  1
     }
+}
+
+
+proc ::ok_utils::ok_dirpath_equal {dirPath1 dirPath2} {
+  set p1N [file normalize $dirPath1]
+  set p2N [file normalize $dirPath]
+  return  [string equal $p1N $p2N]
 }
 
 
