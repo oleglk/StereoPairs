@@ -128,7 +128,7 @@ proc ChooseOrigImgExtensionsInDirs {dirPathList}  {
 
 # Returns 1 if 'filePath' lies in 'dirPathLeft'/'dirPathRight'
 # and matches its extension
-proc IsOrigImageName {filePath dirPathLeft dirPathRight} {
+proc IsOrigImagePath {filePath dirPathLeft dirPathRight} {
   global ORIG_EXT_DICT
   if { $ORIG_EXT_DICT == 0 }  {
     ok_err_msg "Cannot recognize originals before their extension(s) chosen"
@@ -136,46 +136,71 @@ proc IsOrigImageName {filePath dirPathLeft dirPathRight} {
   }
   # extract directory, decide whether L/R pick expected extension
   set dirPath [file dirname $filePath]
-  if {        [ok_dirpath_equal $dirPath $dirPathLeft] }  {
-    set expectExt [dict get $ORIG_EXT_DICT "L"]
-  } elseif {  [ok_dirpath_equal $dirPath $dirPathRight] } {
-    set expectExt [dict get $ORIG_EXT_DICT "R"]
-  } else {  return 0 }
+  if { "" == [set expectExt [GetOrigExtensionForDir $dirPath \
+                                              $dirPathLeft $dirPathRight]] }  {
+    return 0
+  }
   set ext [string range [file extension $filePath] 1 end]; # without leading dot
   if { 0 == [string compare -nocase $ext $expectExt] }  { return 1 }
   return 0
 }
 
 
-proc FindRawInputs {rawDir {priErr 0}} {
+# Returns original-images' extension for directory 'dirPath' or "" on error
+proc GetOrigExtensionForDir {dirPath dirPathLeft dirPathRight} {
   global ORIG_EXT_DICT
-  if { 0 == [IsRawExtension $ORIG_EXT_DICT] }  {
+  if { $ORIG_EXT_DICT == 0 }  {
+    ok_err_msg "Cannot recognize originals' extension(s) before chosen"
+    return  ""
+  }
+  # decide whether 'dirPath' is L/R, pick expected extension
+  if {        [ok_dirpath_equal $dirPath $dirPathLeft] }  {
+    set expectExt [dict get $ORIG_EXT_DICT "L"]
+  } elseif {  [ok_dirpath_equal $dirPath $dirPathRight] } {
+    set expectExt [dict get $ORIG_EXT_DICT "R"]
+  } else {
+    set expectExt ""
+  }
+  return  $expectExt
+}
+
+
+proc FindRawInputs {rawDir dirPathLeft dirPathRight {priErr 0}} {
+  global ORIG_EXT_DICT
+  if { "" == [set extInDir \
+      [GetOrigExtensionForDir $rawDir $dirPathLeft $dirPathRight]] }  {
+    return  [list];   // error, if any, already printed
+  }
+  if { 0 == [IsRawExtension $extInDir] }  {
     if { $priErr }  {
-      ok_err_msg "Non-RAW image type '$ORIG_EXT_DICT' used as input"
+      ok_err_msg "Non-RAW image type '$extInDir' used as input in '$rawDir'"
     }
     return  [list]
   }
   set tclResult [catch {
-    set res [glob [file join $rawDir "*.$ORIG_EXT_DICT"]] } execResult]
+    set res [glob [file join $rawDir "*.$extInDir"]] } execResult]
     if { $tclResult != 0 } { ok_err_msg "$execResult!";  return  [list]  }
   return  $res
 }
 
 
-proc FindRawInputsOrComplain {rawDir allRawsListVar} {
+proc FindRawInputsOrComplain {rawDir dirPathLeft dirPathRight allRawsListVar} {
   upvar $allRawsListVar allRaws
-  set allRaws [FindRawInputs $rawDir]
+  set allRaws [FindRawInputs $rawDir $dirPathLeft $dirPathRight]
   if { 0 == [llength $allRaws] } {
-    ok_err_msg "No RAW inputs found in '[pwd]'"
+    ok_err_msg "No RAW inputs found in '$rawDir'"
     return  0
   }
   return  1
 }
 
 
-proc FindRawInput {rawDir pureName} {
-  global ORIG_EXT_DICT
-  set rPath [file join $rawDir "$pureName.$ORIG_EXT_DICT"]
+proc FindRawInput {rawDir dirPathLeft dirPathRight pureName} {
+  if { "" == [set extInDir \
+    [GetOrigExtensionForDir $rawDir $dirPathLeft $dirPathRight]] }  {
+    return  [list];   // error, if any, already printed
+  }
+  set rPath [file join $rawDir "$pureName.$extInDir"]
   if { 1 == [file exists $rPath] } {
     return $rPath
   }

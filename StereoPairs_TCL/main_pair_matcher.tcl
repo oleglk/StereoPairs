@@ -37,7 +37,7 @@ proc _set_defaults {}  {
 _set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
-set ORIG_EXT_DICT              "" ;  # extension of original out-of-camera images
+set ORIG_EXT_DICT              0;  # extensions of original out-of-camera images
 
 set FILENAME_TIMES_LEFT   "times_left.csv"
 set FILENAME_TIMES_RIGHT  "times_right.csv"
