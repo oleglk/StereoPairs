@@ -33,11 +33,8 @@ setup::define_src_path $normTclSrcRoot $normTclStdExtRoot
 #LZC: package require cnv_config
 #LZC: package require tool_wrap_utils
 #LZC: package require camera_data
-#LZC: package require rawconvert
-#LZC: package require execution
 #LZC: package require filesorter
 #LZC: package require imageproc
-#LZC: package require corr_def
 package require ok_utils
 
 namespace forget ::ok_utils ::filesorter ::imageproc ::setup
@@ -52,3 +49,5 @@ source [file join $SCRIPT_DIR   "fake_fileset.tcl"]
 source [file join $SCRIPT_DIR   "make_stereocards.tcl"]
 source [file join $SCRIPT_DIR   "unused_inputs.tcl"]
 source [file join $SCRIPT_DIR   "main_pair_matcher.tcl"]
+#### TODO: in oredr to enable loading several main-s, avoid duplicating settings-init
+##source [file join $SCRIPT_DIR   "main_settings_copier.tcl"]
