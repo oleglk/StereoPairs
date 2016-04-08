@@ -1,4 +1,4 @@
-# main_pair_matcher.tcl
+# main_paira_matcher.tcl
 
 
 set SCRIPT_DIR [file dirname [info script]]
@@ -13,9 +13,9 @@ namespace import -force ::ok_utils::*
 
 
 ###################### Global variables ############################
-array unset STS ;   # array for global settings
+#DO NOT: array unset STS ;   # array for global settings; unset once per project
 
-proc _set_defaults {}  {
+proc _pair_matcher_set_defaults {}  {
   set ::STS(timeDiff)         0
   set ::STS(minSuccessRate)   0
   set ::STS(origImgRootPath)  ""
@@ -34,7 +34,7 @@ proc _set_defaults {}  {
   set ::STS(doSimulateOnly)   0
 }
 ################################################################################
-_set_defaults ;  # load only;  do call it in a function for repeated invocations
+_pair_matcher_set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
 set ORIG_EXT_DICT              0;  # extensions of original out-of-camera images
@@ -46,7 +46,7 @@ set FILENAME_RENAME_SPEC  "rename_spec.csv"
 
 proc pair_matcher_main {cmdLineAsStr}  {
   global STS SCRIPT_DIR ORIG_EXT_DICT
-  _set_defaults ;  # calling it in a function for repeated invocations
+  _pair_matcher_set_defaults ;  # calling it in a function for repeated invocations
   set extToolPathsFilePath [file join $SCRIPT_DIR ".." "ext_tool_dirs.csv"]
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
     return  0;  # error already printed
@@ -55,6 +55,7 @@ proc pair_matcher_main {cmdLineAsStr}  {
   if { 0 == [pair_matcher_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
+#parray STS; #OK_TMP
   # choose type of originals; RAW is preferable
   if { 0 == [set dirToExt [ChooseOrigImgExtensionsInDirs \
                       [list $STS(origImgDirLeft) $STS(origImgDirRight)]]] }  {
@@ -71,7 +72,7 @@ proc pair_matcher_main {cmdLineAsStr}  {
   if { 0 == [_pair_matcher_find_originals 0 origPathsLeft origPathsRight] }  {
     return  0;  # error already printed
   }
-  if { 0 == [_arrange_workarea] }  { return  0  };  # error already printed
+  if { 0 == [_pair_matcher_arrange_workarea] }  { return  0  };  # error already printed
   # read timestamps from all the images
   if { 0 == [_read_all_images_timestamps_or_complain \
         $origPathsLeft $origPathsRight namesToTimesLeft namesToTimesRight] }  {
@@ -165,7 +166,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "================================================================"
     return  0
   }
-  if { 0 == [_parse_cmdline cml] }  {
+  if { 0 == [_pair_matcher_parse_cmdline cml] }  {
     ok_err_msg "Error(s) in command parameters. Aborting..."
     return  0
   }
@@ -176,7 +177,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
 }
 
 
-proc _parse_cmdline {cmlArrName}  {
+proc _pair_matcher_parse_cmdline {cmlArrName}  {
   upvar $cmlArrName      cml
   set errCnt 0
   if { 0 == [info exists cml(-orig_img_dir)] }  {
@@ -228,7 +229,8 @@ proc _parse_cmdline {cmlArrName}  {
     } else {
       set ::STS(doRestoreLR) 1
     }
-  }
+  } else {  set ::STS(doRestoreLR) 0  } ;  # ensure the variable exists
+
   if { 0 == [string is double $cml(-time_diff)] }  {
     ok_err_msg "Time-difference should be a number"
     incr errCnt 1
@@ -252,10 +254,10 @@ proc _parse_cmdline {cmlArrName}  {
     } else {
       set ::STS(doCreateSBS) 1
     }
-  }
+  } else {  set ::STS(doCreateSBS) 0  } ;  # ensure the variable exists
   if { 1 == [info exists cml(-rename_lr)] }  {
     set ::STS(doRenameLR) 1
-  }
+  } else {  set ::STS(doCreateSBS) 0  } ;  # ensure the variable exists
   if { ($cml(-min_success_rate) < 1) || ($cml(-min_success_rate) > 100) }  {
     ok_err_msg "Minimal succes rate should be 1 ... 100"
     incr errCnt 1
@@ -280,7 +282,7 @@ proc _parse_cmdline {cmlArrName}  {
   }
   if { 1 == [info exists cml(-simulate_only)] }  {
     set ::STS(doSimulateOnly) 1
-  }
+  } else {  set ::STS(doSimulateOnly) 0  } ;  # ensure the variable exists
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
     return  0
@@ -304,7 +306,7 @@ proc _pair_matcher_find_originals {searchHidden \
 }
 
 
-proc _arrange_workarea {}  {
+proc _pair_matcher_arrange_workarea {}  {
   set unmatchedDirLeft  [file join $::STS(origImgDirLeft) $::STS(dirForUnmatched)]
   set unmatchedDirRight [file join $::STS(origImgDirRight) $::STS(dirForUnmatched)]
   if { 0 == [ok_create_absdirs_in_list \

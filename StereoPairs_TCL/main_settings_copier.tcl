@@ -15,10 +15,10 @@ namespace import -force ::ok_utils::*
 
 
 ###################### Global variables ############################
-array unset STS ;   # array for global settings ;  TODO: call once per a project
+#DO NOT: array unset STS ;   # array for global settings; unset once per project
 
-# TODO: extract a common part from _set_defaults() for the whole project
-proc _set_defaults {}  {
+# TODO: extract a common part from _settings_copier_set_defaults() for the whole project
+proc _settings_copier_set_defaults {}  {
   set ::STS(origImgRootPath)  ""
   set ::STS(globalImgSettingsDir)  ""
   set ::STS(origImgDirLeft)   ""
@@ -28,10 +28,10 @@ proc _set_defaults {}  {
   set ::STS(copyFromLR)       "" ;  # "left" == copy settings from left to right, "right" == from right to left
   set ::STS(doSimulateOnly)   0
   
-  set ORIG_EXT_DICT    0 
+  set ORIG_EXT_DICT   0 ;  # per-dir extensions of original out-of-camera images
 }
 ################################################################################
-_set_defaults ;  # load only;  do call it in a function for repeated invocations
+_settings_copier_set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
 set ORIG_EXT_DICT    0 ;  # per-dir extensions of original out-of-camera images
@@ -40,7 +40,7 @@ set ORIG_EXT_DICT    0 ;  # per-dir extensions of original out-of-camera images
 
 proc settings_copier_main {cmdLineAsStr}  {
   global STS SCRIPT_DIR ORIG_EXT_DICT
-  _set_defaults ;  # calling it in a function for repeated invocations
+  _settings_copier_set_defaults ;  # calling it in a function for repeated invocations
   if { 0 == [settings_copier_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
@@ -48,7 +48,7 @@ proc settings_copier_main {cmdLineAsStr}  {
   if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
     return  0;  # error already printed
   }
-  if { 0 == [_arrange_workarea] }  { return  0  };  # error already printed
+  if { 0 == [_settings_copier_arrange_workarea] }  { return  0  };  # error already printed
   
   # TODO: find source settings for originals' names, replicate and replace image name(s) inside
 
@@ -105,7 +105,7 @@ proc settings_copier_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "================================================================"
     return  0
   }
-  if { 0 == [_parse_cmdline cml] }  {
+  if { 0 == [_settings_copier_parse_cmdline cml] }  {
     ok_err_msg "Error(s) in command parameters. Aborting..."
     return  0
   }
@@ -116,7 +116,7 @@ proc settings_copier_cmd_line {cmdLineAsStr cmlArrName}  {
 }
 
 
-proc _parse_cmdline {cmlArrName}  {
+proc _settings_copier_parse_cmdline {cmlArrName}  {
   upvar $cmlArrName      cml
   set errCnt 0
   
@@ -198,7 +198,7 @@ proc _settings_copier_find_originals {searchHidden \
 }
 
 
-proc _arrange_workarea {}  {
+proc _settings_copier_arrange_workarea {}  {
   set unmatchedDirLeft  [file join $::STS(origImgDirLeft) $::STS(dirForUnused)]
   set unmatchedDirRight [file join $::STS(origImgDirRight) $::STS(dirForUnused)]
   if { 0 == [ok_create_absdirs_in_list \
