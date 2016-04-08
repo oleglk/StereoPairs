@@ -25,25 +25,29 @@ proc FindFilePath {dirPath pureName ext descr {checkExist 0}} {
 # Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
 #   - original images if 'searchHidden'==0
 #   - hidden original images if 'searchHidden'==1
-proc dualcam_find_originals {searchHidden origExt \
+proc dualcam_find_originals {searchHidden origExtDict \
               origImgDirLeft origImgDirRight dirForUnmatched \
               origPathsLeftVar origPathsRightVar}  {
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
-  if { $origExt == "" }  {
-    ok_err_msg "Cannot find originals before their extension is determined"
+  if { $origExtDict == 0 }  {
+    ok_err_msg "Cannot find originals before their extensions are determined"
     return  0
   }
+  set origExtLeft   [dict get $origExtDict "L"]
+  set origExtRight  [dict get $origExtDict "R"]
   if { $searchHidden == 0}  {
     set descrSingle "original";   set descrPlural "original(s)"
-    set origPathsLeft  [glob -nocomplain -directory $origImgDirLeft  "*.$origExt"]
-    set origPathsRight [glob -nocomplain -directory $origImgDirRight "*.$origExt"]
+    set origPathsLeft  \
+              [glob -nocomplain -directory $origImgDirLeft  "*.$origExtLeft"]
+    set origPathsRight \
+              [glob -nocomplain -directory $origImgDirRight "*.$origExtRight"]
   } else {
     set descrSingle "hidden-original";   set descrPlural "hidden-original(s)"
     set origPathsLeft  [glob -nocomplain -directory \
-                  [file join $origImgDirLeft $dirForUnmatched]  "*.$origExt"]
+                [file join $origImgDirLeft $dirForUnmatched]  "*.$origExtLeft"]
     set origPathsRight [glob -nocomplain -directory \
-                  [file join $origImgDirRight $dirForUnmatched] "*.$origExt"]
+                [file join $origImgDirRight $dirForUnmatched] "*.$origExtRight"]
   }
   ok_trace_msg "Left $descrPlural:   {$origPathsLeft}"
   ok_trace_msg "Right $descrPlural:  {$origPathsRight}"

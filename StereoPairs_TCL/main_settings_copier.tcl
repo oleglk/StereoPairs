@@ -15,6 +15,7 @@ namespace import -force ::ok_utils::*
 ###################### Global variables ############################
 array unset STS ;   # array for global settings
 
+# TODO: extract a common part from _set_defaults() for the whole project
 proc _set_defaults {}  {
   set ::STS(origImgRootPath)  ""
   set ::STS(globalImgSettingsDir)  ""
@@ -42,7 +43,7 @@ proc settings_copier_main {cmdLineAsStr}  {
     return  0;  # error or help already printed
   }
 
-  if { 0 == [dualcam_find_originals 0 origPathsLeft origPathsRight] }  {
+  if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
     return  0;  # error already printed
   }
   if { 0 == [_arrange_workarea] }  { return  0  };  # error already printed
@@ -181,42 +182,18 @@ proc _parse_cmdline {cmlArrName}  {
 }
 
 
+
 # Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
 #   - original images if 'searchHidden'==0
 #   - hidden original images if 'searchHidden'==1
-proc dualcam_find_originals {searchHidden \
-                                  origPathsLeftVar origPathsRightVar}  {
+proc _settings_copier_find_originals {searchHidden \
+                                      origPathsLeftVar origPathsRightVar}  {
   global STS ORIG_EXT_DICT
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
-  if { $ORIG_EXT_DICT == "" }  {
-    ok_err_msg "Cannot find originals before their extension is determined"
-    return  0
-  }
-  if { $searchHidden == 0}  {
-    set descrSingle "original";   set descrPlural "original(s)"
-    set origPathsLeft  [glob -nocomplain -directory $STS(origImgDirLeft)  "*.$ORIG_EXT_DICT"]
-    set origPathsRight [glob -nocomplain -directory $STS(origImgDirRight) "*.$ORIG_EXT_DICT"]
-  } else {
-    set descrSingle "hidden-original";   set descrPlural "hidden-original(s)"
-    set origPathsLeft  [glob -nocomplain -directory [file join $STS(origImgDirLeft) $STS(dirForUnused)]  "*.$ORIG_EXT_DICT"]
-    set origPathsRight [glob -nocomplain -directory [file join $STS(origImgDirRight) $STS(dirForUnused)] "*.$ORIG_EXT_DICT"]
-  }
-  ok_trace_msg "Left $descrPlural:   {$origPathsLeft}"
-  ok_trace_msg "Right $descrPlural:  {$origPathsRight}"
-  set missingStr ""
-  if { 0 == [llength $origPathsLeft] }   { append missingStr " left" }
-  if { 0 == [llength $origPathsRight] }  { append missingStr " right" }
-  if { $missingStr != "" }  {
-    if { $searchHidden == 0}  {
-      ok_err_msg "Missing $descrSingle images for:$missingStr"
-      return  0
-    } else {
-      ok_info_msg "No hidden $descrSingle images for:$missingStr"
-    }
-  }
-  ok_info_msg "Found [llength $origPathsLeft] left- and [llength $origPathsRight] right $descrSingle image(s)"
-  return  1
+  return  [dualcam_find_originals $searchHidden $ORIG_EXT_DICT \
+              $STS(origImgDirLeft) $STS(origImgDirRight) $STS(dirForUnmatched) \
+              origPathsLeft origPathsRight]
 }
 
 
@@ -727,7 +704,7 @@ proc _settings_copier_restore_original_names {{simulateOnly 0}}  {
 
 proc _settings_copier_restore_hidden_originals {{simulateOnly 0}}  {
   global STS
-  if { 0 == [dualcam_find_originals 1 hidePathsLeft hidePathsRight] }  {
+  if { 0 == [_settings_copier_find_originals 1 hidePathsLeft hidePathsRight] } {
     return  0;  # error already printed
   }
 #  set unmatchedDirLeft  [file join $STS(origImgDirLeft)  $STS(dirForUnused)]
