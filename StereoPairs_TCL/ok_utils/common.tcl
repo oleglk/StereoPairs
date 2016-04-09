@@ -458,7 +458,7 @@ proc ::ok_utils::ok_is_underlying_filepath {loPath hiPath} {
 
 proc ::ok_utils::ok_dirpath_equal {dirPath1 dirPath2} {
   set p1N [file normalize $dirPath1]
-  set p2N [file normalize $dirPath]
+  set p2N [file normalize $dirPath2]
   return  [string equal $p1N $p2N]
 }
 

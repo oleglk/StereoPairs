@@ -15,7 +15,7 @@ namespace import -force ::ok_utils::*
 # Mostly for testing
 proc FindSettingsFiles {subdirName {priErr 1}} {
   global STS
-  if { $STS(cnvSettingsDir) != "" }  { set settingsDir $STS(cnvSettingsDir) ;   # std dir
+  if { $STS(globalImgSettingsDir) != "" }  { set settingsDir $STS(globalImgSettingsDir) ;   # std dir
   } else                      { set settingsDir $subdirName   }
   return  [FindSettingsFilesInDir $settingsDir $priErr]
 }
@@ -59,15 +59,16 @@ proc FindSettingsFilesForRawsInDir {dirPath cntMissing {priErr 1}} {
   upvar $cntMissing cntMiss
   set cntMiss 0
   # TODO: check existence of dirPath
-  set rawPaths [FindRawInputs $dirPath $priErr]
+  set rawPaths [FindRawInputs $dirPath \
+                            $STS(origImgDirLeft) $STS(origImgDirRight) $priErr]
   if { 0 == [llength $rawPaths] }  {
     if { $priErr == 1 }  {
       ok_err_msg "No relevant RAW files found in '$dirPath'"
     }
     return  [list]
   }
-  if { $STS(cnvSettingsDir) != "" }  {
-    set settingsDir $STS(cnvSettingsDir) ;   # full path of standard dir
+  if { $STS(globalImgSettingsDir) != "" }  {
+    set settingsDir $STS(globalImgSettingsDir) ;   # full path of standard dir
   } else {
     set settingsDir $dirPath
   }
@@ -95,8 +96,8 @@ proc FindAllSettingsFilesForOneRaw {rawPath {priErr 1}} {
   global WORK_DIR STS
   set rawName [file tail $rawPath]
   set rawDir  [file dirname $rawPath]
-  if { $STS(cnvSettingsDir) != "" }  {
-    set settingsDir $STS(cnvSettingsDir) ;   # full path of standard dir
+  if { $STS(globalImgSettingsDir) != "" }  {
+    set settingsDir $STS(globalImgSettingsDir) ;   # full path of standard dir
   } else {
     set settingsDir $rawDir
   }
@@ -168,8 +169,8 @@ proc ListRAWsAndSettingsFiles {subdirName \
   upvar $purenameToSettingsVar purenameToSettings
   array unset purenameToRaw;  array unset purenameToSettings
   set rawDir  [file join $WORK_DIR $subdirName]
-  set allRAws [FindRawInputs $rawDir]
-  if { $STS(cnvSettingsDir) != "" }  { ;  # settings for the RAWs; no unmatched settings
+  set allRAws [FindRawInputs $rawDir $STS(origImgDirLeft) $STS(origImgDirRight)]
+  if { $STS(globalImgSettingsDir) != "" }  { ;  # settings for the RAWs; no unmatched settings
     set allSettings [FindSettingsFilesForDive $subdirName cntMissing 0]
   } else { ; # all settings in dive dir; some settings could be unmatched
     set allSettings [FindSettingsFiles $subdirName 0]

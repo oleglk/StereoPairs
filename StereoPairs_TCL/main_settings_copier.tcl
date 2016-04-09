@@ -20,7 +20,7 @@ namespace import -force ::ok_utils::*
 # TODO: extract a common part from _settings_copier_set_defaults() for the whole project
 proc _settings_copier_set_defaults {}  {
   set ::STS(origImgRootPath)  ""
-  set ::STS(globalImgSettingsDir)  ""
+  set ::STS(globalImgSettingsDir)  "" ;  # global settings dir; relevant for some converters
   set ::STS(origImgDirLeft)   ""
   set ::STS(origImgDirRight)  ""
   set ::STS(outDirPath)       ""
@@ -50,12 +50,20 @@ proc settings_copier_main {cmdLineAsStr}  {
     return  0;  # error already printed
   }
 
-  if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
-    return  0;  # error already printed
-  }
+  #~ if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
+    #~ return  0;  # error already printed
+  #~ }
   if { 0 == [_settings_copier_arrange_workarea] }  { return  0  };  # error already printed
   
-  # TODO: find source settings for originals' names, replicate and replace image name(s) inside
+  # TODO: support global settings directory
+  if { $STS(copyFromLR) == "left" } {
+    set srcDir $STS(origImgDirLeft);  set dstDir $STS(origImgDirRight) 
+  } else {
+    set srcDir $STS(origImgDirRight); set dstDir $STS(origImgDirLeft)  }
+
+  set srcSettingsFiles [FindSettingsFilesForRawsInDir $srcDir cntMissing 1]
+  if { 0 == [llength $srcSettingsFiles] } { return  0 };  # error printed
+  # TODO: replicate and replace image name(s) inside
 
   #~ if { $::STS(doRenameLR) == 1 }  {
     #~ if { 0 == $::STS(doSimulateOnly) }  {
