@@ -44,6 +44,19 @@ proc settings_copier_main {cmdLineAsStr}  {
   if { 0 == [settings_copier_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
+  # choose type of originals; RAW is required; TODO: MAKE GENERIC
+  if { 0 == [set dirToExt [ChooseOrigImgExtensionsInDirs \
+                      [list $STS(origImgDirLeft) $STS(origImgDirRight)]]] }  {
+    return  0;  # error already printed
+  }
+  set ORIG_EXT_DICT [dict create "L" [dict get $dirToExt $STS(origImgDirLeft)] \
+                            "R" [dict get $dirToExt $STS(origImgDirRight)] ]
+  set extLeft [dict get $ORIG_EXT_DICT "L"]
+  set extRight [dict get $ORIG_EXT_DICT "R"]
+  if { (0 == [IsRawExtension $extLeft]) || (0 == [IsRawExtension $extRight]) } {
+    ok_err_msg "Both-side originals should be RAW; got ('$extLeft' '$extRight')"
+    return  0;
+  }
 
   if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
     return  0;  # error already printed
@@ -52,19 +65,19 @@ proc settings_copier_main {cmdLineAsStr}  {
   
   # TODO: find source settings for originals' names, replicate and replace image name(s) inside
 
-  if { $::STS(doRenameLR) == 1 }  {
-    if { 0 == $::STS(doSimulateOnly) }  {
-      if { 0 != [_rename_images_by_rename_dict $renameDict] }  {
-        return  0;  # error already printed
-      }
-      if { 0 != [_hide_unmatched_images_by_rename_dict \
-                      [concat $origPathsLeft $origPathsRight] $renameDict] }  {
-        return  0;  # error already printed
-      }
-    } else {
-      ok_warn_msg "Simulation-only mode; no file changes made"
-    }
-  }
+  #~ if { $::STS(doRenameLR) == 1 }  {
+    #~ if { 0 == $::STS(doSimulateOnly) }  {
+      #~ if { 0 != [_rename_images_by_rename_dict $renameDict] }  {
+        #~ return  0;  # error already printed
+      #~ }
+      #~ if { 0 != [_hide_unmatched_images_by_rename_dict \
+                      #~ [concat $origPathsLeft $origPathsRight] $renameDict] }  {
+        #~ return  0;  # error already printed
+      #~ }
+    #~ } else {
+      #~ ok_warn_msg "Simulation-only mode; no file changes made"
+    #~ }
+  #~ }
   return  1
 }
 
@@ -170,7 +183,10 @@ proc _settings_copier_parse_cmdline {cmlArrName}  {
         incr errCnt 1
       }
     }    
-  }
+  } else {
+    ok_err_msg "Please specify from which side to take the conversion settings; example: -copy_from left"
+    incr errCnt 1
+  } 
   if { 1 == [info exists cml(-simulate_only)] }  {
     set ::STS(doSimulateOnly) 1
   }
@@ -193,22 +209,16 @@ proc _settings_copier_find_originals {searchHidden \
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
   return  [dualcam_find_originals $searchHidden $ORIG_EXT_DICT \
-              $STS(origImgDirLeft) $STS(origImgDirRight) $STS(dirForUnmatched) \
-              origPathsLeft origPathsRight]
+            $STS(origImgDirLeft) $STS(origImgDirRight) "dummy-dirForUnmatched" \
+            origPathsLeft origPathsRight]
 }
 
 
 proc _settings_copier_arrange_workarea {}  {
-  set unmatchedDirLeft  [file join $::STS(origImgDirLeft) $::STS(dirForUnused)]
-  set unmatchedDirRight [file join $::STS(origImgDirRight) $::STS(dirForUnused)]
   if { 0 == [ok_create_absdirs_in_list \
-              [list $::STS(outDirPath) $unmatchedDirLeft $unmatchedDirRight] \
-              [list "output"           "left-unmatched"  "right-unmatched"]] } {
+              [list $::STS(outDirPath) $::STS(backupDir)] \
+              [list "output"           "backup"         ]] } {
     return  0;  # error already printed
-  }
-  if { 0 == [ok_filepath_is_writable $::STS(outPairlistPath)] }  {
-    ok_err_msg "Output path for pairlist file '$::STS(outPairlistPath)' is unwritable"
-    return  0;
   }
   return  1
 }
