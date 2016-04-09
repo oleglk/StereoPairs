@@ -67,6 +67,24 @@ proc dualcam_find_originals {searchHidden origExtDict \
 }
 
 
+# Returns dictionary of {L:extLeft, R:extRight} or 0 on error
+proc dualcam_choose_and_check_type_of_originals {origImgDirLeft origImgDirRight \
+                                                 requireRaw} {
+  # choose type of originals; RAW is required
+  if { 0 == [set dirToExt [ChooseOrigImgExtensionsInDirs \
+                      [list $origImgDirLeft $origImgDirRight]]] }  {
+    return  0;  # error already printed
+  }
+  set extLeft  [dict get $dirToExt $origImgDirLeft]
+  set extRight [dict get $dirToExt $origImgDirRight]
+  set lrToExt [dict create "L" $extLeft  "R" $extRight ]
+  if { $requireRaw && \
+       ((0 ==[IsRawExtension $extLeft]) || (0 ==[IsRawExtension $extRight])) } {
+    ok_err_msg "Both-side originals should be RAW; got ('$extLeft' '$extRight')"
+    return  0;
+  }
+  return  $lrToExt
+}
 
 
 # Detects originals' extensions for the work-area
@@ -374,7 +392,7 @@ proc FindSingleDotExtensionsInDir {dirPath} {
   set candidates [glob -nocomplain -directory $dirPath -- "*.*"]
   array unset extensionsArr
   foreach f $candidates {
-    #(?slow?) if { 1 == [regexp $pattern $f fullMatch ext] }  {}
+    #(?slow?) if { 1 == [regexp $pattern $f fullMatch ext] }  {}h
     set ext [file extension $f]
     if { 1 < [string length $ext] }  { ;  # includes leading .
       ok_trace_msg "Candidate image-file extension: '$ext'"

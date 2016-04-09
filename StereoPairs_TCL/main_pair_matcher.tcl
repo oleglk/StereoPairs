@@ -57,12 +57,10 @@ proc pair_matcher_main {cmdLineAsStr}  {
   }
 #parray STS; #OK_TMP
   # choose type of originals; RAW is preferable
-  if { 0 == [set dirToExt [ChooseOrigImgExtensionsInDirs \
-                      [list $STS(origImgDirLeft) $STS(origImgDirRight)]]] }  {
+  if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
+                     $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
     return  0;  # error already printed
   }
-  set ORIG_EXT_DICT [dict create "L" [dict get $dirToExt $STS(origImgDirLeft)] \
-                            "R" [dict get $dirToExt $STS(origImgDirRight)] ]
   if { ($STS(doRestoreLR) == 1) }   {
     set restoreRes  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
     set unhideRes   [_pair_matcher_restore_hidden_originals $STS(doSimulateOnly)]

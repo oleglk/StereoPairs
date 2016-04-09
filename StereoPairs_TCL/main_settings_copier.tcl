@@ -44,18 +44,10 @@ proc settings_copier_main {cmdLineAsStr}  {
   if { 0 == [settings_copier_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
-  # choose type of originals; RAW is required; TODO: MAKE GENERIC
-  if { 0 == [set dirToExt [ChooseOrigImgExtensionsInDirs \
-                      [list $STS(origImgDirLeft) $STS(origImgDirRight)]]] }  {
+  # choose type of originals; RAW is required
+  if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
+                     $STS(origImgDirLeft) $STS(origImgDirRight) 1]] }  {
     return  0;  # error already printed
-  }
-  set ORIG_EXT_DICT [dict create "L" [dict get $dirToExt $STS(origImgDirLeft)] \
-                            "R" [dict get $dirToExt $STS(origImgDirRight)] ]
-  set extLeft [dict get $ORIG_EXT_DICT "L"]
-  set extRight [dict get $ORIG_EXT_DICT "R"]
-  if { (0 == [IsRawExtension $extLeft]) || (0 == [IsRawExtension $extRight]) } {
-    ok_err_msg "Both-side originals should be RAW; got ('$extLeft' '$extRight')"
-    return  0;
   }
 
   if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
