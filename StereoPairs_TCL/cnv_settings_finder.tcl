@@ -186,3 +186,45 @@ proc ListRAWsAndSettingsFiles {subdirName \
   ok_trace_msg "Image names for which settings exist: {[array names purenameToSettings]}"
 }
 
+
+# Reads and returns as one string full settings file from 'settingsPath'.
+# On error returns "".
+proc ReadSettingsFile {settingsPath}  {
+  if { $settingsPath == "" }  {
+    ok_err_msg "Settings file path not given for reading"
+    return  ""
+  }
+  if [catch {open $settingsPath "r"} fileId] {
+    ok_err_msg "Cannot open '$settingsPath' for reading: $fileId"
+    return  ""
+  }
+  set tclExecResult [catch {set data [read $fileId]} execResult]
+  if { $tclExecResult != 0 } {
+    ok_err_msg "Failed reading settings from '$settingsPath': $execResult!"
+    return  ""
+  }
+  close $fileId
+  return $data
+}
+
+
+# Writes full settings from 'settingsStr' into settings file 'settingsPath'.
+# Returns 1 on success, 0 on error.
+proc WriteSettingsFile {settingsStr settingsPath} {
+  if { $settingsPath == "" }  {
+    ok_err_msg "Settings file path not given for writting"
+    return  0
+  }
+  if [catch {open $settingsPath "w"} fileId] {
+    ok_err_msg "Cannot open '$settingsPath' for writting: $fileId"
+    return  0
+  }
+  set tclExecResult [catch {puts -nonewline $fileId $settingsStr} execResult]
+  if { $tclExecResult != 0 } {
+    ok_err_msg "Failed writting settings sinto '$settingsPath': $execResult!"
+    return  0
+  }
+  close $fileId
+  return 1
+}
+

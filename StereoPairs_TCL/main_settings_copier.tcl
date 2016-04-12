@@ -7,6 +7,7 @@ ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 source [file join $SCRIPT_DIR   "ext_tools.tcl"]
 source [file join $SCRIPT_DIR   "image_metadata.tcl"]
 source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
+source [file join $SCRIPT_DIR   "stereopair_naming.tcl"]
 
 source [file join $SCRIPT_DIR   "cnv_settings_finder.tcl"]
 
@@ -231,14 +232,34 @@ proc _clone_settings_files {srcSettingsFiles dstDir}  {
   }
   set cntGood 0;  set cntErr 0
   foreach pt $pathList {
-    set dstPurename TODO
+    set dstPurename [spm_purename_to_peer_purename [AnyFileNameToPurename $pt]]
     set dstPath [file join $destDir $dstPurename]]
-    set tclExecResult [catch { file copy -- $pt $destDir } evalExecResult]
+    set tclExecResult [catch {
+      if { 0 == [_replicate_cnv_settings_file $pt $dstPurename $destDir] }  {
+        incr cntErr 1;  # error already printed
+      }
+    } evalExecResult]
     if { $tclExecResult != 0 } {
       ok_err_msg "$evalExecResult!";  incr cntErr 1
     } else {                          incr cntGood 1  }
   }
   return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
+}
+
+
+proc _replicate_cnv_settings_file {srcPath dstPurename dstDir}  {
+  if { "" == [set stStr [ReadSettingsFile $srcPath]] }   {
+    return  0;  # error already printed
+  }
+  set srcPurename [AnyFileNameToPurename $srcPath]
+  set stStr [string map $srcPurename $dstPurename $stStr]
+  set ext [file extension $srcPath]
+  set dstPath [file join $dstDir "$dstPurename$ext"]
+  if { 0 == [WriteSettingsFile $stStr $dstPath] }   {
+    return  0;  # error already printed
+  }
+  ok_info_msg "Replicated conversion settings from '$srcPath' into '$dstPath'"
+  return  1
 }
 
 

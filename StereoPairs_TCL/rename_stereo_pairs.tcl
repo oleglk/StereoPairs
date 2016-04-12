@@ -4,6 +4,7 @@ set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR   "ok_utils" "debug_utils.tcl"]
 ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 #source [file join $SCRIPT_DIR   "ext_tools.tcl"]
+source [file join $SCRIPT_DIR   "stereopair_naming.tcl"]
 
 package require ok_utils
 namespace import -force ::ok_utils::*
@@ -66,12 +67,3 @@ proc _build_suffix_from_peer_path {peerPath}  {
   return  [build_suffix_from_peer_purename $peerPureName]
 }
 
-
-proc build_suffix_from_peer_purename {peerPureName}  {
-  if { 0 == [regexp {[0-9].*$} $peerPureName peerNameNum] }  {
-    ok_err_msg "Invalid peer image name '$peerPureName'"
-    set peerNameNum "INVALID"
-  }
-  set suffix [format "-%s" $peerNameNum]
-  return  $suffix
-}

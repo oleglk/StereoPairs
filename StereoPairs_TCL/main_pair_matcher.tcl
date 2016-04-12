@@ -7,6 +7,7 @@ ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 source [file join $SCRIPT_DIR   "ext_tools.tcl"]
 source [file join $SCRIPT_DIR   "image_metadata.tcl"]
 source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
+source [file join $SCRIPT_DIR   "stereopair_naming.tcl"]
 
 package require ok_utils
 namespace import -force ::ok_utils::*
@@ -584,10 +585,10 @@ proc _make_rename_dict_from_match_list {imgPathsLeft imgPathsRight matchList} {
   set errCnt 0
   foreach m $matchList {
     ParseMatchListRecord $m nameLeft nameRight timeDiffRightLeft
-    set basePurename [_build_stereopair_purename $nameLeft $nameRight]
+    set basePurename [build_stereopair_purename $nameLeft $nameRight]
     ok_trace_msg "TODO '$nameLeft' + '$nameRight' = '$basePurename'"
-    set lname [_build_spm_left_purename  $basePurename]
-    set rname [_build_spm_right_purename $basePurename]
+    set lname [build_spm_left_purename  $basePurename]
+    set rname [build_spm_right_purename $basePurename]
     if { 0 == [_set_src_and_dest_lr_paths $pureNameToPathLeft $nameLeft \
                                           $lname "left" renameDict] } {
       incr errCnt 1;  continue;  # error already printed
@@ -625,12 +626,6 @@ proc _set_src_and_dest_lr_paths {origPureNameToPathDict origPureName \
   dict set renameDict $srcPath $targetsList
   return  1
 }
-
-
-proc _build_spm_left_purename  {basePurename} {
-  return  [format "%s_l" $basePurename] }
-proc _build_spm_right_purename  {basePurename} {
-  return  [format "%s_r" $basePurename] }
 
 
 # 'renameDict' holds pairs <srcPath> => {list of <dstPath>-s}
@@ -712,7 +707,7 @@ proc UNUSED___rename_images_by_match_list {imgPathsLeft imgPathsRight matchList}
   ok_info_msg "Start renaming [expr 2*[llength $matchList]] images"
   foreach m $matchList {
     ParseMatchListRecord $m nameLeft nameRight timeDiffRightLeft
-    set basePurename [_build_stereopair_purename $nameLeft $nameRight]
+    set basePurename [build_stereopair_purename $nameLeft $nameRight]
     ok_trace_msg "TODO '$nameLeft' + '$nameRight' = '$basePurename'"
     #TODO: build full parh and rename
   }
@@ -848,10 +843,5 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
   return  [expr {($errCnt == 0)? 1 : 0}]s
 }
 
-
-proc _build_stereopair_purename {purenameLeft purenameRight}  {
-  set suffix [build_suffix_from_peer_purename $purenameRight]
-  return  "$purenameLeft$suffix"
-}
 
 
