@@ -51,9 +51,6 @@ proc settings_copier_main {cmdLineAsStr}  {
     return  0;  # error already printed
   }
 
-  #~ if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
-    #~ return  0;  # error already printed
-  #~ }
   if { 0 == [_settings_copier_arrange_workarea] }  { return  0  };  # error already printed
   
   # source dir has RAWs and maybe settings files
@@ -67,22 +64,11 @@ proc settings_copier_main {cmdLineAsStr}  {
 
   set srcSettingsFiles [FindSettingsFilesForRawsInDir $srcDir cntMissing 1]
   if { 0 == [llength $srcSettingsFiles] } { return  0 };  # error printed
-  # TODO: replicate and replace image name(s) inside
-  if { 0 == [_clone_settings_files $srcSettingsFiles $] } { return  0 };  # error printed
-
-  #~ if { $::STS(doRenameLR) == 1 }  {
-    #~ if { 0 == $::STS(doSimulateOnly) }  {
-      #~ if { 0 != [_rename_images_by_rename_dict $renameDict] }  {
-        #~ return  0;  # error already printed
-      #~ }
-      #~ if { 0 != [_hide_unmatched_images_by_rename_dict \
-                      #~ [concat $origPathsLeft $origPathsRight] $renameDict] }  {
-        #~ return  0;  # error already printed
-      #~ }
-    #~ } else {
-      #~ ok_warn_msg "Simulation-only mode; no file changes made"
-    #~ }
-  #~ }
+  # replicate and replace image name(s) inside
+  if { 0 == [_clone_settings_files $srcSettingsFiles $dstDir \ 
+                                   $::STS(doSimulateOnly)] } {
+    return  0;  # error printed
+  }
   return  1
 }
 
@@ -220,7 +206,7 @@ proc _settings_copier_find_originals {searchHidden \
 
 
 # Replicates and replaces image name(s) inside
-proc _clone_settings_files {srcSettingsFiles dstDir}  {
+proc _clone_settings_files {srcSettingsFiles dstDir doSimulateOnly}  {
   global STS
   if { ![file exists $destDir] } {
     ok_err_msg "Inexistent destination directory for settings files '$destDir'"
@@ -234,20 +220,18 @@ proc _clone_settings_files {srcSettingsFiles dstDir}  {
   foreach pt $pathList {
     set dstPurename [spm_purename_to_peer_purename [AnyFileNameToPurename $pt]]
     set dstPath [file join $destDir $dstPurename]]
-    set tclExecResult [catch {
-      if { 0 == [_replicate_cnv_settings_file $pt $dstPurename $destDir] }  {
-        incr cntErr 1;  # error already printed
-      }
-    } evalExecResult]
-    if { $tclExecResult != 0 } {
-      ok_err_msg "$evalExecResult!";  incr cntErr 1
-    } else {                          incr cntGood 1  }
+    if { 0 == [_clone_one_cnv_settings_file $pt $dstPurename $destDir \
+                                            $doSimulateOnly] }  {
+              incr cntErr 1;  # error already printed
+    } else {  incr cntGood 1  }
   }
+  set cntDone [expr [llength $pathList] - $cntErr]
+  ok_info_msg "Cloned settings file(s) for $cntDone RAWs out of [llength $pathList] into directory '$destDir'; $cntErr error(s) occured"
   return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
 }
 
 
-proc _replicate_cnv_settings_file {srcPath dstPurename dstDir}  {
+proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
   if { "" == [set stStr [ReadSettingsFile $srcPath]] }   {
     return  0;  # error already printed
   }
@@ -255,10 +239,14 @@ proc _replicate_cnv_settings_file {srcPath dstPurename dstDir}  {
   set stStr [string map $srcPurename $dstPurename $stStr]
   set ext [file extension $srcPath]
   set dstPath [file join $dstDir "$dstPurename$ext"]
+  if { $doSimulateOnly }  {
+    ok_info_msg "Would have cloned conversion settings from '$srcPath' into '$dstPath'"
+    return  1
+  }
   if { 0 == [WriteSettingsFile $stStr $dstPath] }   {
     return  0;  # error already printed
   }
-  ok_info_msg "Replicated conversion settings from '$srcPath' into '$dstPath'"
+  ok_info_msg "Cloned conversion settings from '$srcPath' into '$dstPath'"
   return  1
 }
 

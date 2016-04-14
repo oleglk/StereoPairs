@@ -9,18 +9,28 @@ package require ok_utils
 namespace import -force ::ok_utils::*
 
 
+set imgNameEndingLeft   "_l"
+set imgNameEndingRight  "_r"
+
 
 proc build_spm_left_purename  {basePurename} {
-  return  [format "%s_l" $basePurename] }
+  return  [format "%s%s" $basePurename $::imgNameEndingLeft] }
   
   
 proc build_spm_right_purename  {basePurename} {
-  return  [format "%s_r" $basePurename] }
+  return  [format "%s%s" $basePurename $::imgNameEndingRight] }
 
 
 proc spm_purename_to_peer_purename {purename} {
   # OK_TODO: generalize
-  TODO:implement
+  set iLeft   [string last $::imgNameEndingLeft $purename]
+  set iRight  [string last $::imgNameEndingRight $purename]
+  if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
+    return  [string replace $purename $iLeft  end $::Right]
+  } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
+    return  [string replace $purename $iRight end $::imgNameEndingLeft]
+  }
+  return  ""  ; # error
 }
 
 
