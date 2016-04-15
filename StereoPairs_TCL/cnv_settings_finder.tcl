@@ -8,6 +8,12 @@ source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
 package require ok_utils
 namespace import -force ::ok_utils::*
 
+# Maps (low-case!) converter-settings-file extensions to converter names
+set CNV_SETTINGS_EXTENSIONS_DICT [dict create \
+      ".xmp" "CorelAftershot-or-PhotoNinja" \
+      ".pp3" "RawTherapee"                  \
+                                            ]
+
 ##### Search for settings files moved here,
 #####        since some converters force standard location
 
@@ -21,34 +27,33 @@ proc FindSettingsFiles {subdirName {priErr 1}} {
 }
 
 
-# Mostly for testing
-proc FindSettingsFilesInDir {dirPath {priErr 1}} {
-  # TODO: improve pattern - use extension for the converter or all extensions
-  set fullPattern [file join $dirPath [SettingsFileName "*"]]
-  set res [list]
-  set tclResult [catch { set res [glob $fullPattern] } execResult]
-  if { $tclResult != 0 } {
-    if { $priErr != 0 }  {
-      ok_err_msg "Failed searching for files matching <$fullPattern> (called by '[ok_callername]'): $execResult"
-    }
-    return  [list]
-  }
-  # filter out unnecessary files
-  # we may have picked settings for other converters; filter these out
-  # TODO: use [_SelectRelevantSettingsFiles $allFilePathsForOneRaw]
-  set fRes [list]
-  foreach sP $res {
-    set settingsFileName [file tail $sP]
-    set purename [SettingsFileNameToPurename $settingsFileName]
-    set expSettingsName [SettingsFileName $purename]
-    if { 0 == [string compare -nocase $settingsFileName $expSettingsName] } {
-      lappend fRes $sP
-    } else {
-      ok_trace_msg "Settings file '$sP' assumed to belong to other RAW converter (pure-name=='$purename', expected-settings-name='$expSettingsName')"
-    }    
-  }
-  return  $fRes
-}
+#~ # Mostly for testing
+#~ proc FindSettingsFilesInDir {dirPath {priErr 1}} {
+  #~ # TODO: improve pattern - use extension for the converter or all extensions
+  #~ set fullPattern [file join $dirPath [SettingsFileName "*"]]
+  #~ set res [list]
+  #~ set tclResult [catch { set res [glob $fullPattern] } execResult]
+  #~ if { $tclResult != 0 } {
+    #~ if { $priErr != 0 }  {
+      #~ ok_err_msg "Failed searching for files matching <$fullPattern> (called by '[ok_callername]'): $execResult"
+    #~ }
+    #~ return  [list]
+  #~ }
+  #~ # filter out unnecessary files
+  #~ # we may have picked settings for other converters; filter these out
+  #~ set fRes [list]
+  #~ foreach sP $res {
+    #~ set settingsFileName [file tail $sP]
+    #~ set purename [AnyFileNameToPurename $settingsFileName]
+    #~ set expSettingsName [SettingsFileName $purename]
+    #~ if { 0 == [string compare -nocase $settingsFileName $expSettingsName] } {
+      #~ lappend fRes $sP
+    #~ } else {
+      #~ ok_trace_msg "Settings file '$sP' assumed to belong to other RAW converter (pure-name=='$purename', expected-settings-name='$expSettingsName')"
+    #~ }    
+  #~ }
+  #~ return  $fRes
+#~ }
 
 
 # For mainstream usage
@@ -76,7 +81,7 @@ proc FindSettingsFilesForRawsInDir {dirPath cntMissing {priErr 1}} {
   foreach rawPath $rawPaths {
     set rawName [file tail $rawPath]
     set allFilesForOneRaw [FindAllInputsForOneRAWInDir $rawName $settingsDir]
-    set relevantSettingsFiles [_SelectRelevantSettingsFiles $allFilesForOneRaw]
+    set relevantSettingsFiles [_SelectSettingsFilesInFileList $allFilesForOneRaw]
     if { 0 == [llength $relevantSettingsFiles] }  {
       incr cntMiss 1
       if { $priErr == 1 }  {
@@ -120,18 +125,37 @@ proc FindAllSettingsFilesForOneRaw {rawPath {priErr 1}} {
 }
 
 
-proc _SelectRelevantSettingsFiles {allFilePathsForOneRaw}  {
+#~ # Finds settings files for the curremt RAW converter
+#~ proc _SelectRelevantSettingsFiles {allFilePathsForOneRaw}  {
+  #~ # filter out unnecessary files
+  #~ # we may have picked settings for other converters; filter these out
+  #~ set fRes [list]
+  #~ foreach sP $allFilePathsForOneRaw {
+    #~ set settingsFileName [file tail $sP]
+    #~ set purename [AnyFileNameToPurename $settingsFileName]
+    #~ set expSettingsName [SettingsFileName $purename]
+    #~ if { 0 == [string compare -nocase $settingsFileName $expSettingsName] } {
+      #~ lappend fRes $sP
+    #~ } else {
+      #~ ok_trace_msg "Settings file '$sP' assumed to belong to other RAW converter (pure-name=='$purename', expected-settings-name='$expSettingsName')"
+    #~ }    
+  #~ }
+  #~ return  $fRes
+#~ }
+
+
+# Finds settings files for all known RAW converters
+proc _SelectSettingsFilesInFileList {filePaths}  {
   # filter out unnecessary files
   # we may have picked settings for other converters; filter these out
   set fRes [list]
-  foreach sP $allFilePathsForOneRaw {
-    set settingsFileName [file tail $sP]
-    set purename [SettingsFileNameToPurename $settingsFileName]
-    set expSettingsName [SettingsFileName $purename]
-    if { 0 == [string compare -nocase $settingsFileName $expSettingsName] } {
+  foreach sP $filePaths {
+    set fileExt [string tolower [file extension $sP]]
+    if { [dict exists $::CNV_SETTINGS_EXTENSIONS_DICT $fileExt] } {
       lappend fRes $sP
+      ok_info_msg "Settings file '$sP' comes from RAW converter '[dict get $::CNV_SETTINGS_EXTENSIONS_DICT $fileExt]'"
     } else {
-      ok_trace_msg "Settings file '$sP' assumed to belong to other RAW converter (pure-name=='$purename', expected-settings-name='$expSettingsName')"
+      ok_info_msg "File '$sP' is not a RAW converter settings file"
     }    
   }
   return  $fRes
@@ -180,7 +204,7 @@ proc ListRAWsAndSettingsFiles {subdirName \
   }
   ok_trace_msg "Image names for which RAWs exist: {[array names purenameToRaw]}"
   foreach f $allSettings {
-    set purenameToSettings([string toupper [SettingsFileNameToPurename \
+    set purenameToSettings([string toupper [AnyFileNameToPurename \
                                                       [file tail $f]]])  $f
   }
   ok_trace_msg "Image names for which settings exist: {[array names purenameToSettings]}"

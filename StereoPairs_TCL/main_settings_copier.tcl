@@ -206,7 +206,7 @@ proc _settings_copier_find_originals {searchHidden \
 
 
 # Replicates and replaces image name(s) inside
-proc _clone_settings_files {srcSettingsFiles dstDir doSimulateOnly}  {
+proc _clone_settings_files {srcSettingsFiles destDir doSimulateOnly}  {
   global STS
   if { ![file exists $destDir] } {
     ok_err_msg "Inexistent destination directory for settings files '$destDir'"

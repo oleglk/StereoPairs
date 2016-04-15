@@ -251,7 +251,7 @@ proc FindAllInputsForOneRAWInDir {rawName rawDirPath} {
     ok_err_msg "Failed searching for input files associated with RAW '$rawName' (pattern: '$fullPattern': $execResult"
     return  [list]
   }
-  ok_trace_msg "Found [llength $res] files related to RAW '$rawName'; pattern: '$fullPattern'"
+  ok_trace_msg "Found [llength $res] file(s) related to RAW '$rawName'; pattern: '$fullPattern'"
   return  $res
 }
 
