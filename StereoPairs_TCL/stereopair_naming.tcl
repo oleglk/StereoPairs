@@ -26,7 +26,7 @@ proc spm_purename_to_peer_purename {purename} {
   set iLeft   [string last $::imgNameEndingLeft $purename]
   set iRight  [string last $::imgNameEndingRight $purename]
   if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
-    return  [string replace $purename $iLeft  end $::Right]
+    return  [string replace $purename $iLeft  end $::imgNameEndingRight]
   } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
     return  [string replace $purename $iRight end $::imgNameEndingLeft]
   }

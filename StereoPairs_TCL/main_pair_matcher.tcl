@@ -102,7 +102,7 @@ proc pair_matcher_main {cmdLineAsStr}  {
     if { 0 == [_dump_rename_dict $renameDict] }  {
       return  0;  # error already printed
     }
-    if { 0 == $::STS(doSimulateOnly) }  {
+    if { $::STS(doSimulateOnly) == 0 }  {
       if { 0 != [_rename_images_by_rename_dict $renameDict] }  {
         return  0;  # error already printed
       }

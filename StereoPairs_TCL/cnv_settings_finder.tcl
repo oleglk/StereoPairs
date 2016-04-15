@@ -10,8 +10,9 @@ namespace import -force ::ok_utils::*
 
 # Maps (low-case!) converter-settings-file extensions to converter names
 set CNV_SETTINGS_EXTENSIONS_DICT [dict create \
-      ".xmp" "CorelAftershot-or-PhotoNinja" \
-      ".pp3" "RawTherapee"                  \
+      ".dummy_sts"  "Dummy-Converter"               \
+      ".xmp"        "CorelAftershot-or-PhotoNinja"  \
+      ".pp3"        "RawTherapee"                   \
                                             ]
 
 ##### Search for settings files moved here,

@@ -65,7 +65,7 @@ proc settings_copier_main {cmdLineAsStr}  {
   set srcSettingsFiles [FindSettingsFilesForRawsInDir $srcDir cntMissing 1]
   if { 0 == [llength $srcSettingsFiles] } { return  0 };  # error printed
   # replicate and replace image name(s) inside
-  if { 0 == [_clone_settings_files $srcSettingsFiles $dstDir \ 
+  if { 0 == [_clone_settings_files $srcSettingsFiles $dstDir \
                                    $::STS(doSimulateOnly)] } {
     return  0;  # error printed
   }
@@ -217,16 +217,22 @@ proc _clone_settings_files {srcSettingsFiles destDir doSimulateOnly}  {
     return  -1
   }
   set cntGood 0;  set cntErr 0
-  foreach pt $pathList {
-    set dstPurename [spm_purename_to_peer_purename [AnyFileNameToPurename $pt]]
+  foreach pt $srcSettingsFiles {
+    set nm [file tail $pt]
+    set dstPurename [spm_purename_to_peer_purename [AnyFileNameToPurename $nm]]
     set dstPath [file join $destDir $dstPurename]]
     if { 0 == [_clone_one_cnv_settings_file $pt $dstPurename $destDir \
                                             $doSimulateOnly] }  {
               incr cntErr 1;  # error already printed
     } else {  incr cntGood 1  }
   }
-  set cntDone [expr [llength $pathList] - $cntErr]
-  ok_info_msg "Cloned settings file(s) for $cntDone RAWs out of [llength $pathList] into directory '$destDir'; $cntErr error(s) occured"
+  set cntDone [expr [llength $srcSettingsFiles] - $cntErr]
+  if { $cntGood > 0 } {
+    ok_info_msg "Cloned settings file(s) for $cntDone RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'; $cntErr error(s) occured"
+  }
+  if { $cntErr > 0 } {
+    ok_err_msg "Failed to clone settings file(s) for $cntErr RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'"
+  }
   return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
 }
 
@@ -235,11 +241,11 @@ proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
   if { "" == [set stStr [ReadSettingsFile $srcPath]] }   {
     return  0;  # error already printed
   }
-  set srcPurename [AnyFileNameToPurename $srcPath]
-  set stStr [string map $srcPurename $dstPurename $stStr]
+  set srcPurename [AnyFileNameToPurename [file tail $srcPath]]
+  set stStr [string map [list $srcPurename $dstPurename] $stStr]
   set ext [file extension $srcPath]
   set dstPath [file join $dstDir "$dstPurename$ext"]
-  if { $doSimulateOnly }  {
+  if { $::STS(doSimulateOnly) != 0 }  {
     ok_info_msg "Would have cloned conversion settings from '$srcPath' into '$dstPath'"
     return  1
   }

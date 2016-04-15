@@ -1,0 +1,3 @@
+# TCL command to create dummy settings files for all left RAWs
+foreach f [glob {L/*.arw}] { set oF "$f.dummy_sts";  ::ok_utils::ok_write_list_into_file [list "Dummy settings for [file tail $f]" "Filename [file tail $oF]"] $oF }
+ 
