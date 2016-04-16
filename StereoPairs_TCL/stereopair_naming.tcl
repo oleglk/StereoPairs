@@ -21,7 +21,6 @@ proc build_spm_right_purename  {basePurename} {
   return  [format "%s%s" $basePurename $::imgNameEndingRight] }
 
 
-# TODO: make spm_purename_to_peer_purename handle optional RAW extension
 proc spm_purename_to_peer_purename {purename} {
   # OK_TODO: generalize
   set iLeft   [string last $::imgNameEndingLeft $purename]
