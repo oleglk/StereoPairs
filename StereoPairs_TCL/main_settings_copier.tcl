@@ -218,8 +218,10 @@ proc _clone_settings_files {srcSettingsFiles destDir doSimulateOnly}  {
   }
   set cntGood 0;  set cntErr 0
   foreach pt $srcSettingsFiles {
-    set nm [file tail $pt]
-    set dstPurename [spm_purename_to_peer_purename [AnyFileNameToPurename $nm]]
+    # do not use AnyFileNameToPurename - some converters preserve RAW extension
+    set pnm [file rootname [file tail $pt]]; # L/qqq_l.arw.xmp -> qqq_l.arw
+    # TODO: make spm_purename_to_peer_purename handle optional RAW extension
+    set dstPurename [spm_purename_to_peer_purename $pnm]
     set dstPath [file join $destDir $dstPurename]]
     if { 0 == [_clone_one_cnv_settings_file $pt $dstPurename $destDir \
                                             $doSimulateOnly] }  {

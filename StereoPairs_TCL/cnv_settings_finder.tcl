@@ -9,11 +9,12 @@ package require ok_utils
 namespace import -force ::ok_utils::*
 
 # Maps (low-case!) converter-settings-file extensions to converter names
-set CNV_SETTINGS_EXTENSIONS_DICT [dict create \
-      ".dummy_sts"  "Dummy-Converter"               \
-      ".xmp"        "CorelAftershot-or-PhotoNinja"  \
-      ".pp3"        "RawTherapee"                   \
-                                            ]
+set CNV_SETTINGS_EXTENSIONS_DICT [dict create                             \
+      ".dummy_sts"      "Dummy-Converter"                                 \
+      ".dummy_gl_sts"   "Dummy-Converter-with-Global-Settings-Directory"  \
+      ".xmp"            "CorelAftershot-or-PhotoNinja"                    \
+      ".pp3"            "RawTherapee"                                     \
+                                                                          ]
 
 ##### Search for settings files moved here,
 #####        since some converters force standard location
