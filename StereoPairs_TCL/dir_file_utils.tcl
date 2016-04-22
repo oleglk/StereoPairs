@@ -38,16 +38,28 @@ proc dualcam_find_originals {searchHidden origExtDict \
   set origExtRight  [dict get $origExtDict "R"]
   if { $searchHidden == 0}  {
     set descrSingle "original";   set descrPlural "original(s)"
-    set origPathsLeft  \
+    set origPathsLeft_  \
               [glob -nocomplain -directory $origImgDirLeft  "*.$origExtLeft"]
-    set origPathsRight \
+    set origPathsRight_ \
               [glob -nocomplain -directory $origImgDirRight "*.$origExtRight"]
   } else {
     set descrSingle "hidden-original";   set descrPlural "hidden-original(s)"
-    set origPathsLeft  [glob -nocomplain -directory \
+    set origPathsLeft_  [glob -nocomplain -directory \
                 [file join $origImgDirLeft $dirForUnmatched]  "*.$origExtLeft"]
-    set origPathsRight [glob -nocomplain -directory \
+    set origPathsRight_ [glob -nocomplain -directory \
                 [file join $origImgDirRight $dirForUnmatched] "*.$origExtRight"]
+  }
+  # filter out already renamed originals
+  set origPathsLeft [list];  set origPathsRight [list]
+  foreach p $origPathsLeft_ {
+    if { 0 == [is_spm_purename [file rootname [file tail $p]]] }  {
+      lappend origPathsLeft $p
+    }
+  }
+  foreach p $origPathsRight_ {
+    if { 0 == [is_spm_purename [file rootname [file tail $p]]] }  {
+      lappend origPathsRight $p
+    }
   }
   ok_trace_msg "Left $descrPlural:   {$origPathsLeft}"
   ok_trace_msg "Right $descrPlural:  {$origPathsRight}"

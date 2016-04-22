@@ -21,6 +21,19 @@ proc build_spm_right_purename  {basePurename} {
   return  [format "%s%s" $basePurename $::imgNameEndingRight] }
 
 
+proc is_spm_purename {purename} {
+  # OK_TODO: generalize
+  set iLeft   [string last $::imgNameEndingLeft $purename]
+  set iRight  [string last $::imgNameEndingRight $purename]
+  if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
+    return  1
+  } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
+    return  1
+  }
+  return  0  ; # not a stereopair name
+}
+
+
 proc spm_purename_to_peer_purename {purename} {
   # OK_TODO: generalize
   set iLeft   [string last $::imgNameEndingLeft $purename]
