@@ -25,7 +25,8 @@ proc FindFilePath {dirPath pureName ext descr {checkExist 0}} {
 # Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
 #   - original images if 'searchHidden'==0
 #   - hidden original images if 'searchHidden'==1
-proc dualcam_find_originals {searchHidden origExtDict \
+# if 'skipRenamed' == 1, ignores already renamed image files
+proc dualcam_find_originals {searchHidden skipRenamed origExtDict \
               origImgDirLeft origImgDirRight dirForUnmatched \
               origPathsLeftVar origPathsRightVar}  {
   upvar $origPathsLeftVar  origPathsLeft
@@ -49,12 +50,15 @@ proc dualcam_find_originals {searchHidden origExtDict \
     set origPathsRight_ [glob -nocomplain -directory \
                 [file join $origImgDirRight $dirForUnmatched] "*.$origExtRight"]
   }
-  # filter out already renamed originals
-  set origPathsLeft [list];  set origPathsRight [list]
-  foreach p $origPathsLeft_ {
-    if { 0 == [is_spm_purename [file rootname [file tail $p]]] }  {
-      lappend origPathsLeft $p
+  if { $skipRenamed == 1 }  { ; # filter out already renamed originals
+    set origPathsLeft [list];  set origPathsRight [list]
+    foreach p $origPathsLeft_ {
+      if { 0 == [is_spm_purename [file rootname [file tail $p]]] }  {
+        lappend origPathsLeft $p
+      }
     }
+  } else {
+    set origPathsLeft $origPathsLeft_;  set origPathsRight $origPathsRight_
   }
   foreach p $origPathsRight_ {
     if { 0 == [is_spm_purename [file rootname [file tail $p]]] }  {

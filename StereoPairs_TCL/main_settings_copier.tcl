@@ -50,19 +50,26 @@ proc settings_copier_main {cmdLineAsStr}  {
                      $STS(origImgDirLeft) $STS(origImgDirRight) 1]] }  {
     return  0;  # error already printed
   }
+  if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] }  {
+    return  0;  # error already printed
+  }
 
   if { 0 == [_settings_copier_arrange_workarea] }  { return  0  };  # error already printed
   
-  # source dir has RAWs and maybe settings files
+  # source dir has originals and maybe settings files
   if { $STS(copyFromLR) == "left" } {
-    set srcDir $STS(origImgDirLeft);  set dstDir $STS(origImgDirRight) 
+    set srcDir $STS(origImgDirLeft);  set dstDir $STS(origImgDirRight)
+    set srcOrigPaths $origPathsLeft
   } else {
     set srcDir $STS(origImgDirRight); set dstDir $STS(origImgDirLeft)  }
+    set srcOrigPaths $origPathsRight
   if { $STS(globalImgSettingsDir) != "" } {
     set dstDir $STS(globalImgSettingsDir)
   }
 
-  set srcSettingsFiles [FindSettingsFilesForRawsInDir $srcDir cntMissing 1]
+  set srcSettingsFiles [FindSettingsFilesForListedImages $srcOrigPaths \
+                                                         cntMissing 1]
+
   if { 0 == [llength $srcSettingsFiles] } { return  0 };  # error printed
   # replicate and replace image name(s) inside
   if { 0 == [_clone_settings_files $srcSettingsFiles $dstDir \
@@ -199,7 +206,7 @@ proc _settings_copier_find_originals {searchHidden \
   global STS ORIG_EXT_DICT
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
-  return  [dualcam_find_originals $searchHidden $ORIG_EXT_DICT \
+  return  [dualcam_find_originals $searchHidden 0 $ORIG_EXT_DICT \
             $STS(origImgDirLeft) $STS(origImgDirRight) "dummy-dirForUnmatched" \
             origPathsLeft origPathsRight]
 }

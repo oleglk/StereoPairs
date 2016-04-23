@@ -299,7 +299,7 @@ proc _pair_matcher_find_originals {searchHidden \
   global STS ORIG_EXT_DICT
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
-  return  [dualcam_find_originals $searchHidden $ORIG_EXT_DICT \
+  return  [dualcam_find_originals $searchHidden 1 $ORIG_EXT_DICT \
               $STS(origImgDirLeft) $STS(origImgDirRight) $STS(dirForUnmatched) \
               origPathsLeft origPathsRight]
 }

@@ -74,26 +74,42 @@ proc FindSettingsFilesForRawsInDir {dirPath cntMissing {priErr 1}} {
     }
     return  [list]
   }
-  if { $STS(globalImgSettingsDir) != "" }  {
-    set settingsDir $STS(globalImgSettingsDir) ;   # full path of standard dir
-  } else {
-    set settingsDir $dirPath
-  }
+  set settingsPaths [FindSettingsFilesForListedImages $rawPaths \
+                                                      cntMissing $priErr]
+  ok_info_msg "Found [llength $settingsPaths] settings file(s) for [llength $rawPaths] RAWs in '$dirPath'"
+  ##if { $cntMiss > 0 }  {error "Missing $cntMiss settings file(s) in '$settingsDir'"} ;   #OK_TMP
+  return  $settingsPaths
+}
+
+
+# For mainstream usage
+# Returns list of settings paths for images in 'imgPaths'.
+# Puts into 'cntMissing' number of images for which no settings files found.
+proc FindSettingsFilesForListedImages {imgPaths cntMissing {priErr 1}} {
+  global STS
+  upvar $cntMissing cntMiss
+  set cntMiss 0
   set settingsPaths [list]
-  foreach rawPath $rawPaths {
-    set rawName [file tail $rawPath]
-    set allFilesForOneRaw [FindAllInputsForOneImageInDir $rawName $settingsDir]
-    set relevantSettingsFiles [_SelectSettingsFilesInFileList $allFilesForOneRaw]
+  foreach imgPath $imgPaths {
+    set imgName [file tail $imgPath]
+    if { $STS(globalImgSettingsDir) != "" }  {
+      set settingsDir $STS(globalImgSettingsDir) ;   # full path of standard dir
+    } else {
+      set settingsDir [file dirname $imgPath];  # settings alongside the image
+    }
+    set allFilesForOneImage [FindAllInputsForOneImageInDir $imgName $settingsDir]
+    set relevantSettingsFiles [_SelectSettingsFilesInFileList \
+                                                         $allFilesForOneImage]
     if { 0 == [llength $relevantSettingsFiles] }  {
       incr cntMiss 1
       if { $priErr == 1 }  {
-        ok_err_msg "No relevant settings files found for '$rawPath' in '$settingsDir'"
+        ok_warn_msg "No relevant settings files found for '$imgPath' in '$settingsDir'"
       }
     } else {
       set settingsPaths [concat $settingsPaths $relevantSettingsFiles]
     }
   }
-  ok_info_msg "Found [llength $settingsPaths] settings file(s) (in directory '$settingsDir') for [llength $rawPaths] RAWs in '$dirPath'"
+  ok_info_msg "Found [llength $settingsPaths] settings file(s) for [llength $imgPaths] image(s)"
   ##if { $cntMiss > 0 }  {error "Missing $cntMiss settings file(s) in '$settingsDir'"} ;   #OK_TMP
   return  $settingsPaths
 }
