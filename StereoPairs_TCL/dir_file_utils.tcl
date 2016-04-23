@@ -249,21 +249,27 @@ proc RAWFileNameToPurename {rawName} {
 
 
 proc RAWFileNameToGlobPattern {rawName} {
-  set pureName [RAWFileNameToPurename $rawName]
-  return  "$pureName.*"
+  set purename [RAWFileNameToPurename $rawName]
+  return  [PurenameToGlobPattern $purename]
 }
 
 
-# Returns list of files related to RAW 'rawName' in directory 'rawDirPath'
-proc FindAllInputsForOneRAWInDir {rawName rawDirPath} {
-  set fullPattern [file join $rawDirPath [RAWFileNameToGlobPattern $rawName]]
+proc PurenameToGlobPattern {purename} {
+  return  "$purename.*"
+}
+
+
+# Returns list of files related to image 'imageName' in directory 'imgDirPath'
+proc FindAllInputsForOneImageInDir {imageName imgDirPath} {
+  set purename [AnyFileNameToPurename $imageName]; # TODO: ImageNameToPurename
+  set fullPattern [file join $imgDirPath [PurenameToGlobPattern $imageName]]
   set res [list]
   set tclResult [catch { set res [glob $fullPattern] } execResult]
   if { $tclResult != 0 } {
-    ok_err_msg "Failed searching for input files associated with RAW '$rawName' (pattern: '$fullPattern': $execResult"
+    ok_err_msg "Failed searching for input files associated with image '$imageName' (pattern: '$fullPattern': $execResult"
     return  [list]
   }
-  ok_trace_msg "Found [llength $res] file(s) related to RAW '$rawName'; pattern: '$fullPattern'"
+  ok_trace_msg "Found [llength $res] file(s) related to image '$imageName'; pattern: '$fullPattern'"
   return  $res
 }
 
