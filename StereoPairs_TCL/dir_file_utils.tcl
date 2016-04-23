@@ -57,13 +57,13 @@ proc dualcam_find_originals {searchHidden skipRenamed origExtDict \
         lappend origPathsLeft $p
       }
     }
+    foreach p $origPathsRight_ {
+      if { 0 == [is_spm_purename [file rootname [file tail $p]]] }  {
+        lappend origPathsRight $p
+      }
+    }
   } else {
     set origPathsLeft $origPathsLeft_;  set origPathsRight $origPathsRight_
-  }
-  foreach p $origPathsRight_ {
-    if { 0 == [is_spm_purename [file rootname [file tail $p]]] }  {
-      lappend origPathsRight $p
-    }
   }
   ok_trace_msg "Left $descrPlural:   {$origPathsLeft}"
   ok_trace_msg "Right $descrPlural:  {$origPathsRight}"
@@ -97,6 +97,10 @@ proc dualcam_choose_and_check_type_of_originals {origImgDirLeft origImgDirRight 
   if { $requireRaw && \
        ((0 ==[IsRawExtension $extLeft]) || (0 ==[IsRawExtension $extRight])) } {
     ok_err_msg "Both-side originals should be RAW; got ('$extLeft' '$extRight')"
+    return  0;
+  }
+  if { [IsRawExtension $extLeft] != [IsRawExtension $extRight] } {
+    ok_err_msg "Both-side originals should be either RAW or not; got ('$extLeft' '$extRight')"
     return  0;
   }
   return  $lrToExt

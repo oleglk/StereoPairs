@@ -89,6 +89,7 @@ proc FindSettingsFilesForListedImages {imgPaths cntMissing {priErr 1}} {
   global STS
   upvar $cntMissing cntMiss
   set cntMiss 0
+  ok_trace_msg "Source images for settings files: {$imgPaths}"
   set settingsPaths [list]
   foreach imgPath $imgPaths {
     set imgName [file tail $imgPath]

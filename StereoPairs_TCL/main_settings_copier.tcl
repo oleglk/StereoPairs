@@ -47,10 +47,10 @@ proc settings_copier_main {cmdLineAsStr}  {
   }
   # choose type of originals; RAW is required
   if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
-                     $STS(origImgDirLeft) $STS(origImgDirRight) 1]] }  {
+                     $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
     return  0;  # error already printed
   }
-  if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] }  {
+  if { 0 == [_settings_copier_find_originals 0 origPathsLeft origPathsRight] } {
     return  0;  # error already printed
   }
 
@@ -60,9 +60,13 @@ proc settings_copier_main {cmdLineAsStr}  {
   if { $STS(copyFromLR) == "left" } {
     set srcDir $STS(origImgDirLeft);  set dstDir $STS(origImgDirRight)
     set srcOrigPaths $origPathsLeft
-  } else {
-    set srcDir $STS(origImgDirRight); set dstDir $STS(origImgDirLeft)  }
+  } elseif { $STS(copyFromLR) == "right" } {
+    set srcDir $STS(origImgDirRight); set dstDir $STS(origImgDirLeft)
     set srcOrigPaths $origPathsRight
+  } else {
+    ok_err_msg "Invalid source settings side specified: '$STS(copyFromLR)'"
+    return  0
+  }
   if { $STS(globalImgSettingsDir) != "" } {
     set dstDir $STS(globalImgSettingsDir)
   }
