@@ -36,6 +36,7 @@ setup::define_src_path $normTclSrcRoot $normTclStdExtRoot
 #LZC: package require filesorter
 #LZC: package require imageproc
 package require ok_utils
+package require img_proc
 
 namespace forget ::ok_utils ::filesorter ::imageproc ::setup
 namespace import -force ::ok_utils::*

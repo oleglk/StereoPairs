@@ -1,0 +1,8 @@
+ImageMagick : Retrieving the individual Image Channel Statistics (SLOW)
+http://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=21008
+  convert rose: -format "%[colorspace]\n%[fx:mean.r]\n%[fx:mean.g]\n%[fx:mean.b]\n%[fx:mean]" info:
+
+@REM Using scale or sample is much faster:
+convert DSC00454_44-56_s060b94g090.TIF -scale 1024x1024 tif:- |convert - -format "%[colorspace]\n%[fx:mean.r]\n%[fx:mean.g]\n%[fx:mean.b]\n%[fx:mean]" info:
+
+convert DSC00454_44-56_s060b94g090.TIF -sample 1024x1024 tif:- |convert - -format "%[colorspace]\n%[fx:mean.r]\n%[fx:mean.g]\n%[fx:mean.b]\n%[fx:mean]" info:
