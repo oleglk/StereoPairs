@@ -49,6 +49,7 @@ proc set_ext_tool_paths_from_csv {csvPath}  {
   set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
   # - ExifTool:
   set ::_EXIFTOOL "exiftool.exe" ; #TODO: path
+  return  1
 }
 
 

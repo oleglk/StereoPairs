@@ -90,17 +90,16 @@ proc ::img_proc::read_channel_statistics_by_imagemagick {fullPath \
     ok_err_msg "Cannot get channel statistics of '$fullPath'"
     return  0
   }
-  # $line should be: "RGB <meanR> <meanG> <meanB> <mean>"
   if { $len == -1 } {
     ok_err_msg "Cannot get channel statistics of '$fullPath'"
     return  0
   }
-  ok_trace_msg "channel statistics of $fullPath = $line"
-  #~ set cVal [string trim $line]
-  #~ if { $cVal == "" } {
-    #~ ok_err_msg "Cannot get pixel color at $x,$y of '$fullPath'"
-	  #~ return  0
-  #~ }
-  #~ ok_trace_msg "Pixel color at $x,$y of $fullPath: $cVal"
+  ok_trace_msg "Channel statistics of $fullPath = $line"
+  # $line should be: "RGB <meanR> <meanG> <meanB> <mean>"
+  set pattern {^(\w+)\s+([.0-9]+)\s+([.0-9]+)\s+([.0-9]+)\s+([.0-9]+)}
+  if { 0 == [regexp -- $pattern $line fullMatch cSp mR mG mB mA] } {
+    ok_err_msg "Cannot decode channel statistics of '$fullPath' from '$line'"
+    return  0
+  }
   return  1
 }
