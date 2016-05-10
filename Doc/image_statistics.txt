@@ -6,3 +6,15 @@ http://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=21008
 convert DSC00454_44-56_s060b94g090.TIF -scale 1024x1024 tif:- |convert - -format "%[colorspace]\n%[fx:mean.r]\n%[fx:mean.g]\n%[fx:mean.b]\n%[fx:mean]" info:
 
 convert DSC00454_44-56_s060b94g090.TIF -sample 1024x1024 tif:- |convert - -format "%[colorspace]\n%[fx:mean.r]\n%[fx:mean.g]\n%[fx:mean.b]\n%[fx:mean]" info:
+
+### TCL - bad 0
+set io [eval [list open [format \
+                    {|%s {%s} -quiet -scale 1024x1024 png:- \
+                    |%s - -format "%%[colorspace] %%[fx:mean.r] %%[fx:mean.g] %%[fx:mean.b] %%[fx:mean]" info:} \
+                    $::_IMCONVERT {L\dsc00900.jpg} $::_IMCONVERT] r]]
+
+### TCL - good
+set io [eval [list open [format \
+                    {|%s {%s} -quiet -scale 1024x1024 png:- \
+                    | %s - -format "%%[colorspace] %%[fx:mean.r] %%[fx:mean.g] %%[fx:mean.b] %%[fx:mean]" info:} \
+                    $::_IMCONVERT {L\dsc00900.jpg} $::_IMCONVERT] r]]

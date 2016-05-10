@@ -77,10 +77,10 @@ proc ::img_proc::read_channel_statistics_by_imagemagick {fullPath \
   set nv_fullPath [file nativename $fullPath]
   # example:  convert DSC00454_44-56_s060b94g090.TIF -scale 1024x1024 tif:- |convert - -format "%[colorspace]\n%[fx:mean.r]\n%[fx:mean.g]\n%[fx:mean.b]\n%[fx:mean]" info:
   set tclExecResult [catch {
-	# Open a pipe to the program
+	# Open a pipe to the program; NOTE "| %s" - SPACE AFTER CONVEYER PIPE
     set io [eval [list open [format \
                     {|%s {%s} -quiet -scale 1024x1024 tif:- \
-                    |%s - -format "%%[colorspace] %%[fx:mean.r] %%[fx:mean.g] %%[fx:mean.b] %%[fx:mean]" info:} \
+                    | %s - -format "%%[colorspace] %%[fx:mean.r] %%[fx:mean.g] %%[fx:mean.b] %%[fx:mean]" info:} \
                     $::_IMCONVERT $nv_fullPath $::_IMCONVERT] r]]
     set len [gets $io line];	# Get the reply
     close $io
