@@ -5,7 +5,6 @@ set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR  "ok_utils" "debug_utils.tcl"]
 ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 source [file join $SCRIPT_DIR   "ext_tools.tcl"]
-source [file join $SCRIPT_DIR   "image_metadata.tcl"]
 source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
 source [file join $SCRIPT_DIR   "stereopair_naming.tcl"]
 

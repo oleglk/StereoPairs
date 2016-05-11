@@ -1,11 +1,29 @@
 # image_metadata.tcl
+# Copyright (C) 2016 by Oleg Kosyakovsky
+global OK_TCLSRC_ROOT
+if { [info exists OK_TCLSRC_ROOT] } {;   # assume running as a part of LazyConv
+    source $OK_TCLSRC_ROOT/lzc_beta_license.tcl
+    package provide img_proc 0.1
+}
+
+
+namespace eval ::img_proc:: {
+    namespace export                          \
+      is_standard_image                       \
+      get_listed_images_global_timestamps     \
+      get_image_global_timestamp              \
+      get_image_timestamp_by_imagemagick      \
+      get_image_brightness_by_imagemagick     \
+      get_image_dimensions_by_imagemagick     \
+      
+}
 
 set SCRIPT_DIR [file dirname [info script]]
 package require ok_utils
 
-#source [file join $SCRIPT_DIR   "debug_utils.tcl"]
-ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
-source [file join $SCRIPT_DIR   "ext_tools.tcl"]
+set UTIL_DIR [file dirname [info script]]
+ok_trace_msg "---- Sourcing '[info script]' in '$UTIL_DIR' ----"
+source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 
 ################################################################################
 # indices for metadata fields
@@ -19,13 +37,13 @@ foreach e $g_stdImageExtensions {lappend g_stdImageExtensions [string toupper $e
 ################################################################################
 
 
-proc is_standard_image {path} {
+proc ::img_proc::is_standard_image {path} {
   set ext [file extension $path]
   return  [expr {0 <= [lsearch -exact $::g_stdImageExtensions $ext]}]
 }
 
 
-#~ proc is_raw_image {path} {
+#~ proc ::img_proc::is_raw_image {path} {
   #~ set ext [file extension $path]
   #~ return  [expr {0 <= [lsearch -exact $::g_rawImageExtensions $ext]}]
 #~ }
@@ -34,7 +52,7 @@ proc is_standard_image {path} {
 # Returns dictionary with global times of images in 'imgPathList': {purenane->time}.
 # On error returns 0.
 # Detects formats by extension; applies relevant methods accordingly.
-proc get_listed_images_global_timestamps {imgPathList} {
+proc ::img_proc::get_listed_images_global_timestamps {imgPathList} {
   set nameToTimeDict [dict create]
   set inexistentCnt 0
   foreach fPath $imgPathList {
@@ -63,7 +81,7 @@ proc get_listed_images_global_timestamps {imgPathList} {
 
 # Returns global time of image 'fullPath'. On error returns -1.
 # Detects format by extension; applies relevant method accordingly.
-proc get_image_global_timestamp {fullPath} {
+proc ::img_proc::get_image_global_timestamp {fullPath} {
   global iMetaDate iMetaTime
   array unset imgInfoArr
   if { [is_standard_image $fullPath] } {
@@ -92,7 +110,7 @@ proc get_image_global_timestamp {fullPath} {
 
 # Example: dateList=="{2016 02 13"  timeList=={16 41 08} ==> returns 1455374380
 # Returns -1 on error
-proc _date_time_to_global_time {dateList timeList formatStr} {
+proc ::img_proc::_date_time_to_global_time {dateList timeList formatStr} {
   set dtStr [join [concat $dateList $timeList]]
   set tclExecResult [catch {
     set globalTime  [clock scan "$dtStr" -format $formatStr]
@@ -110,7 +128,7 @@ proc _date_time_to_global_time {dateList timeList formatStr} {
 # Sample result: imgInfoArr(date)={2016 02 13} imgInfoArr(time)={16 41 08}
 # Processing command:
 ## clock scan "$imgInfoArr($iMetaDate) $imgInfoArr($iMetaTime)" -format {%Y %b %d %H %M %S}
-proc get_image_timestamp_by_imagemagick {fullPath imgInfoArr} {
+proc ::img_proc::get_image_timestamp_by_imagemagick {fullPath imgInfoArr} {
   global iMetaDate iMetaTime
   upvar $imgInfoArr imgInfo
   if { "" == [set tStr [_get_one_image_attribute_by_imagemagick $fullPath \
@@ -129,7 +147,7 @@ proc get_image_timestamp_by_imagemagick {fullPath imgInfoArr} {
 # Returns attribute value text on success, "" on error.
 # Sample Imagemagick "identify" invocation:
 # 	$::_IMIDENTIFY -quiet -verbose -ping -format "%[EXIF:BrightnessValue] <filename>" 
-proc _get_one_image_attribute_by_imagemagick {fullPath attribSpec attribName} {
+proc ::img_proc::_get_one_image_attribute_by_imagemagick {fullPath attribSpec attribName} {
   if { ![file exists $fullPath] || ![file isfile $fullPath] } {
     ok_err_msg "Invalid image path '$fullPath'"
     return  ""
@@ -168,7 +186,7 @@ proc _get_one_image_attribute_by_imagemagick {fullPath attribSpec attribName} {
 # Processes the following exif line(s):
 # 2016:02:13 16:41:08
 # Returns 1 if line was recognized, otherwise 0
-proc _ProcessImIdentifyMetadataLine {line imgInfoArr} {
+proc ::img_proc::_ProcessImIdentifyMetadataLine {line imgInfoArr} {
   global iMetaDate iMetaTime iMetaISO
   upvar $imgInfoArr imgInfo
   # example:'2016:02:13 16:41:08'
@@ -188,7 +206,7 @@ proc _ProcessImIdentifyMetadataLine {line imgInfoArr} {
 # Returns 1 on success, 0 on error.
 # Imagemagick "identify" invocation:
 # 	$::_IMIDENTIFY -quiet -verbose -ping -format "%[EXIF:BrightnessValue] <filename>" 
-proc get_image_brightness_by_imagemagick {fullPath brightness} {
+proc ::img_proc::get_image_brightness_by_imagemagick {fullPath brightness} {
   upvar $brightness brVal
   if { ![file exists $fullPath] || ![file isfile $fullPath] } {
     ok_err_msg "Invalid image path '$fullPath'"
@@ -229,7 +247,7 @@ proc get_image_brightness_by_imagemagick {fullPath brightness} {
 # Puts into 'width' and 'height' horizontal and vertical sizes of 'fullPath'
 # Returns 1 on success, 0 on error.
 # Imagemagick "identify" invocation: identify -ping -format "%w %h" <filename>
-proc get_image_dimensions_by_imagemagick {fullPath width height} {
+proc ::img_proc::get_image_dimensions_by_imagemagick {fullPath width height} {
   upvar $width wd
   upvar $height ht
   if { ![file exists $fullPath] || ![file isfile $fullPath] } {
@@ -268,7 +286,7 @@ proc get_image_dimensions_by_imagemagick {fullPath width height} {
 
 # Verifies whether exiftool command line ended OK through the test it printed.
 # Returns 1 if it was good, 0 otherwise.
-proc is_exiftool_result_ok {execResultText} {
+proc ::img_proc::_is_exiftool_result_ok {execResultText} {
   # 'execResultText' tells how exiftool-based command ended
   # - OK if noone of 'errKeys' appears
   set result 1;    # as if it ended OK
@@ -290,7 +308,7 @@ proc is_exiftool_result_ok {execResultText} {
 # Processes the following exif line(s):
 # Timestamp: Sat Aug 23 08:58:21 2014
 # Returns 1 if line was recognized, otherwise 0
-proc _ProcessDcrawMetadataLine {line imgInfoArr} {
+proc ::img_proc::_ProcessDcrawMetadataLine {line imgInfoArr} {
   global iMetaDate iMetaTime iMetaISO
   upvar $imgInfoArr imgInfo
   # example:'Timestamp: Sat Aug 23 08:58:21 2014'
@@ -307,7 +325,7 @@ proc _ProcessDcrawMetadataLine {line imgInfoArr} {
 
 # Puts into 'imgInfoArr' ISO, etc. of image 'fullPath'.
 # On success returns number of data fields being read, 0 on error.
-proc GetImageAttributesByDcraw {fullPath imgInfoArr} {
+proc ::img_proc::GetImageAttributesByDcraw {fullPath imgInfoArr} {
   global _DCRAW
   global iMetaDate iMetaTime iMetaISO
   upvar $imgInfoArr imgInfo
