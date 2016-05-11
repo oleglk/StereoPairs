@@ -83,6 +83,48 @@ proc dualcam_find_originals {searchHidden skipRenamed origExtDict \
 }
 
 
+# Puts into 'imgPathsLeftVar' and 'imgPathsRightVar' the paths 
+# of properly named left and right images found in 'imgDirLeft' and 'imgDirRight'
+proc dualcam_find_lr_images {imgExtDict imgDirLeft imgDirRight \
+                              imgPathsLeftVar imgPathsRightVar}  {
+  upvar $imgPathsLeftVar  imgPathsLeft
+  upvar $imgPathsRightVar imgPathsRight
+  if { $imgExtDict == 0 }  {
+    ok_err_msg "Cannot find images before their extensions are determined"
+    return  0
+  }
+  set imgExtLeft   [dict get $imgExtDict "L"]
+  set imgExtRight  [dict get $imgExtDict "R"]
+  set imgPathsLeft_  \
+            [glob -nocomplain -directory $imgDirLeft  "*.$imgExtLeft"]
+  set imgPathsRight_ \
+            [glob -nocomplain -directory $imgDirRight "*.$imgExtRight"]
+  # filter out irrelevant images
+  set imgPathsLeft [list];  set imgPathsRight [list]
+  foreach p $imgPathsLeft_ {
+    if { 1 == [is_spm_purename [file rootname [file tail $p]]] }  {
+      lappend imgPathsLeft $p
+    }
+  }
+  foreach p $imgPathsRight_ {
+    if { 1 == [is_spm_purename [file rootname [file tail $p]]] }  {
+      lappend imgPathsRight $p
+    }
+  }
+  ok_trace_msg "Left image(s):   {$imgPathsLeft}"
+  ok_trace_msg "Right image(s):  {$imgPathsRight}"
+  set missingStr ""
+  if { 0 == [llength $imgPathsLeft] }   { append missingStr " left" }
+  if { 0 == [llength $imgPathsRight] }  { append missingStr " right" }
+  if { $missingStr != "" }  {
+    ok_err_msg "Missing image(s) for:$missingStr"
+    return  0
+  }
+  ok_info_msg "Found [llength $imgPathsLeft] left- and [llength $imgPathsRight] right image(s)"
+  return  1
+}
+
+
 # Returns dictionary of {L:extLeft, R:extRight} or 0 on error
 proc dualcam_choose_and_check_type_of_originals {origImgDirLeft origImgDirRight \
                                                  requireRaw} {

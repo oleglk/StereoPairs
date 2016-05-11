@@ -44,7 +44,7 @@ proc settings_copier_main {cmdLineAsStr}  {
   if { 0 == [settings_copier_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
-  # choose type of originals; RAW is required
+  # choose type of originals; RAW is not required
   if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
                      $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
     return  0;  # error already printed
