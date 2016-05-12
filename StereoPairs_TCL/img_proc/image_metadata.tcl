@@ -19,7 +19,7 @@ namespace eval ::img_proc:: {
 }
 
 set SCRIPT_DIR [file dirname [info script]]
-package require ok_utils
+package require ok_utils;   namespace import -force ::ok_utils::*
 
 set UTIL_DIR [file dirname [info script]]
 ok_trace_msg "---- Sourcing '[info script]' in '$UTIL_DIR' ----"

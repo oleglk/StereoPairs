@@ -51,6 +51,7 @@ source [file join $SCRIPT_DIR   "make_stereocards.tcl"]
 source [file join $SCRIPT_DIR   "unused_inputs.tcl"]
 source [file join $SCRIPT_DIR   "main_pair_matcher.tcl"]
 source [file join $SCRIPT_DIR   "main_settings_copier.tcl"]
+source [file join $SCRIPT_DIR   "main_color_analyzer.tcl"]
 
 ## In oder to enable loading several main-s, avoid duplicating settings-init
 array unset STS ;   # array for global settings ;  unset once per a project
