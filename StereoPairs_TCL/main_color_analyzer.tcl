@@ -24,7 +24,6 @@ proc _color_analyzer_set_defaults {}  {
   set ::STS(stdImgExtLeft)    "" ;  # filename extension for left  images
   set ::STS(stdImgExtRight)   "" ;  # filename extension for right images
   set ::STS(outDirPath)       ""
-  set ::STS(backupDir)        ""
   set ::STS(colorDiffThresh)  "" ;  # minimal L-R color difference to warn on
   
   set IMG_EXT_DICT   0 ;  # per-dir extensions of standard images
@@ -46,7 +45,7 @@ proc color_analyzer_main {cmdLineAsStr}  {
   # type of standard images dictated by extensions from cmd line
   set IMG_EXT_DICT [dict create L $STS(stdImgExtLeft) R $STS(stdImgExtRight)]
 
-  if { 0 == [_color_analyzer_find_lr_images 0 imgPathsLeft imgPathsRight] } {
+  if { 0 == [_color_analyzer_find_lr_images imgPathsLeft imgPathsRight] } {
     return  0;  # error already printed
   }
 
@@ -64,19 +63,18 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
   set descrList \
 [list \
   -help {"" "print help"} \
-  -global_img_settings_dir {val	"full path of the directory where the RAW converter keeps all image-settings files - specify if relevant for your converter"} \
-  -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
+  -img_dir {val	"input directory; left (right) images to be checked expected in 'img_dir'/L ('img_dir'/R)"} \
+  -ext_left {val	"file extension of left images; standard type only (tif/jpg/etc.)"} \
+  -ext_right {val	"file extension of right images; standard type only (tif/jpg/etc.)"} \
   -out_dir {val	"output directory"} \
-  -backup_dir {val	"directory to move overriden settings files to"} \
-  -copy_from {val	"'left' == copy settings from left to right, 'right' == from right to left"} \
-  -simulate_only {""	"if specified, no file changes performed, only decide and report what should be done"} ]
+  -warn_color_diff_above {val "minimal left-right color difference (%) to warn on"} ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
   # create dummy command line with the default parameters and copy it
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-   {-backup_dir "Backup"} }
+   {-warn_color_diff_above "10"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -85,12 +83,12 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
   if { [info exists cml(-help)] } {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
     ok_info_msg "================================================================"
-    ok_info_msg "    DualCam Settings Copier replicates image-conversion settings from  left- to right images of each matched stereopair, or vice-versa."
+    ok_info_msg "    DualCam Color Analyzer compares color-channels' statistics of left- and right images of each matched stereopair."
     ok_info_msg "========= Command line parameters (in any order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg " color_analyzer_main \"-orig_img_dir . -out_dir ./OUT -copy_from left\""
+    ok_info_msg " color_analyzer_main \"-img_dir . -out_dir ./OUT -ext_left jpg -ext_right jpg -warn_color_diff_above 15\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -178,8 +176,7 @@ proc _color_analyzer_parse_cmdline {cmlArrName}  {
 
 # Puts into 'imgPathsLeftVar' and 'imgPathsRightVar' the paths of
 # standard l/r images
-proc _color_analyzer_find_lr_images {searchHidden \
-                                      imgPathsLeftVar imgPathsRightVar}  {
+proc _color_analyzer_find_lr_images {imgPathsLeftVar imgPathsRightVar}  {
   global STS IMG_EXT_DICT
   upvar $imgPathsLeftVar  imgPathsLeft
   upvar $imgPathsRightVar imgPathsRight
