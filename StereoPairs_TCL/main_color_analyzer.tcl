@@ -59,7 +59,6 @@ proc color_analyzer_main {cmdLineAsStr}  {
 proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
   upvar $cmlArrName      cml
   # create the command-line description
-  # TODO: implement
   set descrList \
 [list \
   -help {"" "print help"} \
@@ -97,8 +96,8 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
     return  0
   }
   set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
-  ok_info_msg "==== Now TODO by the following spec: ===="
-  ok_info_msg $cmdStrNoHelp
+  ok_info_msg "==== Now compare stereopairs' color-channel statistics by the following spec: ===="
+  ok_info_msg "==== \n$cmdStrNoHelp\n===="
   return  1
 }
 
@@ -106,25 +105,32 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
 proc _color_analyzer_parse_cmdline {cmlArrName}  {
   upvar $cmlArrName      cml
   set errCnt 0
-  
-  if { 1 == [info exists cml(-global_img_settings_dir)] }  {
-    if { 0 == [file isdirectory $cml(-global_img_settings_dir)] }  {
-      ok_err_msg "Non-directory '$cml(-global_img_settings_dir)' specified as the global image-settings directory"
-      incr errCnt 1
-    } else {
-      set ::STS(globalImgSettingsDir) $cml(-global_img_settings_dir)
-    }
-  }  
-  if { 0 == [info exists cml(-orig_img_dir)] }  {
-    ok_err_msg "Please specify input directory; example: -orig_img_dir D:/Photo/Work"
+
+##   set ::STS(stdImgRootPath)   ""
+ #   set ::STS(stdImgDirLeft)    ""
+ #   set ::STS(stdImgDirRight)   ""
+ #   set ::STS(stdImgExtLeft)    "" ;  # filename extension for left  images
+ #   set ::STS(stdImgExtRight)   "" ;  # filename extension for right images
+ #   set ::STS(outDirPath)       ""
+ #   set ::STS(colorDiffThresh)  "" ;  # minimal L-R color difference to warn on
+ ##
+##   -img_dir {val	"input directory; left (right) images to be checked expected in 'img_dir'/L ('img_dir'/R)"} \
+ #   -ext_left {val	"file extension of left images; standard type only (tif/jpg/etc.)"} \
+ #   -ext_right {val	"file extension of right images; standard type only (tif/jpg/etc.)"} \
+ #   -out_dir {val	"output directory"} \
+ #   -warn_color_diff_above {val "minimal left-right color difference (%) to warn on"} ]
+ ##
+
+  if { 0 == [info exists cml(-img_dir)] }  {
+    ok_err_msg "Please specify input root directory; example: -img_dir D:/Photo/Work"
     incr errCnt 1
-  } elseif { 0 == [file isdirectory $cml(-orig_img_dir)] }  {
-    ok_err_msg "Non-directory '$cml(-orig_img_dir)' specified as input directory"
+  } elseif { 0 == [file isdirectory $cml(-img_dir)] }  {
+    ok_err_msg "Non-directory '$cml(-img_dir)' specified as input root directory"
     incr errCnt 1
   } else {
-    set ::STS(origImgRootPath) $cml(-orig_img_dir)
-    set ::STS(stdImgDirLeft)  [file join $::STS(origImgRootPath) "L"]
-    set ::STS(stdImgDirRight) [file join $::STS(origImgRootPath) "R"]
+    set ::STS(stdImgRootPath) $cml(-img_dir)
+    set ::STS(stdImgDirLeft)  [file join $::STS(stdImgRootPath) "L"]
+    set ::STS(stdImgDirRight) [file join $::STS(stdImgRootPath) "R"]
     if { 0 == [file isdirectory $::STS(stdImgDirLeft)] }  {
       ok_err_msg "Non-directory '$::STS(stdImgDirLeft)' specified as left input directory"
       incr errCnt 1
@@ -145,24 +151,20 @@ proc _color_analyzer_parse_cmdline {cmlArrName}  {
     set ::STS(outDirPath)      [file normalize $cml(-out_dir)]
     # validity of pair-list path will be checked after out-dir creation
   }
-  if { 1 == [info exists cml(-backup_dir)] }  {
-    set ::STS(backupDir) $cml(-backup_dir)
-  }
- if { 1 == [info exists cml(-copy_from)] }  {
-    switch -nocase -- [string tolower $cml(-copy_from)]  {
-      "left"   {  set ::STS(copyFromLR) "left"   }
-      "right"  {  set ::STS(copyFromLR) "right"  }
-      default  {
-        ok_err_msg "-copy_from expects left|right"
-        incr errCnt 1
-      }
-    }    
+ if { 1 == [info exists cml(-ext_left)] }  {
+    set ::STS(stdImgExtLeft) $cml(-ext_left)
   } else {
-    ok_err_msg "Please specify from which side to take the conversion settings; example: -copy_from left"
+    ok_err_msg "Please specify extension for left images; example: -ext_left TIF"
     incr errCnt 1
   } 
-  if { 1 == [info exists cml(-simulate_only)] }  {
-    set ::STS(doSimulateOnly) 1
+ if { 1 == [info exists cml(-ext_right)] }  {
+    set ::STS(stdImgExtRight) $cml(-ext_right)
+  } else {
+    ok_err_msg "Please specify extension for right images; example: -ext_right TIF"
+    incr errCnt 1
+  } 
+  if { 1 == [info exists cml(-warn_color_diff_above)] }  {
+    set ::STS(colorDiffThresh) $cml(-warn_color_diff_above)
   }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
@@ -248,8 +250,8 @@ proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
 
 proc _color_analyzer_arrange_workarea {}  {
   if { 0 == [ok_create_absdirs_in_list \
-              [list $::STS(outDirPath) $::STS(backupDir)] \
-              [list "output"           "backup"         ]] } {
+              [list $::STS(outDirPath)] \
+              [list "output"         ]] } {
     return  0;  # error already printed
   }
   return  1

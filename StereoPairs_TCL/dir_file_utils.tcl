@@ -95,6 +95,8 @@ proc dualcam_find_lr_images {imgExtDict imgDirLeft imgDirRight \
   }
   set imgExtLeft   [dict get $imgExtDict "L"]
   set imgExtRight  [dict get $imgExtDict "R"]
+  ok_info_msg "Left  images (*.$imgExtLeft) expected in '$imgDirLeft'"
+  ok_info_msg "Right images (*.$imgExtRight) expected in '$imgDirRight'"
   set imgPathsLeft_  \
             [glob -nocomplain -directory $imgDirLeft  "*.$imgExtLeft"]
   set imgPathsRight_ \
