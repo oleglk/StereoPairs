@@ -47,6 +47,19 @@ proc spm_purename_to_peer_purename {purename} {
 }
 
 
+proc spm_purename_to_pair_purename {purename} {
+  # OK_TODO: generalize
+  set iLeft   [string last $::imgNameEndingLeft $purename]
+  set iRight  [string last $::imgNameEndingRight $purename]
+  if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
+    return  [string replace $purename $iLeft  end ""]
+  } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
+    return  [string replace $purename $iRight end ""]
+  }
+  return  ""  ; # error
+}
+
+
 proc build_stereopair_purename {purenameLeft purenameRight}  {
   set suffix [build_suffix_from_peer_purename $purenameRight]
   return  "$purenameLeft$suffix"

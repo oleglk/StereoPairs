@@ -51,6 +51,12 @@ proc color_analyzer_main {cmdLineAsStr}  {
 
   if { 0 == [_color_analyzer_arrange_workarea] }  { return  0  };  # error already printed
 
+  if { 0 == [set pairNameToLRPathsDict \
+      [_map_pairname_to_lrpaths $imgPathsLeft $imgPathsRight]] } {
+    return  0;  # error already printed
+  }
+  puts $pairNameToLRPathsDict
+
   # TODO
   return  1
 }
@@ -255,4 +261,48 @@ proc _color_analyzer_arrange_workarea {}  {
     return  0;  # error already printed
   }
   return  1
+}
+
+
+# Returns dictionary {pairname :: {pathLeft pathRight}} ot 0 on error
+proc _map_pairname_to_lrpaths {imgPathsLeft imgPathsRight}  {
+  set pairNameToLeftPath [dict create]
+  set pairNameToRightPath [dict create]
+  set errCnt 0
+  foreach fPath $imgPathsLeft {
+    set purename [AnyFileNameToPurename [file tail $fPath]]
+    set pairPurename [spm_purename_to_pair_purename $purename]
+    if { $pairPurename == "" }  {
+      ok_err_msg "File '$fPath is not a left image";  incr errCnt 1
+    }
+    dict append pairNameToLeftPath $pairPurename $fPath
+  }
+  foreach fPath $imgPathsRight {
+    set purename [AnyFileNameToPurename [file tail $fPath]]
+    set pairPurename [spm_purename_to_pair_purename $purename]
+    if { $pairPurename == "" }  {
+      ok_err_msg "File '$fPath is not a right image";  incr errCnt 1
+    }
+    dict append pairNameToRightPath $pairPurename $fPath
+  }
+  set pairNameToLRPathsDict [dict create]
+  ok_trace_msg "Found [dict size $pairNameToLeftPath] left and [dict size $pairNameToRightPath] right images"
+  set allPairNames [lsort -unique [concat \
+              [dict keys $pairNameToLeftPath] [dict keys $pairNameToRightPath]]]
+  foreach pairPurename $allPairNames {
+    if { ! [dict exists $pairNameToLeftPath $pairPurename] }  {
+      ok_err_msg "Missing left image for '$pairPurename'";  incr errCnt 1
+      continue
+    }
+    if { ! [dict exists $pairNameToRightPath $pairPurename] }  {
+      ok_err_msg "Missing right image for '$pairPurename'";  incr errCnt 1
+      continue
+    }
+    dict append pairNameToLRPathsDict $pairPurename [list \
+                                [dict get $pairNameToLeftPath  $pairPurename] \
+                                [dict get $pairNameToRightPath $pairPurename]]
+  }
+  set msg "Correlated paths of left/right images for [dict size $pairNameToLRPathsDict] stereopair(s); $errCnt error(s) occured"
+  if { $errCnt == 0 }  {  ok_info_msg $msg;   return  $pairNameToLRPathsDict
+  } else {                ok_err_msg  $msg;   return  0 }
 }
