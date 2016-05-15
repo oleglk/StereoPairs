@@ -39,6 +39,12 @@ set IMG_EXT_DICT    0 ;  # per-dir extensions of original out-of-camera images
 proc color_analyzer_main {cmdLineAsStr}  {
   global STS SCRIPT_DIR IMG_EXT_DICT
   _color_analyzer_set_defaults ;  # calling it in a function for repeated invocations
+  set extToolPathsFilePath [file join $SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
+    return  0;  # error already printed
+  }
+  if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
+  
   if { 0 == [color_analyzer_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
@@ -55,7 +61,12 @@ proc color_analyzer_main {cmdLineAsStr}  {
       [_map_pairname_to_lrpaths $imgPathsLeft $imgPathsRight]] } {
     return  0;  # error already printed
   }
-  puts $pairNameToLRPathsDict
+  ###puts $pairNameToLRPathsDict
+
+  if { 0 == [set pairNameToColorStatsDict \
+      [_map_pairname_to_color_stat $pairNameToLRPathsDict]] } {
+    return  0;  # error already printed
+  }
 
   # TODO
   return  1
@@ -305,4 +316,33 @@ proc _map_pairname_to_lrpaths {imgPathsLeft imgPathsRight}  {
   set msg "Correlated paths of left/right images for [dict size $pairNameToLRPathsDict] stereopair(s); $errCnt error(s) occured"
   if { $errCnt == 0 }  {  ok_info_msg $msg;   return  $pairNameToLRPathsDict
   } else {                ok_err_msg  $msg;   return  0 }
+}
+
+
+proc _map_pairname_to_color_stat {pairNameToLRPathsDict}  {
+  set pairNameToColorStatsDict [dict create]
+  set errCnt 0
+  dict for {pairname lrPathsList} $pairNameToLRPathsDict {
+    set pathLeft [lindex $lrPathsList 0];  set pathRight [lindex $lrPathsList 1]
+    if { 0 == [read_channel_statistics_by_imagemagick \
+                              $pathLeft meanRLeft meanGLeft meanBLeft] }  {
+      incr errCnt 1;  continue;   # error already printed
+    }
+    if { 0 == [read_channel_statistics_by_imagemagick \
+                              $pathRight meanRRight meanGRight meanBRight] }  {
+      incr errCnt 1;  continue;   # error already printed
+    }
+    ok_trace_msg "Channel means for '$pairname' (L/R): Red $meanRLeft/$meanRRight, Green $meanGLeft/$meanGRight, Blue $meanBLeft/$meanBRight"
+    set avgR [expr ($meanRLeft + $meanRRight)/2]
+    set diffR [expr {($avgR==0.0)? 0 \
+                    : [expr {abs($meanRLeft - $meanRRight) / $avgR}]}]
+    set avgG [expr ($meanGLeft + $meanGRight)/2]
+    set diffG [expr {($avgG==0.0)? 0 \
+                    : [expr {abs($meanGLeft - $meanGRight) / $avgG}]}]
+    set avgB [expr ($meanBLeft + $meanBRight)/2]
+    set diffB [expr {($avgB==0.0)? 0 \
+                    : [expr {abs($meanBLeft - $meanBRight) / $avgB}]}]
+    # TODO: pack_pairname_to_colorstat_record
+  }
+  return  1;  # OK_TMP
 }
