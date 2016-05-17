@@ -34,6 +34,9 @@ _color_analyzer_set_defaults ;  # load only;  do call it in a function for repea
 
 set IMG_EXT_DICT    0 ;  # per-dir extensions of original out-of-camera images
 
+set COLORDIFF_CSV_NAME        "color_diff_lr.csv"  ;   # name for color-channel diff file
+set COLORDIFF_SORTED_CSV_NAME "color_diff_lr.sorted.csv"  ;   # name for sorted color-channel diff file
+
 ################################################################################
 
 proc color_analyzer_main {cmdLineAsStr}  {
@@ -63,8 +66,12 @@ proc color_analyzer_main {cmdLineAsStr}  {
   }
   ###puts $pairNameToLRPathsDict
 
-  if { 0 == [set pairNameToColorStatsDict \
-      [_map_pairname_to_color_stat $pairNameToLRPathsDict]] } {
+  if { 0 == [set pairNameToColorChannelDiffList \
+      [_map_pairname_to_color_stat_diff $pairNameToLRPathsDict]] } {
+    return  0;  # error already printed
+  }
+
+  if { 0 == [_report_pairname_to_color_diff $pairNameToColorChannelDiffList] } {
     return  0;  # error already printed
   }
 
@@ -319,8 +326,9 @@ proc _map_pairname_to_lrpaths {imgPathsLeft imgPathsRight}  {
 }
 
 
-proc _map_pairname_to_color_stat {pairNameToLRPathsDict}  {
-  set pairNameToColorStatsDict [dict create]
+# Returns list of {pairname diffR diffG diffB} records
+proc _map_pairname_to_color_stat_diff {pairNameToLRPathsDict}  {
+  set pairNameToColorChannelDiffList [list]
   set errCnt 0
   dict for {pairname lrPathsList} $pairNameToLRPathsDict {
     set pathLeft [lindex $lrPathsList 0];  set pathRight [lindex $lrPathsList 1]
@@ -342,7 +350,37 @@ proc _map_pairname_to_color_stat {pairNameToLRPathsDict}  {
     set avgB [expr ($meanBLeft + $meanBRight)/2]
     set diffB [expr {($avgB==0.0)? 0 \
                     : [expr {abs($meanBLeft - $meanBRight) / $avgB}]}]
-    # TODO: pack_pairname_to_colorstat_record
+    set rec [pack_pairname_to_rgb_record $pairname $diffR $diffG $diffB]
+    lappend pairNameToColorChannelDiffList $rec
   }
-  return  1;  # OK_TMP
+  return  $pairNameToColorChannelDiffList
 }
+
+
+proc _report_pairname_to_color_diff {pairNameToColorChannelDiffList}  {
+  set colorDiffCSVPath [file join $::STS(outDirPath) $::COLORDIFF_CSV_NAME]
+  set header [pack_pairname_to_rgb_record "pair-name" "diffR" "diffG" "diffB"]
+  set extendedListWithHeader [concat [list $header] $pairNameToColorChannelDiffList]
+  return  [ok_write_list_of_lists_into_csv_file $extendedListWithHeader \
+                                                $colorDiffCSVPath " "]
+}
+
+
+proc pack_pairname_to_rgb_record {pairname valForR valForG valForB} {
+  return  [list $pairname $valForR $valForG $valForB]
+}
+
+
+proc parse_pairname_to_rgb_record {recAsList pairname valForR valForG valForB} {
+  upvar $pairname nm
+  upvar $valForR  vR;  upvar $valForG  vG;  upvar $valForB  vB
+  if { 4 > [llength $recAsList] }  {
+    return  0
+  }
+  set nm    [lindex $recAsList 0]
+  set vR    [lindex $recAsList 1]
+  set vG    [lindex $recAsList 2]
+  set vB    [lindex $recAsList 3]
+  return  1
+}
+
