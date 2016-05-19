@@ -45,7 +45,7 @@
 		<cdate>1462219685184</cdate>
 		<name>SonyCam</name>
 		<pids>24,12,14</pids>
-		<tids>18,21,22,9,19,20,23</tids>
+		<tids>22,21,19,18,20,9,23</tids>
 	</Project>
 	<Task sr="task18">
 		<cdate>1461874985006</cdate>
@@ -72,7 +72,7 @@
 	</Task>
 	<Task sr="task19">
 		<cdate>1461852025455</cdate>
-		<edate>1462566447549</edate>
+		<edate>1463554214881</edate>
 		<id>19</id>
 		<nme>SonyCam_SetTv</nme>
 		<pri>100</pri>
@@ -108,7 +108,7 @@
 	</Task>
 	<Task sr="task20">
 		<cdate>1462100603047</cdate>
-		<edate>1462566394613</edate>
+		<edate>1463553734915</edate>
 		<id>20</id>
 		<nme>DetectTvThenSonyCam_SetTv</nme>
 		<pri>100</pri>
@@ -147,18 +147,41 @@
 	</Task>
 	<Task sr="task21">
 		<cdate>1462263560246</cdate>
-		<edate>1462566516094</edate>
+		<edate>1463554326160</edate>
 		<id>21</id>
 		<nme>SonyCam_CheckResponse</nme>
+		<pri>100</pri>
 		<Action sr="act0" ve="7">
 			<code>548</code>
 			<Str sr="arg0" ve="3">Going to check SonyCam response</Str>
-			<Int sr="arg1" val="1"/>
+			<Int sr="arg1" val="0"/>
 		</Action>
 		<Action sr="act1" ve="7">
-			<code>548</code>
-			<Str sr="arg0" ve="3">SonyCam request failed</Str>
+			<code>30</code>
+			<Int sr="arg0" val="500"/>
 			<Int sr="arg1" val="0"/>
+			<Int sr="arg2" val="0"/>
+			<Int sr="arg3" val="0"/>
+			<Int sr="arg4" val="0"/>
+		</Action>
+		<Action sr="act2" ve="7">
+			<code>61</code>
+			<label>SonyCam command performed</label>
+			<se>false</se>
+			<Int sr="arg0" val="200"/>
+			<ConditionList sr="if">
+				<Condition sr="c0" ve="3">
+					<lhs>%HTTPR</lhs>
+					<op>0</op>
+					<rhs>200</rhs>
+				</Condition>
+			</ConditionList>
+		</Action>
+		<Action sr="act3" ve="7">
+			<code>61</code>
+			<label>SonyCam command failed</label>
+			<se>false</se>
+			<Int sr="arg0" val="1000"/>
 			<ConditionList sr="if">
 				<Condition sr="c0" ve="3">
 					<lhs>%HTTPR</lhs>
@@ -167,7 +190,7 @@
 				</Condition>
 			</ConditionList>
 		</Action>
-		<Action sr="act2" ve="7">
+		<Action sr="act4" ve="7">
 			<code>548</code>
 			<Str sr="arg0" ve="3">SonyCam response: @ %HTTPD @</Str>
 			<Int sr="arg1" val="0"/>
@@ -182,18 +205,14 @@
 	</Task>
 	<Task sr="task22">
 		<cdate>1461852025455</cdate>
-		<edate>1462566291231</edate>
+		<edate>1463554168100</edate>
 		<id>22</id>
 		<nme>SonyCam_SetISO</nme>
 		<pri>100</pri>
 		<Action sr="act0" ve="7">
-			<code>523</code>
+			<code>548</code>
 			<Str sr="arg0" ve="3">SonyCam ISO &lt;== %SonyCam_ISO</Str>
-			<Str sr="arg1" ve="3"/>
-			<Img sr="arg2" ve="2"/>
-			<Int sr="arg3" val="0"/>
-			<Int sr="arg4" val="0"/>
-			<Int sr="arg5" val="3"/>
+			<Int sr="arg1" val="0"/>
 		</Action>
 		<Action sr="act1" ve="7">
 			<code>116</code>
