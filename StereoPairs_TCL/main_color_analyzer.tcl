@@ -66,12 +66,12 @@ proc color_analyzer_main {cmdLineAsStr}  {
   }
   ###puts $pairNameToLRPathsDict
 
-  if { 0 == [set pairNameToColorChannelDiffList \
+  if { 0 == [set pairNameAndColorChannelDiffList \
       [_map_pairname_to_color_stat_diff $pairNameToLRPathsDict]] } {
     return  0;  # error already printed
   }
 
-  if { 0 == [_report_pairname_to_color_diff $pairNameToColorChannelDiffList] } {
+  if { 0 == [_report_pairname_to_color_diff $pairNameAndColorChannelDiffList] } {
     return  0;  # error already printed
   }
 
@@ -328,7 +328,7 @@ proc _map_pairname_to_lrpaths {imgPathsLeft imgPathsRight}  {
 
 # Returns list of {pairname diffR diffG diffB} records
 proc _map_pairname_to_color_stat_diff {pairNameToLRPathsDict}  {
-  set pairNameToColorChannelDiffList [list]
+  set pairNameAndColorChannelDiffList [list]
   set errCnt 0
   dict for {pairname lrPathsList} $pairNameToLRPathsDict {
     set pathLeft [lindex $lrPathsList 0];  set pathRight [lindex $lrPathsList 1]
@@ -343,26 +343,86 @@ proc _map_pairname_to_color_stat_diff {pairNameToLRPathsDict}  {
     ok_trace_msg "Channel means for '$pairname' (L/R): Red $meanRLeft/$meanRRight, Green $meanGLeft/$meanGRight, Blue $meanBLeft/$meanBRight"
     set avgR [expr ($meanRLeft + $meanRRight)/2]
     set diffR [expr {($avgR==0.0)? 0 \
-                    : [expr {abs($meanRLeft - $meanRRight) / $avgR}]}]
+                : [expr {round(100 * abs($meanRLeft - $meanRRight) / $avgR)}]}]
     set avgG [expr ($meanGLeft + $meanGRight)/2]
     set diffG [expr {($avgG==0.0)? 0 \
-                    : [expr {abs($meanGLeft - $meanGRight) / $avgG}]}]
+                : [expr {round(100 * abs($meanGLeft - $meanGRight) / $avgG)}]}]
     set avgB [expr ($meanBLeft + $meanBRight)/2]
     set diffB [expr {($avgB==0.0)? 0 \
-                    : [expr {abs($meanBLeft - $meanBRight) / $avgB}]}]
+                : [expr {round(100 * abs($meanBLeft - $meanBRight) / $avgB)}]}]
     set rec [pack_pairname_to_rgb_record $pairname $diffR $diffG $diffB]
-    lappend pairNameToColorChannelDiffList $rec
+    lappend pairNameAndColorChannelDiffList $rec
   }
-  return  $pairNameToColorChannelDiffList
+  return  $pairNameAndColorChannelDiffList
 }
 
 
-proc _report_pairname_to_color_diff {pairNameToColorChannelDiffList}  {
+# Compares supplied {pair-name diffR(%) diffG(%) diffB(%)} records by total diff
+proc _less_then__pairname_to_color_diff_rec {rec1 rec2}  {
+  if { 0 == [parse_pairname_to_rgb_record $rec1 \
+                                    pairname1 diffR1 diffG1 diffB1] } {
+    ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%)} record {$rec1}"
+    return  0
+  }
+  if { 0 == [parse_pairname_to_rgb_record $rec2 \
+                                    pairname2 diffR2 diffG2 diffB2] } {
+    ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%)} record {$rec2}"
+    return  0
+  }
+  set totalDiff1 [expr $diffR1 + $diffG1 + $diffB1]
+  set totalDiff2 [expr $diffR2 + $diffG2 + $diffB2]
+  if { $totalDiff1 < $totalDiff2 }  { return -1 }
+  if { $totalDiff1 > $totalDiff2 }  { return  1 }
+  return  0
+}
+
+
+# Outputs "raw" and sorted-by-diff versions
+# of supplied list of {pair-name diffR(%) diffG(%) diffB(%)} lists.
+# Warns on elements with diff above the threshold
+proc _report_pairname_to_color_diff {pairNameAndColorChannelDiffList}  {
   set colorDiffCSVPath [file join $::STS(outDirPath) $::COLORDIFF_CSV_NAME]
-  set header [pack_pairname_to_rgb_record "pair-name" "diffR" "diffG" "diffB"]
-  set extendedListWithHeader [concat [list $header] $pairNameToColorChannelDiffList]
-  return  [ok_write_list_of_lists_into_csv_file $extendedListWithHeader \
-                                                $colorDiffCSVPath " "]
+  set colorDiffSortedCSVPath \
+                [file join $::STS(outDirPath) $::COLORDIFF_SORTED_CSV_NAME]
+  set header [pack_pairname_to_rgb_record "pair-name" "diffR(%)" "diffG(%)" "diffB(%)"]
+  set descrFormat " printing %s color-channel relative differences into '%s'"
+  set descr1 [format $descrFormat "unsorted" $colorDiffCSVPath]
+  set descr2 [format $descrFormat "sorted"   $colorDiffSortedCSVPath]
+  # print unsorted list of differences
+  set extendedListWithHeader [concat [list $header] $pairNameAndColorChannelDiffList]
+  set ret1 [ok_write_list_of_lists_into_csv_file $extendedListWithHeader \
+                                                 $colorDiffCSVPath " "]
+  if { $ret1 } {ok_info_msg "Success $descr1"} else {ok_err_msg  "Failed $descr1"}
+  # print sorted list of differences
+  set sortedDataList [lsort -command _less_then__pairname_to_color_diff_rec \
+                            -decreasing $pairNameAndColorChannelDiffList]
+  set extendedListWithHeader [concat [list $header] $sortedDataList]
+  set ret2 [ok_write_list_of_lists_into_csv_file $extendedListWithHeader \
+                                                $colorDiffSortedCSVPath " "]
+  if { $ret2 } {ok_info_msg "Success $descr2"} else {ok_err_msg  "Failed $descr2"}
+  # report stereopairs with differences above the threshold
+  set errCnt 0;  set aboveThreshCnt 0
+  foreach rec $pairNameAndColorChannelDiffList {
+    if { 0 == [parse_pairname_to_rgb_record $rec \
+                                      pairname diffR diffG diffB] } {
+      ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%)} record {$rec}"
+      incr errCnt 1;  continue
+    }
+    foreach ch [list [list $diffR red] [list $diffG green] [list $diffB blue]] {
+      set exceeds 0;  set d [lindex $ch 0]; set c [lindex $ch 1]
+      if { $d >= $::STS(colorDiffThresh) }  {
+        ok_warn_msg "Difference of $d% in $c channel of '$pairname' exceeds threshold of $::STS(colorDiffThresh)%"
+        set exceeds 1 
+      }
+    }
+    if { $exceeds }  {  incr aboveThreshCnt 1 }
+  }
+  if { ($errCnt == 0) && ($aboveThreshCnt == 0) }  {
+    ok_info_msg "None of [llength $pairNameAndColorChannelDiffList] stereopair(s) have color difference above the threshold of $::STS(colorDiffThresh)%"
+  } else {
+    ok_warn_msg "$aboveThreshCnt of [llength $pairNameAndColorChannelDiffList] stereopair(s) has/have color difference above the threshold of $::STS(colorDiffThresh)%; $errCnt error(s) occured"
+  }
+  return  [expr {($ret1 != 0) && ($ret2 != 0)}]
 }
 
 
