@@ -45,7 +45,20 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   if { 0 == [workarea_cleaner_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
+  # "original"s in wa-cleaner help  to CONSERVATIVELY find unused settings files
+  # choose type of originals; RAW is not required
+  if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
+                     $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
+    return  0;  # error already printed
+  }
+  if { 0 == [_workarea_cleaner_find_originals 0 origPathsLeft origPathsRight] } {
+    return  0;  # error already printed
+  }
 
+  set srcSettingsFiles [FindSettingsFilesForListedImages \
+                          [concat $origPathsLeft $origPathsRight] cntMissing 0]
+  # it's OK to have no settings files
+  
   if { 0 == [_workarea_cleaner_arrange_workarea] }  { return  0  };  # error already printed  return  1
 }
 
@@ -117,7 +130,9 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     ok_err_msg "Non-directory '$cml(-orig_img_dir)' specified as input directory"
     incr errCnt 1
   } else {
-    set ::STS(origImgRootPath) $cml(-orig_img_dir); # recurse under origImgRootPath
+    set ::STS(origImgRootPath) $cml(-orig_img_dir); # recurse under L/R subdir-s 
+    set ::STS(origImgDirLeft)  [file join $::STS(origImgRootPath) "L"]
+    set ::STS(origImgDirRight) [file join $::STS(origImgRootPath) "R"]
   }
   if { 0 == [info exists cml(-std_img_dir)] }  {
     ok_warn_msg "Workarea cleaner did not obtain directory with standard images"
@@ -160,6 +175,21 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
   #ok_info_msg "Command parameters are valid"
   return  1
 }
+
+
+# Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
+#   - standard and RAW images anywhere under originals' directories
+proc _workarea_cleaner_find_originals { \
+                                       origPathsLeftVar origPathsRightVar}  {
+  global STS ORIG_EXT_DICT
+  upvar $origPathsLeftVar  origPathsLeft
+  upvar $origPathsRightVar origPathsRight
+  TODO
+##   return  [dualcam_find_originals $searchHidden 0 $ORIG_EXT_DICT \
+ #             $STS(origImgDirLeft) $STS(origImgDirRight) "dummy-dirForUnmatched" \
+ #             origPathsLeft origPathsRight]
+ # }
+ ##
 
 
 

@@ -72,8 +72,8 @@ proc settings_copier_main {cmdLineAsStr}  {
 
   set srcSettingsFiles [FindSettingsFilesForListedImages $srcOrigPaths \
                                                          cntMissing 1]
-
   if { 0 == [llength $srcSettingsFiles] } { return  0 };  # error printed
+  
   # replicate and replace image name(s) inside
   if { 0 == [_clone_settings_files $srcSettingsFiles $dstDir \
                                    $::STS(doSimulateOnly)] } {
