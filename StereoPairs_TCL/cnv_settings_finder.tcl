@@ -174,7 +174,7 @@ proc _SelectSettingsFilesInFileList {filePaths}  {
       lappend fRes $sP
       ok_info_msg "Settings file '$sP' comes from RAW converter '[dict get $::CNV_SETTINGS_EXTENSIONS_DICT $fileExt]'"
     } else {
-      ok_info_msg "File '$sP' is not a RAW converter settings file"
+      ok_trace_msg "File '$sP' is not a RAW converter settings file"
     }    
   }
   return  $fRes

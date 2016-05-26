@@ -314,7 +314,7 @@ proc PurenameToGlobPattern {purename} {
 # Returns list of files related to image 'imageName' in directory 'imgDirPath'
 proc FindAllInputsForOneImageInDir {imageName imgDirPath} {
   set purename [AnyFileNameToPurename $imageName]; # TODO: ImageNameToPurename
-  set fullPattern [file join $imgDirPath [PurenameToGlobPattern $imageName]]
+  set fullPattern [file join $imgDirPath [PurenameToGlobPattern $purename]]
   set res [list]
   set tclResult [catch { set res [glob $fullPattern] } execResult]
   if { $tclResult != 0 } {

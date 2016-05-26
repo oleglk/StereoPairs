@@ -45,13 +45,15 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   if { 0 == [workarea_cleaner_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
+  if { 0 == [_workarea_cleaner_arrange_workarea] }  { return  0  };  # error already printed
+
   # "original"s in wa-cleaner help  to CONSERVATIVELY find unused settings files
   # choose type of originals; RAW is not required
   if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
                      $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
     return  0;  # error already printed
   }
-  if { 0 == [_workarea_cleaner_find_originals 0 origPathsLeft origPathsRight] } {
+  if { 0 == [_workarea_cleaner_find_originals origPathsLeft origPathsRight] } {
     return  0;  # error already printed
   }
 
@@ -59,7 +61,11 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
                           [concat $origPathsLeft $origPathsRight] cntMissing 0]
   # it's OK to have no settings files
   
-  if { 0 == [_workarea_cleaner_arrange_workarea] }  { return  0  };  # error already printed  return  1
+  # TODO: find standard-image files UNDER ultimate-results location
+  # TODO: find standard-image and RAW files UNDER originals' location
+  # TODO: find standard-image files UNDER standard-images' location
+  
+ return  1
 }
 
 
@@ -177,20 +183,20 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
 }
 
 
-# Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of:
-#   - standard and RAW images anywhere under originals' directories
-proc _workarea_cleaner_find_originals { \
-                                       origPathsLeftVar origPathsRightVar}  {
+# Puts into 'origPathsLeftVar' and 'origPathsRightVar' the paths of
+# standard and RAW images anywhere under originals' directories.
+# Returns number of files found.
+proc _workarea_cleaner_find_originals {origPathsLeftVar origPathsRightVar}  {
   global STS ORIG_EXT_DICT
   upvar $origPathsLeftVar  origPathsLeft
   upvar $origPathsRightVar origPathsRight
-  TODO
-##   return  [dualcam_find_originals $searchHidden 0 $ORIG_EXT_DICT \
- #             $STS(origImgDirLeft) $STS(origImgDirRight) "dummy-dirForUnmatched" \
- #             origPathsLeft origPathsRight]
- # }
- ##
-
+  set origExtLeft   [dict get $ORIG_EXT_DICT "L"]
+  set origExtRight  [dict get $ORIG_EXT_DICT "R"]
+  set origPathsLeft  [ok_find_files $STS(origImgDirLeft)  "*.$origExtLeft" ]
+  set origPathsRight [ok_find_files $STS(origImgDirRight) "*.$origExtRight"]
+  set cntFound [expr [llength $origPathsLeft] + [llength $origPathsRight]]
+  return  $cntFound
+}
 
 
 proc _workarea_cleaner_arrange_workarea {}  {
