@@ -8,6 +8,8 @@ package require ok_utils
 namespace import -force ::ok_utils::*
 
 
+set KNOWN_STD_IMG_EXTENSIONS_DICT [dict create jpg JPEG tif TIFF bmp BMP]
+
 proc FindFilePath {dirPath pureName ext descr {checkExist 0}} {
   set fPath [file join $dirPath "$pureName.$ext"]
   if { $checkExist != 0 } {
@@ -448,11 +450,10 @@ proc IsRawExtension {ext} {
 
 # Returns list of known standard-image extensions (no dot) in directory 'dirPath'
 proc FindStdImageExtensionsInDir {dirPath} {
-  set knownStdImgExtensions [dict create jpg JPEG tif TIFF]
   set allExtensions [FindSingleDotExtensionsInDir $dirPath]
   set foundExtensions [list]
   foreach ext $allExtensions {
-    if { 1 == [dict exists $knownStdImgExtensions $ext] }  {
+    if { 1 == [dict exists $::KNOWN_STD_IMG_EXTENSIONS_DICT $ext] }  {
       lappend foundExtensions $ext
     }
   }

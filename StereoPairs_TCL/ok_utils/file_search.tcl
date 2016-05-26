@@ -64,3 +64,18 @@ proc ::ok_utils::ok_find_files {directory pattern} {
   # Return only unique filenames
   return [lsort -unique $result]
 }
+
+
+# TODO
+proc ok_find_files_by_entensions {rootDir extList doRecurse}  {
+  set allExtFileList [list]
+  foreach ext $extList {
+    set oneExtFileList [expr {($doRecurse)? \
+                              [ok_find_files  $rootDir "*.$ext"] :
+                                [glob -nocomplain -directory $rootDir "*.$ext"]}]
+    if { 0 < [llength $oneExtFileList] }  {
+      ok_trace_msg TODO
+    }
+
+    lappend 
+}

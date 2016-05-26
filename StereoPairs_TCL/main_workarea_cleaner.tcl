@@ -61,7 +61,12 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
                           [concat $origPathsLeft $origPathsRight] cntMissing 0]
   # it's OK to have no settings files
   
-  # TODO: find standard-image files UNDER ultimate-results location
+  # TODO: find standard-image files IN ultimate-results location
+  set ultimateImages [_workarea_cleaner_find_ultimate_images]
+  if { 0 == [llength $ultimateImages] } {
+    return  0;  # error already printed
+  }
+
   # TODO: find standard-image and RAW files UNDER originals' location
   # TODO: find standard-image files UNDER standard-images' location
   
@@ -196,6 +201,19 @@ proc _workarea_cleaner_find_originals {origPathsLeftVar origPathsRightVar}  {
   set origPathsRight [ok_find_files $STS(origImgDirRight) "*.$origExtRight"]
   set cntFound [expr [llength $origPathsLeft] + [llength $origPathsRight]]
   return  $cntFound
+}
+
+
+# Finds and returns standard-image files IN ultimate-results location
+proc _workarea_cleaner_find_ultimate_images] {} {
+  set ultimateImages [ok_find_files_by_entensions $:STS(finalImgDirPath) \
+                                [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 0]
+  if { 0 < [llength $ultimateImages] }  {
+    ok_info_msg "Found [llength $ultimateImages] ultimate image(s) in '$:STS(finalImgDirPath)'"
+  } else {
+    ok_err_msg "No ultimate image(s) found in '$:STS(finalImgDirPath)'"
+  }
+  return  $ultimateImages
 }
 
 
