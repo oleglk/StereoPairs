@@ -160,7 +160,7 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     ok_err_msg "Non-directory '$cml(-final_img_dir)' specified as final images directory"
     incr errCnt 1
   } else {
-    set ::STS(finalImgRootPath) $cml(-final_img_dir)
+    set ::STS(finalImgDirPath) $cml(-final_img_dir)
   }
   if { 0 == [info exists cml(-out_dir)] }  {
     ok_err_msg "Please specify output directory; example: -out_dir D:/Photo/Work"
@@ -205,13 +205,13 @@ proc _workarea_cleaner_find_originals {origPathsLeftVar origPathsRightVar}  {
 
 
 # Finds and returns standard-image files IN ultimate-results location
-proc _workarea_cleaner_find_ultimate_images] {} {
-  set ultimateImages [ok_find_files_by_entensions $:STS(finalImgDirPath) \
+proc _workarea_cleaner_find_ultimate_images {} {
+  set ultimateImages [ok_find_files_by_entensions $::STS(finalImgDirPath) \
                                 [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 0]
   if { 0 < [llength $ultimateImages] }  {
-    ok_info_msg "Found [llength $ultimateImages] ultimate image(s) in '$:STS(finalImgDirPath)'"
+    ok_info_msg "Found [llength $ultimateImages] ultimate image(s) in '$::STS(finalImgDirPath)'"
   } else {
-    ok_err_msg "No ultimate image(s) found in '$:STS(finalImgDirPath)'"
+    ok_err_msg "No ultimate image(s) found in '$::STS(finalImgDirPath)'"
   }
   return  $ultimateImages
 }

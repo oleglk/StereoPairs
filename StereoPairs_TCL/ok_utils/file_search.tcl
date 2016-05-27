@@ -3,8 +3,9 @@
 
 namespace eval ::ok_utils:: {
 
-  namespace export \
-    ok_find_files
+  namespace export                \
+    ok_find_files                 \
+    ok_find_files_by_entensions
 }
 
 
@@ -66,16 +67,18 @@ proc ::ok_utils::ok_find_files {directory pattern} {
 }
 
 
-# TODO
-proc ok_find_files_by_entensions {rootDir extList doRecurse}  {
+# Finds and returns paths of files (as a list) with extensions in 'extList':
+# - if 'doRecurse' == 0, searches only in 'rootDir'
+# - if 'doRecurse' != 0, searches in 'rootDir' and its subdirectories recursively
+proc ::ok_utils::ok_find_files_by_entensions {rootDir extList doRecurse}  {
   set allExtFileList [list]
+  set whereDescr [expr {($doRecurse)? "under" : "in"}]
   foreach ext $extList {
     set oneExtFileList [expr {($doRecurse)? \
                               [ok_find_files  $rootDir "*.$ext"] :
-                                [glob -nocomplain -directory $rootDir "*.$ext"]}]
-    if { 0 < [llength $oneExtFileList] }  {
-      ok_trace_msg TODO
-    }
-
-    lappend 
+                              [glob -nocomplain -directory $rootDir "*.$ext"]}]
+    ok_trace_msg "Found [llength $oneExtFileList] '.$ext' file(s) $whereDescr '$rootDir'"
+    set allExtFileList [concat $allExtFileList $oneExtFileList]
+  }
+  return  $allExtFileList
 }
