@@ -23,6 +23,8 @@ namespace import -force ::ok_utils::*
 proc _workarea_cleaner_set_defaults {}  {
   set ::STS(origImgRootPath)  ""
   set ::STS(stdImgRootPath)   ""
+  set ::STS(origImgDirLeft)   ""
+  set ::STS(origImgDirRight)  ""
   set ::STS(globalImgSettingsDir)  "" ;  # global settings dir; relevant for some converters
   set ::STS(finalImgDirPath)       "" ;  # directory with ultimate images
   set ::STS(outDirPath)       ""
@@ -48,29 +50,44 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   if { 0 == [_workarea_cleaner_arrange_workarea] }  { return  0  };  # error already printed
 
   # "original"s in wa-cleaner help  to CONSERVATIVELY find unused settings files
-  # choose type of originals; RAW is not required
-  if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
-                     $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
-    return  0;  # error already printed
-  }
-  if { 0 == [_workarea_cleaner_find_originals origPathsLeft origPathsRight] } {
-    return  0;  # error already printed
-  }
+  if { $STS(origImgRootPath) != "" } {; # requested to clean originals and settings
+    # choose type of originals; RAW is not required
+    if { 0 == [set ORIG_EXT_DICT [dualcam_choose_and_check_type_of_originals \
+                       $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
+      return  0;  # error already printed
+    }
+    if { 0 == [_workarea_cleaner_find_originals origPathsLeft origPathsRight]} {
+      return  0;  # error already printed
+    }
 
-  set srcSettingsFiles [FindSettingsFilesForListedImages \
+    set cnvSettingsFiles [FindSettingsFilesForListedImages \
                           [concat $origPathsLeft $origPathsRight] cntMissing 0]
-  # it's OK to have no settings files
+    # it's OK to have no settings files
+  } else {
+    set cnvSettingsFiles [list]; # cannot safely clean settings without originals
+  }
   
-  # TODO: find standard-image files IN ultimate-results location
+  # find standard-image files IN ultimate-results location
   set ultimateImages [_workarea_cleaner_find_ultimate_images]
   if { 0 == [llength $ultimateImages] } {
     return  0;  # error already printed
   }
 
-  # TODO: find standard-image and RAW files UNDER originals' location
-  # TODO: find standard-image files UNDER standard-images' location
-  
- return  1
+  # find standard-image and RAW files UNDER originals' location
+  set originalImages [_workarea_cleaner_find_original_images]
+  # it's OK to have no original image files
+
+  # find standard-image files UNDER standard-images' location
+  set intermediateImages [_workarea_cleaner_find_intermediate_images]
+  # it's OK to have no intermediate image files
+
+  set cleanCandidates [concat $cnvSettingsFiles $originalImages $intermediateImages]
+  if { 0 == [llength $cleanCandidates] }  {
+    ok_warn_msg "No candidate files to clean were found; there's nothing to do."
+    return  0
+  }
+  ok_info_msg "Found [llength $cleanCandidates] potential candidate-to-clean file(s)"
+  return  1
 }
 
 
@@ -82,7 +99,7 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
   -help {"" "print help"} \
   -global_img_settings_dir {val	"full path of the directory where the RAW converter keeps all image-settings files - specify if relevant for your converter"} \
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
-  -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
+  -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW and/or intermediate images); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
   -final_img_dir {val	"directory with ultimate stereopair images"} \
   -out_dir {val	"output directory"} \
   -backup_dir {val	"directory to hide unused files in"} \
@@ -135,8 +152,7 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     }
   }  
   if { 0 == [info exists cml(-orig_img_dir)] }  {
-    ok_err_msg "Please specify directory with original images; example: -orig_img_dir D:/Photo/Work"
-    incr errCnt 1
+    ok_warn_msg "Workarea cleaner did not obtain directory with original images"
   } elseif { 0 == [file isdirectory $cml(-orig_img_dir)] }  {
     ok_err_msg "Non-directory '$cml(-orig_img_dir)' specified as input directory"
     incr errCnt 1
@@ -206,6 +222,7 @@ proc _workarea_cleaner_find_originals {origPathsLeftVar origPathsRightVar}  {
 
 # Finds and returns standard-image files IN ultimate-results location
 proc _workarea_cleaner_find_ultimate_images {} {
+  ok_info_msg "Start searching for ultimate images"
   set ultimateImages [ok_find_files_by_entensions $::STS(finalImgDirPath) \
                                 [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 0]
   if { 0 < [llength $ultimateImages] }  {
@@ -214,6 +231,47 @@ proc _workarea_cleaner_find_ultimate_images {} {
     ok_err_msg "No ultimate image(s) found in '$::STS(finalImgDirPath)'"
   }
   return  $ultimateImages
+}
+
+
+# Finds and returns RAW- and standard-image files UNDER original-images location
+proc _workarea_cleaner_find_original_images {} {
+  if { $::STS(origImgRootPath) == "" }  {
+    ok_info_msg "Cleaning original images not requested"
+    return  [list]
+  }
+  ok_info_msg "Start searching for original images"
+  set allExtensions [concat [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] \
+                            [dict keys $::KNOWN_RAW_EXTENSIONS_DICT]]
+  set originalImagesLeft [ok_find_files_by_entensions $::STS(origImgDirLeft) \
+                                                      $allExtensions 1]
+  set originalImagesRight [ok_find_files_by_entensions $::STS(origImgDirRight) \
+                                                       $allExtensions 1]
+  set originalImages [concat $originalImagesLeft $originalImagesRight]
+  if { 0 < [llength $originalImages] }  {
+    ok_info_msg "Found [llength $originalImagesLeft] original image(s) under '$::STS(origImgDirLeft)' and [llength $originalImagesRight] original image(s) under '$::STS(origImgDirRight)'"
+  } else {
+    ok_info_msg "No original image(s) found under '$::STS(origImgDirLeft)' and '$::STS(origImgDirRight)'"
+  }
+  return  $originalImages
+}
+
+
+# Finds and returns standard-image files UNDER intermediate-images location
+proc _workarea_cleaner_find_intermediate_images {} {
+  if { $::STS(stdImgRootPath) == "" }  {
+    ok_info_msg "Cleaning intermediate images not requested"
+    return  [list]
+  }
+  ok_info_msg "Start searching for intermediate images"
+  set intermediateImages [ok_find_files_by_entensions $::STS(stdImgRootPath) \
+                                [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 0]
+  if { 0 < [llength $intermediateImages] }  {
+    ok_info_msg "Found [llength $intermediateImages] intermediate image(s) in '$::STS(stdImgRootPath)'"
+  } else {
+    ok_info_msg "No intermediate image(s) found in '$::STS(stdImgRootPath)'"
+  }
+  return  $intermediateImages
 }
 
 
