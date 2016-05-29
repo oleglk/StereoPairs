@@ -11,6 +11,7 @@ namespace import -force ::ok_utils::*
 
 set imgNameEndingLeft   "_l"
 set imgNameEndingRight  "_r"
+set imgFileIdPattern    {[0-9]+} ;  # example: "dsc(01234).jpg"
 
 
 proc build_spm_left_purename  {basePurename} {
@@ -73,4 +74,36 @@ proc build_suffix_from_peer_purename {peerPureName}  {
   }
   set suffix [format "-%s" $peerNameNum]
   return  $suffix
+}
+
+
+# Puts into 'idLeft' and 'idRight' image-file IDs found in 'pairNamesOrPaths'.
+# "dsc003-007.tif" => {003 007}
+# Returns 1 on success, 0 on invalid name.
+proc find_lr_image_ids_in_pairname {pairNameOrPath idLeft idRight {priErr 0}}  {
+  upvar $idLeft  name1
+  upvar $idRight name2
+  set pureNameNoExt [file rootname [file tail $pairNameOrPath]]
+  set spPattern "($::imgFileIdPattern)-($::imgFileIdPattern)"
+  ok_trace_msg "Match '$pureNameNoExt' by '$spPattern'"
+  if { 1 == [regexp -nocase -- $spPattern $pureNameNoExt full name1 name2] }  {
+    return  1
+  }
+  if { $priErr }  {
+    ok_err_msg "Invalid pair image name '$pairNameOrPath' (pure-name='$pureNameNoExt')"
+  }
+  return  0
+}
+
+
+# Returns list of image-file IDs found in 'pairNamesOrPaths'.
+# "dsc003-007.tif" => {003 007}
+proc find_lr_image_ids_in_pair_namelist {pairNamesOrPaths {priErr 0}}  {
+  set lrNames [list]
+  foreach pairPath $pairNamesOrPaths {
+    if { 1 == [find_lr_image_ids_in_pairname $pairPath name1 name2 $priErr] }  {
+      lappend lrNames $name1;  lappend lrNames $name2
+    }
+  }
+  return  $lrNames
 }
