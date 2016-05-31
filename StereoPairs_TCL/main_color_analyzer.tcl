@@ -19,8 +19,8 @@ package require img_proc;   namespace import -force ::img_proc::*
 # TODO: extract a common part from _color_analyzer_set_defaults() for the whole project
 proc _color_analyzer_set_defaults {}  {
   set ::STS(stdImgRootPath)   ""
-  set ::STS(stdImgDirLeft)    ""
-  set ::STS(stdImgDirRight)   ""
+  set ::STS(stdImgPathLeft)   "" ;  # full path or relative path under CWD
+  set ::STS(stdImgPathRight)  "" ;  # full path or relative path under CWD
   set ::STS(stdImgExtLeft)    "" ;  # filename extension for left  images
   set ::STS(stdImgExtRight)   "" ;  # filename extension for right images
   set ::STS(outDirPath)       ""
@@ -86,7 +86,9 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
   set descrList \
 [list \
   -help {"" "print help"} \
-  -img_dir {val	"input directory; left (right) images to be checked expected in 'img_dir'/L ('img_dir'/R)"} \
+  -img_dir {val	"root input directory"} \
+  -left_img_subdir {val	"subdirectory for left images; left images to be checked expected in 'img_dir'/'left_img_subdir')"} \
+  -right_img_subdir {val "subdirectory for right images; right images to be checked expected in 'img_dir'/'right_img_subdir')"} \
   -ext_left {val	"file extension of left images; standard type only (tif/jpg/etc.)"} \
   -ext_right {val	"file extension of right images; standard type only (tif/jpg/etc.)"} \
   -out_dir {val	"output directory"} \
@@ -111,7 +113,7 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg " color_analyzer_main \"-img_dir . -out_dir ./OUT -ext_left jpg -ext_right jpg -warn_color_diff_above 15\""
+    ok_info_msg " color_analyzer_main \"-img_dir . -left_img_subdir L -right_img_subdir R -out_dir ./OUT -ext_left jpg -ext_right jpg -warn_color_diff_above 15\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -131,8 +133,8 @@ proc _color_analyzer_parse_cmdline {cmlArrName}  {
   set errCnt 0
 
 ##   set ::STS(stdImgRootPath)   ""
- #   set ::STS(stdImgDirLeft)    ""
- #   set ::STS(stdImgDirRight)   ""
+ #   set ::STS(stdImgPathLeft)    ""
+ #   set ::STS(stdImgPathRight)   ""
  #   set ::STS(stdImgExtLeft)    "" ;  # filename extension for left  images
  #   set ::STS(stdImgExtRight)   "" ;  # filename extension for right images
  #   set ::STS(outDirPath)       ""
@@ -153,14 +155,26 @@ proc _color_analyzer_parse_cmdline {cmlArrName}  {
     incr errCnt 1
   } else {
     set ::STS(stdImgRootPath) $cml(-img_dir)
-    set ::STS(stdImgDirLeft)  [file join $::STS(stdImgRootPath) "L"]
-    set ::STS(stdImgDirRight) [file join $::STS(stdImgRootPath) "R"]
-    if { 0 == [file isdirectory $::STS(stdImgDirLeft)] }  {
-      ok_err_msg "Non-directory '$::STS(stdImgDirLeft)' specified as left input directory"
+    if { 0 == [info exists cml(-left_img_subdir)] }  {
+      ok_err_msg "Please specify input subdirectory for left images; example: -left_img_subdir L/TIFF"
+      incr errCnt 1
+    } else {
+      set ::STS(stdImgPathLeft)  [file join $::STS(stdImgRootPath) \
+                                            $cml(-left_img_subdir)]
+    }
+    if { 0 == [info exists cml(-right_img_subdir)] }  {
+      ok_err_msg "Please specify input subdirectory for right images; example: -right_img_subdir R/TIFF"
+      incr errCnt 1
+    } else {
+      set ::STS(stdImgPathRight)  [file join $::STS(stdImgRootPath) \
+                                            $cml(-right_img_subdir)]
+    }
+    if { 0 == [file isdirectory $::STS(stdImgPathLeft)] }  {
+      ok_err_msg "Non-directory '$::STS(stdImgPathLeft)' specified as left input directory"
       incr errCnt 1
     }
-    if { 0 == [file isdirectory $::STS(stdImgDirRight)] }  {
-      ok_err_msg "Non-directory '$::STS(stdImgDirRight)' specified as right input directory"
+    if { 0 == [file isdirectory $::STS(stdImgPathRight)] }  {
+      ok_err_msg "Non-directory '$::STS(stdImgPathRight)' specified as right input directory"
       incr errCnt 1
     }
   }
@@ -207,7 +221,7 @@ proc _color_analyzer_find_lr_images {imgPathsLeftVar imgPathsRightVar}  {
   upvar $imgPathsLeftVar  imgPathsLeft
   upvar $imgPathsRightVar imgPathsRight
   return  [dualcam_find_lr_images $IMG_EXT_DICT \
-            $STS(stdImgDirLeft) $STS(stdImgDirRight) imgPathsLeft imgPathsRight]
+            $STS(stdImgPathLeft) $STS(stdImgPathRight) imgPathsLeft imgPathsRight]
 }
 
 
