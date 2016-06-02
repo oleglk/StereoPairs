@@ -88,6 +88,15 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
     return  0
   }
   ok_info_msg "Found [llength $cleanCandidates] potential candidate-to-clean file(s)"
+  
+  set usedIDsDict [ok_list_to_dict_set \
+                        [find_lr_image_ids_in_pair_namelist $ultimateImages 1]]
+  if { 0 == [dict size $usedIDsDict] }  {
+    ok_warn_msg "No used image IDs were found; this is suspicious."
+    return  0
+  }
+  ok_info_msg "Found [dict size $usedIDsDict] used image ID(s)"
+  
   return  1
 }
 

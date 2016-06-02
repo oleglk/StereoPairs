@@ -105,7 +105,7 @@ proc find_lr_image_ids_in_pair_namelist {pairNamesOrPaths {priErr 0}}  {
       lappend lrNames $name1;  lappend lrNames $name2
     }
   }
-  return  $lrNames
+  return  [lsort -unique $lrNames]
 }
 
 
@@ -115,7 +115,7 @@ proc find_lr_image_ids_in_pair_namelist {pairNamesOrPaths {priErr 0}}  {
 proc find_1or2_image_ids_in_imagename {imgNameOrPath id1 id2 {priErr 0}}  {
   upvar $id1 name1
   upvar $id2 name2
-  if { 1 == [find_lr_image_ids_in_pairname $imgNameOrPath name1 name2] }  {
+  if { 1 == [find_lr_image_ids_in_pairname $imgNameOrPath name1 name2 0] }  {
     return  1;  # OK, it was a pair filename
   }
   set pureNameNoExt [file rootname [file tail $imgNameOrPath]]
@@ -129,4 +129,18 @@ proc find_1or2_image_ids_in_imagename {imgNameOrPath id1 id2 {priErr 0}}  {
     ok_err_msg "Invalid image name '$imgNameOrPath' (pure-name='$pureNameNoExt')"
   }
   return  0
+}
+
+
+# Returns list of image-file IDs found in 'imgNamesOrPaths'.
+# "dsc003-007.tif" => {003 007}
+proc find_image_ids_in_image_namelist {imgNamesOrPaths {priErr 0}}  {
+  set lrNames [list]
+  foreach imgPath $imgNamesOrPaths {
+    if { 1 == [find_1or2_image_ids_in_imagename $imgPath name1 name2 $priErr] }  {
+      lappend lrNames $name1
+      if { $name2 != "" } { lappend lrNames $name2 }
+    }
+  }
+  return  [lsort -unique $lrNames]
 }

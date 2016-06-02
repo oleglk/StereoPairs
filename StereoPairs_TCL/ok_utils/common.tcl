@@ -11,6 +11,7 @@ namespace eval ::ok_utils:: {
 
     namespace export \
 	ok_list_to_set \
+  ok_list_to_dict_set \
 	ok_name_in_array \
 	ok_discard_empty_list_elements \
 	ok_subtract_list_from_list \
@@ -41,6 +42,7 @@ namespace eval ::ok_utils:: {
   ok_run_loud_os_cmd
 }
 
+
 # Converts list 'theList' into array 'setName' of {elem->"+"} mappings.
 # Returns number of elements in 'theList'
 proc ::ok_utils::ok_list_to_set {theList setName} {
@@ -52,6 +54,17 @@ proc ::ok_utils::ok_list_to_set {theList setName} {
 	incr cnt
     }
     return $cnt
+}
+
+
+# Converts list 'theList' into dictionary of {elem->"+"} mappings.
+# Returns the dictionary.
+proc ::ok_utils::ok_list_to_dict_set {theList} {
+  set theDict [dict create]
+  foreach el $theList {
+    dict set theDict $el "+"
+  }
+  return $theDict
 }
 
 # Checks whether 'name' appears in 'arrayName'
