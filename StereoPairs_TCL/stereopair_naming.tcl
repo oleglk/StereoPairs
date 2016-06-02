@@ -107,3 +107,26 @@ proc find_lr_image_ids_in_pair_namelist {pairNamesOrPaths {priErr 0}}  {
   }
   return  $lrNames
 }
+
+
+# Puts into 'id1' and optionally 'id2' image-file IDs found in 'imgNamesOrPaths'.
+# "dsc003-007.tif" => {"003" "007"};  "dsc0053.tif" => {"0053" ""}
+# Returns 1 on success, 0 on invalid name.
+proc find_1or2_image_ids_in_imagename {imgNameOrPath id1 id2 {priErr 0}}  {
+  upvar $id1 name1
+  upvar $id2 name2
+  if { 1 == [find_lr_image_ids_in_pairname $imgNameOrPath name1 name2] }  {
+    return  1;  # OK, it was a pair filename
+  }
+  set pureNameNoExt [file rootname [file tail $imgNameOrPath]]
+  set spPattern "($::imgFileIdPattern)-($::imgFileIdPattern)"
+  ok_trace_msg "Match '$pureNameNoExt' by '$::imgFileIdPattern'"
+  if { 1 == [regexp -nocase -- $::imgFileIdPattern $pureNameNoExt name1] }  {
+    set name2 ""
+    return  1
+  }
+  if { $priErr }  {
+    ok_err_msg "Invalid image name '$imgNameOrPath' (pure-name='$pureNameNoExt')"
+  }
+  return  0
+}
