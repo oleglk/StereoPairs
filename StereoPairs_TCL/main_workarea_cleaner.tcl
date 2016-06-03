@@ -222,6 +222,15 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     #ok_err_msg "Error(s) in command parameters!"
     return  0
   }
+  set waDirs [ok_discard_empty_list_elements \
+        [list $::STS(origImgRootPath) $::STS(stdImgRootPath) $::STS(backupDir)]]
+  if { "" != [set ::STS(workAreaRootPath) \
+                                  [ok_find_filepaths_common_prefix $waDirs]] } {
+    ok_info_msg "Common work-area root directory is '$::STS(workAreaRootPath)'"
+  } else {
+    ok_info_msg "No common work-area root directory assumed"
+  }
+  
   #ok_info_msg "Command parameters are valid"
   return  1
 }
