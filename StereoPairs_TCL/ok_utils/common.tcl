@@ -476,6 +476,26 @@ proc ::ok_utils::ok_dirpath_equal {dirPath1 dirPath2} {
 }
 
 
+#~ proc ::ok_utils::ok_filepaths_common_prefix {pathList}  {
+  #~ set normPathList [list]
+  #~ foreach p $pathList { lappend normPathList [file normalize $p] }
+  #~ set normPathList [lsort -unique $normPathList]
+  #~ set listOfComponentLists [list] ;  # list of lists of path components
+  #~ foreach onePath $normPathList {
+    #~ if { 0 == llength [set components [file split $onePath]] }  {
+      #~ ok_err_msg "Empty/invalid path string '$onePath'"
+      #~ return  ""
+    #~ }
+    #~ lappend listOfComponentLists $components
+  #~ }
+  #~ set prefix [list];  # will contain ordered list of path components
+  #~ set componentsLeft 1
+  #~ set currComponent "" 
+  #~ while $componentsLeft {
+    #~ foreach path 
+  #~ }
+#~ }
+
 # Builds and returns an ordered list of run-time arguments
 # for (existing!) procedure 'procName'
 # out of argument-spec array 'swArgArr' that maps argument name to its value.
