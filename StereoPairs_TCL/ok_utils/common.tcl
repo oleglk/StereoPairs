@@ -36,6 +36,7 @@ namespace eval ::ok_utils:: {
 	ok_mkdir \
 	ok_is_underlying_filepath \
   ok_dirpath_equal  \
+  ok_find_filepaths_common_prefix \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
   ok_run_silent_os_cmd \
@@ -476,25 +477,45 @@ proc ::ok_utils::ok_dirpath_equal {dirPath1 dirPath2} {
 }
 
 
-#~ proc ::ok_utils::ok_filepaths_common_prefix {pathList}  {
-  #~ set normPathList [list]
-  #~ foreach p $pathList { lappend normPathList [file normalize $p] }
-  #~ set normPathList [lsort -unique $normPathList]
-  #~ set listOfComponentLists [list] ;  # list of lists of path components
-  #~ foreach onePath $normPathList {
-    #~ if { 0 == llength [set components [file split $onePath]] }  {
-      #~ ok_err_msg "Empty/invalid path string '$onePath'"
-      #~ return  ""
-    #~ }
-    #~ lappend listOfComponentLists $components
-  #~ }
-  #~ set prefix [list];  # will contain ordered list of path components
-  #~ set componentsLeft 1
-  #~ set currComponent "" 
-  #~ while $componentsLeft {
-    #~ foreach path 
-  #~ }
-#~ }
+proc ::ok_utils::ok_find_filepaths_common_prefix {pathList}  {
+  set normPathList [list]
+  foreach p $pathList { lappend normPathList [file normalize $p] }
+  set normPathList [lsort -unique $normPathList]
+  set listOfComponentLists [list] ;  # list of lists of path components
+  set minCompNum 999999 ;   # for min num of path components among 'pathList'
+  foreach onePath $normPathList {
+    set components [file split $onePath]
+    if { 0 == [set lng [llength $components]] }  {
+      ok_err_msg "Empty/invalid path string '$onePath'"
+      return  ""
+    }
+    lappend listOfComponentLists $components
+    if { $minCompNum > $lng } { set minCompNum $lng }
+  }
+  ok_trace_msg "Start searching for common prefix in {$normPathList}"
+  set prefixList [list];  # will contain ordered list of path components
+  for {set i 1} {$i < $lng} {incr i 1}  {
+    set currComponent [lindex [lindex $listOfComponentLists 0] $i]; # [i] of 1st path
+    foreach onePathCompList [lrange $listOfComponentLists 1 end] {
+      set componentToCheck [lindex $onePathCompList $i]
+      if { $currComponent != $componentToCheck }  {
+        ok_trace_msg "Prefix match ended at '$currComponent' vs '$componentToCheck' in {$onePathCompList}"
+        break
+      }
+      lappend prefixList $currComponent
+      ok_trace_msg "Prefix match continues at '$currComponent'"
+    }
+  }
+  ok_trace_msg "Done  searching for common prefix in {$normPathList}"
+  if { 0 == [llength $prefixList] }  {
+    ok_trace_msg "No common prefix found in {$pathList}";    return  ""
+  }
+  set prefix ""
+  foreach component $prefixList { set prefix [file join $prefix $component] }
+  ok_trace_msg "Common prefix '$prefix' found in {$pathList}"
+  return  $prefix
+}
+
 
 # Builds and returns an ordered list of run-time arguments
 # for (existing!) procedure 'procName'
