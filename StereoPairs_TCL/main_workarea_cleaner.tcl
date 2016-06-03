@@ -21,6 +21,7 @@ namespace import -force ::ok_utils::*
 
 # TODO: extract a common part from _workarea_cleaner_set_defaults() for the whole project
 proc _workarea_cleaner_set_defaults {}  {
+  set ::STS(workAreaRootPath) "" ;  # we may deduce common root for all dir-s
   set ::STS(origImgRootPath)  ""
   set ::STS(stdImgRootPath)   ""
   set ::STS(origImgDirLeft)   ""
@@ -48,6 +49,11 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
     return  0;  # error or help already printed
   }
   if { 0 == [_workarea_cleaner_arrange_workarea] }  { return  0  };  # error already printed
+  
+  # set variables required for maintaining backup/trash directory
+  set ::ok_utils::WORK_AREA_ROOT_DIR    "" ;   # OK for this use-case
+  set ::ok_utils::BACKUP_ROOT_NAME      $STS(backupDir)
+  set ::ok_utils::_LAST_BACKUP_DIR_PATH ""
 
   # "original"s in wa-cleaner help  to CONSERVATIVELY find unused settings files
   if { $STS(origImgRootPath) != "" } {; # requested to clean originals and settings
@@ -104,7 +110,7 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
     return  0
   }
   
-  return  1
+  return  [ok_move_files_to_backup_dir "HideUnusedFiles" $filesToHide]
 }
 
 

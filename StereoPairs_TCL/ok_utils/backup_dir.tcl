@@ -9,8 +9,9 @@ if { [info exists OK_TCLSRC_ROOT] } {;   # assume running as a part of LazyConv
 
 namespace eval ::ok_utils:: {
 
-  namespace export \
-    ok_provide_backup_dir
+  namespace export                \
+    ok_provide_backup_dir         \
+    ok_move_files_to_backup_dir
     
   variable WORK_AREA_ROOT_DIR ; # path of work-area root directory
   variable BACKUP_ROOT_NAME ;   # name for backup subdirectory under work-area
@@ -68,3 +69,22 @@ proc ::ok_utils::ok_provide_backup_dir {dirNameKey {trashDirPath ""}}  {
   return  $trashDirPath
 }
 
+
+proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
+                                                          {trashDirPath ""}}  {
+  variable WORK_AREA_ROOT_DIR
+  if { "" == [set destRootDir [ok_provide_backup_dir \
+                                                  $dirNameKey $trashDirPath]]} {
+    return  0;  # error already printed
+  }
+  if { 0 == [llength $filePathsList] }  {
+    ok_warn_msg "No files provided for trash/backup for '$dirNameKey'"
+    return  1;  # nothing to do
+  }
+  ok_info_msg "Start moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
+  foreach fPath $filePathsList {
+    ok_trace_msg "Going to move '$fPath' to under '$destRootDir'"
+  }
+  ok_info_msg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
+  return  1
+}
