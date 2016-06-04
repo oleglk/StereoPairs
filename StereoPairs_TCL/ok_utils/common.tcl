@@ -37,6 +37,7 @@ namespace eval ::ok_utils:: {
 	ok_is_underlying_filepath \
   ok_dirpath_equal  \
   ok_find_filepaths_common_prefix \
+  ok_strip_prefix_from_filepath   \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
   ok_run_silent_os_cmd \
@@ -460,7 +461,7 @@ proc ::ok_utils::ok_mkdir {dirPath} {
 proc ::ok_utils::ok_is_underlying_filepath {loPath hiPath} {
     set loPathN [file normalize $loPath]
     set hiPathN [file normalize $hiPath]
-    ok_assert {[file isdirectory $hiPath]} ""
+    ok_assert {(0 == [file exists $hiPath]) || ([file isdirectory $hiPath])} ""
     # is 'hiPathN' a prefix for 'loPathN'?
     if { 0 != [string first $hiPathN $loPathN] } {
 	return  0
@@ -514,6 +515,49 @@ proc ::ok_utils::ok_find_filepaths_common_prefix {pathList}  {
   foreach component $prefixList { set prefix [file join $prefix $component] }
   ok_trace_msg "Common prefix '$prefix' found in {$pathList}"
   return  $prefix
+}
+
+
+# If 'filePath' lies under 'pathPrefix' directory,
+#   returns path equivalent to 'filePath' that's relative to 'pathPrefix'.
+# Otherwise returns 'filePath'.
+# Implementation borrowed from http://wiki.tcl.tk/15925
+proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix}  {
+  ok_trace_msg "Try to strip '$dirPathPrefix' from '$filePath'"
+  if { 0 == [ok_is_underlying_filepath $filePath $dirPathPrefix] }  {
+    return  $filePath
+  }
+  set cc [file split [file normalize $dirPathPrefix]]
+  set tt [file split [file normalize $filePath]]
+  # the filowing check could be redundant; just copied from original
+  if {![string equal [lindex $cc 0] [lindex $tt 0]]} {
+      # not on *n*x then - ("$filePath not on same volume as $dirPathPrefix")
+      return  $filePath
+  }
+  while {[string equal [lindex $cc 0] [lindex $tt 0]] && [llength $cc] > 0} {
+      # discard matching components from the front
+      set cc [lreplace $cc 0 0]
+      set tt [lreplace $tt 0 0]
+  }
+  set prefix ""
+  # The below code in the original guaranteed path relative to current directory
+  # In our case te prefix should have been fully included, so [llength $cc] == 0
+##   if {[llength $cc] == 0} {
+ #       # just the file name, so filePath is lower down (or in same place)
+ #       set prefix "."
+ #   }
+ #   # step up the tree
+ #   for {set i 0} {$i < [llength $cc]} {incr i} {
+ #       append prefix " .."
+ #   }
+ ##
+  if { 0 != [llength $cc] } {
+    set msg "Error making relative path from {'$filePath' '$dirPathPrefix'}"
+    ok_err_msg "$msg";  return -code error $msg
+  }
+
+  # stick it all together (the eval is to flatten the filePath list)
+  return [eval file join $prefix $tt]
 }
 
 

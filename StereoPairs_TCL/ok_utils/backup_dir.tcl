@@ -83,7 +83,8 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
   }
   ok_info_msg "Start moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   foreach fPath $filePathsList {
-    ok_trace_msg "Going to move '$fPath' to under '$destRootDir'"
+    set pathInWA [ok_strip_prefix_from_filepath $fPath $WORK_AREA_ROOT_DIR]
+    ok_trace_msg "Going to move '$fPath' (as '$pathInWA') to under '$destRootDir'"
   }
   ok_info_msg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   return  1
