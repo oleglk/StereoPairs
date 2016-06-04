@@ -495,7 +495,7 @@ proc ::ok_utils::ok_find_filepaths_common_prefix {pathList}  {
   }
   ok_trace_msg "Start searching for common prefix in {$normPathList}"
   set prefixList [list];  # will contain ordered list of path components
-  for {set i 1} {$i < $lng} {incr i 1}  {
+  for {set i 0} {$i < $lng} {incr i 1}  {
     set currComponent [lindex [lindex $listOfComponentLists 0] $i]; # [i] of 1st path
     foreach onePathCompList [lrange $listOfComponentLists 1 end] {
       set componentToCheck [lindex $onePathCompList $i]

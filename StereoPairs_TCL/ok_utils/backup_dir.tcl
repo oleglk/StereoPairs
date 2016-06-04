@@ -70,9 +70,13 @@ proc ::ok_utils::ok_provide_backup_dir {dirNameKey {trashDirPath ""}}  {
 }
 
 
+# Moves files from 'filePathsList' to under the current backup directory.
+# Each is placed under a relative path of subdirectories
+# reflecting its location:
+# - under 'commonRootDirOrNone' if given and valid,
+# - under the drive root if 'commonRootDirOrNone' not given or invalid.
 proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
-                                                          {trashDirPath ""}}  {
-  variable WORK_AREA_ROOT_DIR
+                                       commonRootDirOrNone {trashDirPath ""}}  {
   if { "" == [set destRootDir [ok_provide_backup_dir \
                                                   $dirNameKey $trashDirPath]]} {
     return  0;  # error already printed
@@ -83,7 +87,8 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
   }
   ok_info_msg "Start moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   foreach fPath $filePathsList {
-    set pathInWA [ok_strip_prefix_from_filepath $fPath $WORK_AREA_ROOT_DIR]
+    set pathInWA [expr {($commonRootDirOrNone == "")? $fPath :
+                  [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone]}]
     ok_trace_msg "Going to move '$fPath' (as '$pathInWA') to under '$destRootDir'"
   }
   ok_info_msg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"

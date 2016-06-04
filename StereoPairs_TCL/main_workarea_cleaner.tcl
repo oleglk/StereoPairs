@@ -110,7 +110,8 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
     return  0
   }
   
-  return  [ok_move_files_to_backup_dir "HideUnusedFiles" $filesToHide]
+  return  [ok_move_files_to_backup_dir "HideUnusedFiles" $filesToHide \
+                                        $::STS(workAreaRootPath) ""]
 }
 
 
@@ -227,6 +228,7 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
   if { "" != [set ::STS(workAreaRootPath) \
                                   [ok_find_filepaths_common_prefix $waDirs]] } {
     ok_info_msg "Common work-area root directory is '$::STS(workAreaRootPath)'"
+    set ::ok_utils::WORK_AREA_ROOT_DIR $::STS(workAreaRootPath)
   } else {
     ok_info_msg "No common work-area root directory assumed"
   }
