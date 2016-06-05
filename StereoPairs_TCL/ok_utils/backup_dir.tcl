@@ -70,6 +70,14 @@ proc ::ok_utils::ok_provide_backup_dir {dirNameKey {trashDirPath ""}}  {
 }
 
 
+proc ::ok_utils::_ok_rename_root_component_in_filepath {fPathComponentsList}  {
+  if { 0 == [llength $fPathComponentsList] }  { return $fPathComponentsList }
+  set comp1Old [lindex $fPathComponentsList 0]
+  set comp1New [string map {: _colon_ . _dot_ / _slash_} $comp1Old]
+  return [lreplace $fPathComponentsList 0 0 $comp1New]
+}
+
+
 # Moves files from 'filePathsList' to under the current backup directory.
 # Each is placed under a relative path of subdirectories
 # reflecting its location:
@@ -88,7 +96,8 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
   ok_info_msg "Start moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   foreach fPath $filePathsList {
     set pathInWA [expr {($commonRootDirOrNone == "")? $fPath :
-                  [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone]}]
+                  [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone \
+                            ::ok_utils::_ok_rename_root_component_in_filepath]}]
     ok_trace_msg "Going to move '$fPath' (as '$pathInWA') to under '$destRootDir'"
   }
   ok_info_msg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"

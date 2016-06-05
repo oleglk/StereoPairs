@@ -521,14 +521,19 @@ proc ::ok_utils::ok_find_filepaths_common_prefix {pathList}  {
 # If 'filePath' lies under 'pathPrefix' directory,
 #   returns path equivalent to 'filePath' that's relative to 'pathPrefix'.
 # Otherwise returns 'filePath'.
+# if 'postProcCallbackOrNone', applies it to list of components
 # Implementation borrowed from http://wiki.tcl.tk/15925
-proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix}  {
+proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix \
+                          {postProcCallbackOrNone 0}}  {
   ok_trace_msg "Try to strip '$dirPathPrefix' from '$filePath'"
-  if { 0 == [ok_is_underlying_filepath $filePath $dirPathPrefix] }  {
-    return  $filePath
-  }
   set cc [file split [file normalize $dirPathPrefix]]
   set tt [file split [file normalize $filePath]]
+  if { 0 == [ok_is_underlying_filepath $filePath $dirPathPrefix] }  {
+    if { $postProcCallbackOrNone != 0 }  {
+      set tt [eval [list $postProcCallbackOrNone $tt]]
+    }
+    return  [eval file join $tt]
+  }
   # the filowing check could be redundant; just copied from original
   if {![string equal [lindex $cc 0] [lindex $tt 0]]} {
       # not on *n*x then - ("$filePath not on same volume as $dirPathPrefix")
@@ -556,6 +561,17 @@ proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix}  {
     ok_err_msg "$msg";  return -code error $msg
   }
 
+  # process 1st component; it is either 'prefix' or the 1st element of 'tt'
+  if { $postProcCallbackOrNone != 0 }  {
+    if { $prefix != "" } {
+      ok_trace_msg "Postrprocessing path prefix '$prefix'"
+      set prefix [eval [list $postProcCallbackOrNone $prefix]]
+    } else {
+      ok_trace_msg "Postrprocessing path components {$tt}"
+      set tt [eval [list $postProcCallbackOrNone $tt]]
+    }
+  }
+  
   # stick it all together (the eval is to flatten the filePath list)
   return [eval file join $prefix $tt]
 }
