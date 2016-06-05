@@ -359,55 +359,6 @@ proc CanWriteFile {fPath}  {
 }
 
 
-#~ # On success returns empty string
-#~ proc MoveListedFilesIntoTrashDir {preserveSrc pathList \
-                                  #~ fileTypeDescr actionName trashDirVar} {
-  #~ upvar $trashDirVar trashDir
-  #~ if { 0 != [llength $pathList] } {
-    #~ ok_trace_msg "MoveListedFilesIntoTrashDir for '$actionName' called with trashDir='$trashDir'"
-    #~ set trashDir [ProvideTrashDir $actionName $trashDir]
-    #~ if { $trashDir == "" }  { return  "Cannot create backup directory" }
-    #~ if { 0 > [MoveListedFiles $preserveSrc $pathList $trashDir] }  {
-      #~ set msg "Failed to hide $fileTypeDescr file(s) in '$trashDir'"
-      #~ ok_err_msg $msg;    return  $msg
-    #~ }
-    #~ ok_info_msg "[llength $pathList] $fileTypeDescr file(s) moved into '$trashDir'"
-  #~ }
-  #~ return  ""
-#~ }
-
-
-proc MoveListedFiles {preserveSrc pathList destDir} {
-  return  [MoveListedFiles 1 $pathList $destDir]
-}
-
-# Moves/copies files in 'pathList' into 'destDir' - if 'preserveSrc' == 0/1.
-# Destination directory 'destDir' should preexist.
-# On success returns number of files moved;
-# on error returns negative count of errors
-proc MoveListedFiles {preserveSrc pathList destDir} {
-  set action [expr {($preserveSrc == 1)? "copy" : "rename"}]
-  set descr [expr {($preserveSrc == 1)? "CopyListedFiles" : "MoveListedFiles"}]
-  if { ![file exists $destDir] } {
-    ok_err_msg "$descr: no directory $destDir"
-    return  -1
-  }
-  if { ![file isdirectory $destDir] } {
-    ok_err_msg "$descr: non-directory $destDir"
-    return  -1
-  }
-  set cntGood 0;  set cntErr 0
-  foreach pt $pathList {
-    set tclExecResult [catch { file $action -- $pt $destDir } evalExecResult]
-    if { $tclExecResult != 0 } {
-      ok_err_msg "$evalExecResult!";  incr cntErr 1
-    } else {                          incr cntGood 1  }
-  }
-  return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
-}
-
-
-
 # Returns -1 if 'path1' is older than 'path2', 1 if newer, 0 if same time.
 proc CompareFileDates {path1 path2} {
   # fill attr arrays for old and new files:

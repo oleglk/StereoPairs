@@ -78,6 +78,12 @@ proc ::ok_utils::_ok_rename_root_component_in_filepath {fPathComponentsList}  {
 }
 
 
+proc ::ok_utils::_ok_rename_root_in_filepath_string {fPath}  {
+  set fPathComponentsList [file split [file normalize $filePath]]
+  return  [_ok_rename_root_component_in_filepath $fPathComponentsList]
+}
+
+
 # Moves files from 'filePathsList' to under the current backup directory.
 # Each is placed under a relative path of subdirectories
 # reflecting its location:
@@ -95,11 +101,85 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
   }
   ok_info_msg "Start moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   foreach fPath $filePathsList {
-    set pathInWA [expr {($commonRootDirOrNone == "")? $fPath :
-                  [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone \
+    set pathInBU [expr {($commonRootDirOrNone == "")?                          \
+                  [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
+                  [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
                             ::ok_utils::_ok_rename_root_component_in_filepath]}]
-    ok_trace_msg "Going to move '$fPath' (as '$pathInWA') to under '$destRootDir'"
+    ok_trace_msg "Going to move '$fPath' (as '$pathInBU') to under '$destRootDir'"
   }
   ok_info_msg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   return  1
 }
+
+
+proc ::ok_utils::_ok_move_one_file_to_backup_dir {fPath destRootDir \
+                                                  commonRootDirOrNone}  {
+  set pathInBU [expr {($commonRootDirOrNone == "")?                          \
+                [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
+                [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
+                          ::ok_utils::_ok_rename_root_component_in_filepath]}
+  ok_trace_msg "Going to move '$fPath' (as '$pathInBU') to under '$destRootDir'"
+  set subdirRelPath [file dirname $pathInBU]
+  set subdirAbsPath [file join $destRootDir $subdirRelPath]
+  if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {[
+    ok_err msg "Failed creating destination directory '$subdirAbsPath' for '$fPath'"
+    return  0
+  }
+  set tclExecResult [catch { \
+                        file rename -- $fPath $subdirAbsPath } evalExecResult]
+  if { $tclExecResult != 0 } {
+    ok_err_msg "$evalExecResult!";    return  0
+  }
+  ok_trace_msg "Moved '$fPath' into '$subdirAbsPath'"
+  return  1
+}
+
+
+#~ # On success returns empty string
+#~ proc ::ok_utils::ok_move_listed_filesIntoTrashDir {preserveSrc pathList \
+                                  #~ fileTypeDescr actionName trashDirVar} {
+  #~ upvar $trashDirVar trashDir
+  #~ if { 0 != [llength $pathList] } {
+    #~ ok_trace_msg "::ok_utils::ok_move_listed_filesIntoTrashDir for '$actionName' called with trashDir='$trashDir'"
+    #~ set trashDir [ProvideTrashDir $actionName $trashDir]
+    #~ if { $trashDir == "" }  { return  "Cannot create backup directory" }
+    #~ if { 0 > [::ok_utils::ok_move_listed_files $preserveSrc $pathList $trashDir] }  {
+      #~ set msg "Failed to hide $fileTypeDescr file(s) in '$trashDir'"
+      #~ ok_err_msg $msg;    return  $msg
+    #~ }
+    #~ ok_info_msg "[llength $pathList] $fileTypeDescr file(s) moved into '$trashDir'"
+  #~ }
+  #~ return  ""
+#~ }
+
+
+## proc ::ok_utils::ok_move_listed_files {preserveSrc pathList destDir} {
+ #   return  [::ok_utils::ok_move_listed_files 1 $pathList $destDir]
+ # }
+ ##
+
+# Moves/copies files in 'pathList' into 'destDir' - if 'preserveSrc' == 0/1.
+# Destination directory 'destDir' should preexist.
+# On success returns number of files moved;
+# on error returns negative count of errors
+proc ::ok_utils::ok_move_listed_files {preserveSrc pathList destDir} {
+  set action [expr {($preserveSrc == 1)? "copy" : "rename"}]
+  set descr [expr {($preserveSrc == 1)? "CopyListedFiles" : "::ok_utils::ok_move_listed_files"}]
+  if { ![file exists $destDir] } {
+    ok_err_msg "$descr: no directory $destDir"
+    return  -1
+  }
+  if { ![file isdirectory $destDir] } {
+    ok_err_msg "$descr: non-directory $destDir"
+    return  -1
+  }
+  set cntGood 0;  set cntErr 0
+  foreach pt $pathList {
+    set tclExecResult [catch { file $action -- $pt $destDir } evalExecResult]
+    if { $tclExecResult != 0 } {
+      ok_err_msg "$evalExecResult!";  incr cntErr 1
+    } else {                          incr cntGood 1  }
+  }
+  return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
+}
+

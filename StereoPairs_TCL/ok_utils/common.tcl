@@ -534,7 +534,7 @@ proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix \
     }
     return  [eval file join $tt]
   }
-  # the filowing check could be redundant; just copied from original
+  # the following check could be redundant; just copied from original
   if {![string equal [lindex $cc 0] [lindex $tt 0]]} {
       # not on *n*x then - ("$filePath not on same volume as $dirPathPrefix")
       return  $filePath
