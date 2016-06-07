@@ -112,6 +112,33 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
 }
 
 
+proc ::ok_utils::ok_provide_backup_dirs_for_filelist {dirNameKey filePathsList \
+                                       commonRootDirOrNone {trashDirPath ""}}  {
+  set setOfDirs [dict create]
+  if { "" == [set destRootDir [ok_provide_backup_dir \
+                                                  $dirNameKey $trashDirPath]]} {
+    return  0;  # error already printed
+  }
+  foreach fPath $filePathsList {
+    set pathInBU [expr {($commonRootDirOrNone == "")?                          \
+                  [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
+                  [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
+                            ::ok_utils::_ok_rename_root_component_in_filepath]}]
+    set subdirRelPath [file dirname $pathInBU]; # do not normalize relative paths
+    set subdirAbsPath [file normalize [file join $destRootDir $subdirRelPath]]]
+    if { 0 == [dict exists $setOfDirs $dirPathInBU] } {
+      ok_trace_msg "Going to create directory '$subdirAbsPath' as backup destination for '$fPath'"
+      #TODO: check if simulate-only mode
+      if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {
+        ok_err msg "Failed creating destination directory '$subdirAbsPath' for '$fPath'"
+        return  0
+      }
+      dict set setOfDirs $subdirAbsPath
+    }
+  }
+  return  1
+}
+
 proc ::ok_utils::_ok_move_one_file_to_backup_dir {fPath destRootDir \
                                                   commonRootDirOrNone}  {
   set pathInBU [expr {($commonRootDirOrNone == "")?                          \
@@ -121,7 +148,7 @@ proc ::ok_utils::_ok_move_one_file_to_backup_dir {fPath destRootDir \
   ok_trace_msg "Going to move '$fPath' (as '$pathInBU') to under '$destRootDir'"
   set subdirRelPath [file dirname $pathInBU]
   set subdirAbsPath [file join $destRootDir $subdirRelPath]
-  if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {[
+  if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {
     ok_err msg "Failed creating destination directory '$subdirAbsPath' for '$fPath'"
     return  0
   }
