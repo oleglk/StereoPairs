@@ -299,11 +299,11 @@ proc _workarea_cleaner_find_intermediate_images {} {
   }
   ok_info_msg "Start searching for intermediate images"
   set intermediateImages [ok_find_files_by_entensions $::STS(stdImgRootPath) \
-                                [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 0]
+                                [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 1]
   if { 0 < [llength $intermediateImages] }  {
-    ok_info_msg "Found [llength $intermediateImages] intermediate image(s) in '$::STS(stdImgRootPath)'"
+    ok_info_msg "Found [llength $intermediateImages] intermediate image(s) under '$::STS(stdImgRootPath)'"
   } else {
-    ok_info_msg "No intermediate image(s) found in '$::STS(stdImgRootPath)'"
+    ok_info_msg "No intermediate image(s) found under '$::STS(stdImgRootPath)'"
   }
   return  $intermediateImages
 }
