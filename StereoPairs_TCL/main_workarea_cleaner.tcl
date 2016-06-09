@@ -111,7 +111,7 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   }
   
   return  [ok_move_files_to_backup_dir "HideUnusedFiles" $filesToHide \
-                                        $::STS(workAreaRootPath) ""]
+                            $::STS(workAreaRootPath) $::STS(doSimulateOnly) ""]
 }
 
 

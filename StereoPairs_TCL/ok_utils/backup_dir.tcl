@@ -9,9 +9,10 @@ if { [info exists OK_TCLSRC_ROOT] } {;   # assume running as a part of LazyConv
 
 namespace eval ::ok_utils:: {
 
-  namespace export                \
-    ok_provide_backup_dir         \
-    ok_move_files_to_backup_dir
+  namespace export                      \
+    ok_provide_backup_dir               \
+    ok_move_files_to_backup_dir         \
+    ok_provide_backup_dirs_for_filelist
     
   variable WORK_AREA_ROOT_DIR ; # path of work-area root directory
   variable BACKUP_ROOT_NAME ;   # name for backup subdirectory under work-area
@@ -90,14 +91,14 @@ proc ::ok_utils::_ok_rename_root_in_filepath_string {fPath}  {
 # - under 'commonRootDirOrNone' if given and valid,
 # - under the drive root if 'commonRootDirOrNone' not given or invalid.
 proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
-                                       commonRootDirOrNone {trashDirPath ""}}  {
-  if { "" == [set destRootDir [ok_provide_backup_dir \
-                                                  $dirNameKey $trashDirPath]]} {
-    return  0;  # error already printed
-  }
+                        commonRootDirOrNone doSimulateOnly {trashDirPath ""}}  {
   if { 0 == [llength $filePathsList] }  {
     ok_warn_msg "No files provided for trash/backup for '$dirNameKey'"
     return  1;  # nothing to do
+  }
+  if { 0 == [set destRootDir [ok_provide_backup_dirs_for_filelist $dirNameKey \
+          $filePathsList $commonRootDirOrNone $doSimulateOnly $trashDirPath]]} {
+    return  0;  # error already printed
   }
   ok_info_msg "Start moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   foreach fPath $filePathsList {
@@ -105,16 +106,22 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
                   [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
                   [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
                             ::ok_utils::_ok_rename_root_component_in_filepath]}]
-    ok_trace_msg "Going to move '$fPath' (as '$pathInBU') to under '$destRootDir'"
+    set actDescr [expr {($doSimulateOnly==0)? "Going to move" : \
+                                                "Would have moved"}]
+    set msg "$actDescr '$fPath' (as '$pathInBU') to under '$destRootDir'"
+    if { $doSimulateOnly }  { ok_info_msg $msg } else { ok_trace_msg $msg }
   }
   ok_info_msg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   return  1
 }
 
 
+# Creates directories needed to hide/backup files in 'filePathsList'.
+# If 'commonRootDirOrNone' given, directories to create are under it.
+# Returns root trash/backup directory on success, 0 on error
 proc ::ok_utils::ok_provide_backup_dirs_for_filelist {dirNameKey filePathsList \
-                                       commonRootDirOrNone {trashDirPath ""}}  {
-  set setOfDirs [dict create]
+                        commonRootDirOrNone doSimulateOnly {trashDirPath ""}}  {
+  set setOfDirs [dict create]; # will map created dirs' paths to 1 (classic set)
   if { "" == [set destRootDir [ok_provide_backup_dir \
                                                   $dirNameKey $trashDirPath]]} {
     return  0;  # error already printed
@@ -125,19 +132,24 @@ proc ::ok_utils::ok_provide_backup_dirs_for_filelist {dirNameKey filePathsList \
                   [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
                             ::ok_utils::_ok_rename_root_component_in_filepath]}]
     set subdirRelPath [file dirname $pathInBU]; # do not normalize relative paths
-    set subdirAbsPath [file normalize [file join $destRootDir $subdirRelPath]]]
-    if { 0 == [dict exists $setOfDirs $dirPathInBU] } {
-      ok_trace_msg "Going to create directory '$subdirAbsPath' as backup destination for '$fPath'"
-      #TODO: check if simulate-only mode
-      if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {
-        ok_err msg "Failed creating destination directory '$subdirAbsPath' for '$fPath'"
-        return  0
+    set subdirAbsPath [file normalize [file join $destRootDir $subdirRelPath]]
+    if { 0 == [dict exists $setOfDirs $subdirAbsPath] } {
+      set actDescr [expr {($doSimulateOnly==0)? "Going to create" : \
+                                                "Would have created"}]
+      set msg "$actDescr directory '$subdirAbsPath' as backup destination for '$fPath'"
+    if { $doSimulateOnly }  { ok_info_msg $msg } else { ok_trace_msg $msg }
+      if { $doSimulateOnly == 0 } {
+        if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {
+          ok_err msg "Failed creating destination directory '$subdirAbsPath' for '$fPath'"
+          return  0
+        }
       }
-      dict set setOfDirs $subdirAbsPath
+      dict set setOfDirs $subdirAbsPath 1
     }
   }
-  return  1
+  return  $destRootDir
 }
+
 
 proc ::ok_utils::_ok_move_one_file_to_backup_dir {fPath destRootDir \
                                                   commonRootDirOrNone}  {
