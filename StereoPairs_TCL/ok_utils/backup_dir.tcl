@@ -100,18 +100,16 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
           $filePathsList $commonRootDirOrNone $doSimulateOnly $trashDirPath]]} {
     return  0;  # error already printed
   }
+  set errCnt 0
   ok_info_msg "Start moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
   foreach fPath $filePathsList {
-    set pathInBU [expr {($commonRootDirOrNone == "")?                          \
-                  [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
-                  [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
-                            ::ok_utils::_ok_rename_root_component_in_filepath]}]
-    set actDescr [expr {($doSimulateOnly==0)? "Going to move" : \
-                                                "Would have moved"}]
-    set msg "$actDescr '$fPath' (as '$pathInBU') to under '$destRootDir'"
-    if { $doSimulateOnly }  { ok_info_msg $msg } else { ok_trace_msg $msg }
+    if { 0 == [_ok_move_one_file_to_backup_dir $fPath $destRootDir \
+                                    $commonRootDirOrNone 1 $doSimulateOnly] } {
+      incr errCnt 1;  # error already printed
+    }
   }
-  ok_info_msg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey"
+  set resMsg "Done  moving [llength $filePathsList] file(s) to under '$destRootDir' - $dirNameKey; $errCnt error(s) occured"
+  if { $errCnt == 0 } { ok_info_msg $resMsg } else { ok_warn_msg $resMsg }
   return  1
 }
 
@@ -151,25 +149,34 @@ proc ::ok_utils::ok_provide_backup_dirs_for_filelist {dirNameKey filePathsList \
 }
 
 
+# Moves 'fPath' into thrash/backup under 'destRootDir'.
+# If 'expectDestDirExistent'==0, cares to provide the ultimate destination dir.
 proc ::ok_utils::_ok_move_one_file_to_backup_dir {fPath destRootDir \
-                                                  commonRootDirOrNone}  {
+                    commonRootDirOrNone expectDestDirExistent doSimulateOnly} {
   set pathInBU [expr {($commonRootDirOrNone == "")?                          \
                 [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
                 [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
-                          ::ok_utils::_ok_rename_root_component_in_filepath]}
-  ok_trace_msg "Going to move '$fPath' (as '$pathInBU') to under '$destRootDir'"
+                          ::ok_utils::_ok_rename_root_component_in_filepath]}]
   set subdirRelPath [file dirname $pathInBU]
   set subdirAbsPath [file join $destRootDir $subdirRelPath]
-  if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {
-    ok_err msg "Failed creating destination directory '$subdirAbsPath' for '$fPath'"
-    return  0
+  if { ($expectDestDirExistent == 0) && ($doSimulateOnly == 0) }  {
+    if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {
+      ok_err msg "Failed creating destination directory '$subdirAbsPath' for '$fPath'"
+      return  0
+    }
   }
-  set tclExecResult [catch { \
-                        file rename -- $fPath $subdirAbsPath } evalExecResult]
-  if { $tclExecResult != 0 } {
-    ok_err_msg "$evalExecResult!";    return  0
-  }
-  ok_trace_msg "Moved '$fPath' into '$subdirAbsPath'"
+  set actDescr [expr {($doSimulateOnly==0)? "Going to move" : \
+                                              "Would have moved"}]
+  set msg "$actDescr '$fPath' (as '$pathInBU') to under '$destRootDir'"
+  if { $doSimulateOnly == 0 } {
+    ok_trace_msg $msg
+    set tclExecResult [catch { \
+                          file rename -- $fPath $subdirAbsPath } evalExecResult]
+    if { $tclExecResult != 0 } {
+      ok_err_msg "$evalExecResult!";    return  0
+    }
+    ok_trace_msg "Moved '$fPath' into '$subdirAbsPath'"
+  } else  { ok_info_msg $msg } ;  # simulation
   return  1
 }
 
