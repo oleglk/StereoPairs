@@ -51,6 +51,10 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   }
   if { 0 == [_workarea_cleaner_arrange_workarea] }  { return  0  };  # error already printed
   
+  if { 1 == [_workarea_cleaner_is_unhide_mode] } {
+    ok_warn_msg "Restoring hidden files isn't implemented yet"
+    return  0
+  }
   # set variables required for maintaining backup/trash directory
   set ::ok_utils::WORK_AREA_ROOT_DIR    "" ;   # OK for this use-case
   set ::ok_utils::BACKUP_ROOT_NAME      $STS(backupDir)
@@ -129,6 +133,7 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
   -out_dir {val	"output directory"} \
   -backup_dir {val	"directory to hide unused files in"} \
   -restore_from_dir {val	"directory to unhide/restore files from"} \
+  -workarea_root_dir {val	"workarea root directory - where to unhide/restore files to"} \
   -simulate_only {""	"if specified, no file changes performed, only decide and report what should be done"} ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -149,8 +154,10 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "========= Command line parameters (in any order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
-    ok_info_msg "========= Example (note TCL-style directory separators): ======="
+    ok_info_msg "========= Example - hide (note TCL-style directory separators): ======="
     ok_info_msg " workarea_cleaner_main \"-orig_img_dir . -std_img_dir TIFF -final_img_dir . -out_dir ./OUT -backup_dir TRASH\""
+    ok_info_msg "========= Example - unhide (note TCL-style directory separators): ======="
+    ok_info_msg " workarea_cleaner_main \"-restore_from_dir ./TRASH/2016-06-10_15-15-46__HideUnusedFiles__1/ -workarea_root_dir . -out_dir ./OUT\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -163,6 +170,12 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
   ok_info_msg $cmdStrNoHelp
   return  1
 }
+
+
+proc _workarea_cleaner_is_unhide_mode {} {
+  return [expr {$::STS(restoreFromDir) != ""}]
+}
+
 
 proc _workarea_cleaner_warn_unhide_mode {cliParamName} {
   if { $::STS(restoreFromDir) == "" }  {  return  0 } ; # not in unhide mode
@@ -205,31 +218,49 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     }
   }  
   if { 0 == [info exists cml(-orig_img_dir)] }  {
-    ok_warn_msg "Workarea cleaner did not obtain directory with original images"
-  } elseif { 0 == [file isdirectory $cml(-orig_img_dir)] }  {
-    ok_err_msg "Non-directory '$cml(-orig_img_dir)' specified as input directory"
-    incr errCnt 1
+    if { 0 == [_workarea_cleaner_is_unhide_mode] } {
+      ok_warn_msg "Workarea cleaner did not obtain directory with original images"
+    }
   } else {
-    set ::STS(origImgRootPath) $cml(-orig_img_dir); # recurse under L/R subdir-s 
-    set ::STS(origImgDirLeft)  [file join $::STS(origImgRootPath) "L"]
-    set ::STS(origImgDirRight) [file join $::STS(origImgRootPath) "R"]
+    if { 1 == [_workarea_cleaner_warn_unhide_mode "-orig_img_dir"] } {
+      incr errCnt 1
+    } elseif { 0 == [file isdirectory $cml(-orig_img_dir)] }  {
+      ok_err_msg "Non-directory '$cml(-orig_img_dir)' specified as input directory"
+      incr errCnt 1
+    } else {
+      set ::STS(origImgRootPath) $cml(-orig_img_dir); # recurse under L/R subdir-s 
+      set ::STS(origImgDirLeft)  [file join $::STS(origImgRootPath) "L"]
+      set ::STS(origImgDirRight) [file join $::STS(origImgRootPath) "R"]
+    }
   }
   if { 0 == [info exists cml(-std_img_dir)] }  {
-    ok_warn_msg "Workarea cleaner did not obtain directory with standard images"
-  } elseif { 0 == [file isdirectory $cml(-std_img_dir)] }  {
-    ok_err_msg "Non-directory '$cml(-std_img_dir)' specified as standard-images directory"
-    incr errCnt 1
+    if { 0 == [_workarea_cleaner_is_unhide_mode] } {
+      ok_warn_msg "Workarea cleaner did not obtain directory with standard images"
+    }
   } else {
-    set ::STS(stdImgRootPath) $cml(-std_img_dir); # recurse under stdImgRootPath
+    if { 1 == [_workarea_cleaner_warn_unhide_mode "-std_img_dir"] } {
+      incr errCnt 1
+    } elseif { 0 == [file isdirectory $cml(-std_img_dir)] }  {
+      ok_err_msg "Non-directory '$cml(-std_img_dir)' specified as standard-images directory"
+      incr errCnt 1
+    } else {
+      set ::STS(stdImgRootPath) $cml(-std_img_dir); # recurse under stdImgRootPath
+    }
   }
   if { 0 == [info exists cml(-final_img_dir)] }  {
-    ok_err_msg "Please specify directory with final images; example: -final_img_dir D:/Photo/Work"
-    incr errCnt 1
-  } elseif { 0 == [file isdirectory $cml(-final_img_dir)] }  {
-    ok_err_msg "Non-directory '$cml(-final_img_dir)' specified as final images directory"
-    incr errCnt 1
+    if { 0 == [_workarea_cleaner_is_unhide_mode] } {
+      ok_err_msg "Please specify directory with final images; example: -final_img_dir D:/Photo/Work"
+      incr errCnt 1
+    }
   } else {
-    set ::STS(finalImgDirPath) $cml(-final_img_dir)
+    if { 1 == [_workarea_cleaner_warn_unhide_mode "-final_img_dir"] } {
+      incr errCnt 1
+    } elseif { 0 == [file isdirectory $cml(-final_img_dir)] }  {
+      ok_err_msg "Non-directory '$cml(-final_img_dir)' specified as final images directory"
+      incr errCnt 1
+    } else {
+      set ::STS(finalImgDirPath) $cml(-final_img_dir)
+    }
   }
   if { 0 == [info exists cml(-out_dir)] }  {
     ok_err_msg "Please specify output directory; example: -out_dir D:/Photo/Work"
@@ -243,6 +274,7 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     # validity of pair-list path will be checked after out-dir creation
   }
   if { 1 == [info exists cml(-backup_dir)] }  {
+    # since "-backup_dir" has a default, it cannot be prohibited in unhide mode
     set ::STS(backupDir) $cml(-backup_dir)
   }
   if { 1 == [info exists cml(-simulate_only)] }  {
@@ -252,16 +284,33 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     #ok_err_msg "Error(s) in command parameters!"
     return  0
   }
-  set waDirs [ok_discard_empty_list_elements \
-        [list $::STS(origImgRootPath) $::STS(stdImgRootPath) $::STS(backupDir)]]
-  if { "" != [set ::STS(workAreaRootPath) \
-                                  [ok_find_filepaths_common_prefix $waDirs]] } {
-    ok_info_msg "Common work-area root directory is '$::STS(workAreaRootPath)'"
-    set ::ok_utils::WORK_AREA_ROOT_DIR $::STS(workAreaRootPath)
-  } else {
-    ok_info_msg "No common work-area root directory assumed"
+  if { 1 == [_workarea_cleaner_is_unhide_mode] } {
+    if { 0 == [info exists cml(-workarea_root_dir)] }  {
+      ok_err_msg "Please specify workarea root directory; example: -workarea_root_dir D:/Photo/Work/Yesterday"
+      incr errCnt 1
+    } elseif { (1 == [file exists $cml(-workarea_root_dir)]) && \
+               (0 == [file isdirectory $cml(-workarea_root_dir)]) }  {
+      ok_err_msg "Non-directory '$cml(-workarea_root_dir)' specified as workarea root directory"
+      incr errCnt 1
+    } else {
+      set ::STS(workAreaRootPath)      [file normalize $cml(-workarea_root_dir)]
+      set ::ok_utils::WORK_AREA_ROOT_DIR $::STS(workAreaRootPath)
+    }
+  } else { ;  # deduce workarea root from image dir-s
+    set waDirs [ok_discard_empty_list_elements \
+          [list $::STS(origImgRootPath) $::STS(stdImgRootPath) $::STS(backupDir)]]
+    if { "" != [set ::STS(workAreaRootPath) \
+                                    [ok_find_filepaths_common_prefix $waDirs]] } {
+      ok_info_msg "Common work-area root directory is '$::STS(workAreaRootPath)'"
+      set ::ok_utils::WORK_AREA_ROOT_DIR $::STS(workAreaRootPath)
+    } else {
+      ok_info_msg "No common work-area root directory assumed"
+    }
   }
-  
+  if { $errCnt > 0 }  { ;   # recheck for root-dir
+    #ok_err_msg "Error(s) in command parameters!"
+    return  0
+  }
   #ok_info_msg "Command parameters are valid"
   return  1
 }
