@@ -30,6 +30,7 @@ proc _workarea_cleaner_set_defaults {}  {
   set ::STS(finalImgDirPath)       "" ;  # directory with ultimate images
   set ::STS(outDirPath)       ""
   set ::STS(backupDir)        ""
+  set ::STS(restoreFromDir)   "" ; # reverse the backup/thrash operation from this dir
   set ::STS(doSimulateOnly)   0
   
   set ORIG_EXT_DICT   0 ;  # per-dir extensions of original out-of-camera images
@@ -127,6 +128,7 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
   -final_img_dir {val	"directory with ultimate stereopair images"} \
   -out_dir {val	"output directory"} \
   -backup_dir {val	"directory to hide unused files in"} \
+  -restore_from_dir {val	"directory to unhide/restore files from"} \
   -simulate_only {""	"if specified, no file changes performed, only decide and report what should be done"} ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -162,17 +164,44 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
   return  1
 }
 
+proc _workarea_cleaner_warn_unhide_mode {cliParamName} {
+  if { $::STS(restoreFromDir) == "" }  {  return  0 } ; # not in unhide mode
+  switch -- $cliParamName {
+    "-global_img_settings_dir"  -
+    "-orig_img_dir"             -
+    "-std_img_dir"              -
+    "-final_img_dir"            -
+    "-backup_dir"   {
+      ok_err_msg "Option '$cliParamName' is incompatible with restore/unhide mode"
+      return  1
+    }
+    default   { return 0 } ;  # non-conflicting parameter
+  }
+}
+
 
 proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
   upvar $cmlArrName      cml
   set errCnt 0
   
-  if { 1 == [info exists cml(-global_img_settings_dir)] }  {
-    if { 0 == [file isdirectory $cml(-global_img_settings_dir)] }  {
-      ok_err_msg "Non-directory '$cml(-global_img_settings_dir)' specified as the global image-settings directory"
+  if { 1 == [info exists cml(-restore_from_dir)] }  { ; # comes 1st - MUX with most
+    if { 0 == [file isdirectory $cml(-restore_from_dir)] }  {
+      ok_err_msg "Non-directory '$cml(-restore_from_dir)' specified as the directory to restore hidden files from"
       incr errCnt 1
     } else {
-      set ::STS(globalImgSettingsDir) $cml(-global_img_settings_dir)
+      set ::STS(restoreFromDir) $cml(-restore_from_dir)
+    }
+  }
+  if { 1 == [info exists cml(-global_img_settings_dir)] }  {
+    if { 1 == [_workarea_cleaner_warn_unhide_mode "-global_img_settings_dir"] } {
+      incr errCnt 1
+    } else {
+      if { 0 == [file isdirectory $cml(-global_img_settings_dir)] }  {
+        ok_err_msg "Non-directory '$cml(-global_img_settings_dir)' specified as the global image-settings directory"
+        incr errCnt 1
+      } else {
+        set ::STS(globalImgSettingsDir) $cml(-global_img_settings_dir)
+      }
     }
   }  
   if { 0 == [info exists cml(-orig_img_dir)] }  {
