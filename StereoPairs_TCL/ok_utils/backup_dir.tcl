@@ -229,3 +229,26 @@ proc ::ok_utils::ok_move_listed_files {preserveSrc pathList destDir} {
   return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
 }
 
+
+proc ::ok_utils::ok_restore_files_from_backup_dir {trashDirPath doSimulateOnly} {
+  if { (![file exists $trashDirPath]) || (![file isdirectory $destDir]) } {
+    ok_err_msg "Invalid or inexistent directory '$trashDirPath' specified for file restoration"
+    return  -1
+  }
+  set srcPathList [ok_find_files $trashDirPath {*}]
+  if { 0 == [llength $pathList] }  {
+    ok_err_msg "No files to restore found under directory '$trashDirPath'"
+    return  0
+  }
+  set errCnt 0;   set goodCnt 0
+  foreach srcPath $srcPathList {
+    ok_trace_msg "Going to restore '$srcPath' into TODO"
+  }
+  return [expr {($errCnt > 0)? [expr -1*$errCnt] : $goodCnt}]
+}
+
+
+proc ::ok_utils::_ok_build_filepath_to_restore_from_backup_dir {backupFilePath \
+                                                                trashDirPath} {
+  #TODO
+}

@@ -10,6 +10,7 @@ namespace eval ::ok_utils:: {
 
 
 # ok_find_files  - recursive search for files.
+#   Returns sorted list of normalized paths.
 #   Handles cycles created by symbolic links
 #   and in the process eliminates duplicate files due to symbolic links as well
 # 'basedir' - the directory to start looking in
