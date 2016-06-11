@@ -128,6 +128,7 @@ proc ::ok_utils::ok_move_files_to_backup_dir {dirNameKey filePathsList \
 # Returns root trash/backup directory on success, 0 on error
 proc ::ok_utils::ok_provide_backup_dirs_for_filelist {dirNameKey filePathsList \
                         commonRootDirOrNone doSimulateOnly {trashDirPath ""}}  {
+  ok_trace_msg "Requested to provide directories ($dirNameKey) to backup [llength $filePathsList] file(s); common path prefix: '$commonRootDirOrNone'"
   set setOfDirs [dict create]; # will map created dirs' paths to 1 (classic set)
   if { "" == [set destRootDir [ok_provide_backup_dir \
                                                   $dirNameKey $trashDirPath]]} {
@@ -143,7 +144,7 @@ proc ::ok_utils::ok_provide_backup_dirs_for_filelist {dirNameKey filePathsList \
     if { 0 == [dict exists $setOfDirs $subdirAbsPath] } {
       set actDescr [expr {($doSimulateOnly==0)? "Going to create" : \
                                                 "Would have created"}]
-      set msg "$actDescr directory '$subdirAbsPath' as backup destination for '$fPath'"
+      set msg "$actDescr directory '$subdirAbsPath' as backup destination for '$fPath' (path in backup: '$pathInBU')"
     if { $doSimulateOnly }  { ok_info_msg $msg } else { ok_trace_msg $msg }
       if { $doSimulateOnly == 0 } {
         if { 0 == [ok_create_absdirs_in_list [list $subdirAbsPath]] }  {

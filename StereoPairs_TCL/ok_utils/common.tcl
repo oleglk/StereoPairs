@@ -508,6 +508,7 @@ proc ::ok_utils::ok_find_filepaths_common_prefix {pathList}  {
       set componentToCheck [lindex $onePathCompList $i]
       if { $currComponent != $componentToCheck }  {
         ok_trace_msg "Prefix match ended at '$currComponent' vs '$componentToCheck' in {$onePathCompList}"
+        ok_trace_msg "List of matched prefix components: {$prefixList}"
         break
       }
       lappend prefixList $currComponent
