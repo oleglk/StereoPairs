@@ -230,14 +230,21 @@ proc ::ok_utils::ok_move_listed_files {preserveSrc pathList destDir} {
 }
 
 
-proc ::ok_utils::ok_restore_files_from_backup_dir {trashDirPath doSimulateOnly} {
-  if { (![file exists $trashDirPath]) || (![file isdirectory $destDir]) } {
-    ok_err_msg "Invalid or inexistent directory '$trashDirPath' specified for file restoration"
+proc ::ok_utils::ok_restore_files_from_backup_dir {trashDirRootPath \
+                                              destRootDirPath doSimulateOnly} {
+  if { (![file exists $destRootDirPath]) || \
+       (![file isdirectory $destRootDirPath]) } {
+    ok_err_msg "Invalid or inexistent destination directory '$destRootDirPath' specified for file restoration"
     return  -1
   }
-  set srcPathList [ok_find_files $trashDirPath {*}]
+  if { (![file exists $trashDirRootPath]) || \
+       (![file isdirectory $trashDirRootPath]) } {
+    ok_err_msg "Invalid or inexistent backup directory '$trashDirRootPath' specified for file restoration"
+    return  -1
+  }
+  set srcPathList [ok_find_files $trashDirRootPath {*}]
   if { 0 == [llength $pathList] }  {
-    ok_err_msg "No files to restore found under directory '$trashDirPath'"
+    ok_err_msg "No files to restore found under directory '$trashDirRootPath'"
     return  0
   }
   set errCnt 0;   set goodCnt 0
@@ -249,6 +256,23 @@ proc ::ok_utils::ok_restore_files_from_backup_dir {trashDirPath doSimulateOnly} 
 
 
 proc ::ok_utils::_ok_build_filepath_to_restore_from_backup_dir {backupFilePath \
-                                                                trashDirPath} {
+                                            destRootDirPath trashDirRootPath} {
+  set buDirDescr "thrash/backup directory '$trashDirRootPath'"
+  if { 0 == [ok_is_underlying_filepath $backupFilePath $trashDirRootPath] }  {
+    ok_err_msg "File to restore '$backupFilePath' doesn't reside under $buDirDescr"
+    return  ""
+  }
+  set pathInBU [ok_strip_prefix_from_filepath $backupFilePath $trashDirRootPath \
+                            ::ok_utils::_ok_restore_root_component_in_filepath]
+  #TODO: _ok_restore_root_component_in_filepath and so on
+  
+  
+##   set pathInBU [expr {($commonRootDirOrNone == "")?                          \
+ #                   [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
+ #                   [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
+ #                             ::ok_utils::_ok_rename_root_component_in_filepath]}]
+ #     set restoreToPath [file normalze [file join 
+ ##
+
   #TODO
 }
