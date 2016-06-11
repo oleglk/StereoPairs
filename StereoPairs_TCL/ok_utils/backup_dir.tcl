@@ -12,7 +12,8 @@ namespace eval ::ok_utils:: {
   namespace export                      \
     ok_provide_backup_dir               \
     ok_move_files_to_backup_dir         \
-    ok_provide_backup_dirs_for_filelist
+    ok_provide_backup_dirs_for_filelist \
+    ok_restore_files_from_backup_dir
     
   variable WORK_AREA_ROOT_DIR ; # path of work-area root directory
   variable BACKUP_ROOT_NAME ;   # name for backup subdirectory under work-area
@@ -82,6 +83,14 @@ proc ::ok_utils::_ok_rename_root_component_in_filepath {fPathComponentsList}  {
 proc ::ok_utils::_ok_rename_root_in_filepath_string {fPath}  {
   set fPathComponentsList [file split [file normalize $filePath]]
   return  [_ok_rename_root_component_in_filepath $fPathComponentsList]
+}
+
+
+proc ::ok_utils::_ok_restore_root_component_in_filepath {fPathComponentsList}  {
+  if { 0 == [llength $fPathComponentsList] }  { return $fPathComponentsList }
+  set comp1Old [lindex $fPathComponentsList 0]
+  set comp1New [string map {_colon_ :  _dot_ .  _slash_ /} $comp1Old]
+  return [lreplace $fPathComponentsList 0 0 $comp1New]
 }
 
 
@@ -237,20 +246,48 @@ proc ::ok_utils::ok_restore_files_from_backup_dir {trashDirRootPath \
     ok_err_msg "Invalid or inexistent destination directory '$destRootDirPath' specified for file restoration"
     return  -1
   }
-  if { (![file exists $trashDirRootPath]) || \
-       (![file isdirectory $trashDirRootPath]) } {
+  if { ![ok_filepath_is_existent_dir $trashDirRootPath] } {
     ok_err_msg "Invalid or inexistent backup directory '$trashDirRootPath' specified for file restoration"
     return  -1
   }
   set srcPathList [ok_find_files $trashDirRootPath {*}]
-  if { 0 == [llength $pathList] }  {
+  if { 0 == [llength $srcPathList] }  {
     ok_err_msg "No files to restore found under directory '$trashDirRootPath'"
     return  0
   }
   set errCnt 0;   set goodCnt 0
+  set actionDescr "restoring [llength $srcPathList] file(s) from under '$trashDirRootPath' into '$destRootDirPath'"
+  ok_info_msg "Start $actionDescr"
   foreach srcPath $srcPathList {
-    ok_trace_msg "Going to restore '$srcPath' into TODO"
+    if { "" == [set pathInDest [_ok_build_filepath_to_restore_from_backup_dir \
+                              $srcPath $destRootDirPath $trashDirRootPath]] } {
+      incr errCnt 1;  continue;   # error already printed
+    }
+    set fileDescr "'$srcPath' into '$pathInDest'"
+    set destDir [file dirname $pathInDest]
+    if { ![ok_filepath_is_existent_dir $destDir] } {
+      ok_err_msg "Invalid or inexistent destination leaf directory '$destDir' implied for restoration of '$srcPath' into '$pathInDest'"
+      incr errCnt 1;  continue
+    }
+    
+    set fileActionDescr [expr {($doSimulateOnly==0)? "Going to restore" : \
+                                                     "Would have restored"}]
+    set msg "$fileActionDescr '$srcPath' as '$pathInDest'"
+    if { $doSimulateOnly == 0 } {
+      ok_trace_msg $msg
+      set tclExecResult [catch { \
+                            file rename -- $srcPath $destDir } evalExecResult]
+      if { $tclExecResult != 0 } {
+        ok_err_msg "$evalExecResult!";    incr errCnt 1;  continue
+      }
+      ok_trace_msg "Restored '$srcPath' into '$destDir'"
+      incr goodCnt 1
+    } else  { ;  # simulation
+      ok_info_msg $msg;  incr goodCnt 1
+    }
+
   }
+  ok_info_msg "Done $actionDescr; $goodCnt file(s) succeeded, $errCnt error(s) occured"
   return [expr {($errCnt > 0)? [expr -1*$errCnt] : $goodCnt}]
 }
 
@@ -264,15 +301,5 @@ proc ::ok_utils::_ok_build_filepath_to_restore_from_backup_dir {backupFilePath \
   }
   set pathInBU [ok_strip_prefix_from_filepath $backupFilePath $trashDirRootPath \
                             ::ok_utils::_ok_restore_root_component_in_filepath]
-  #TODO: _ok_restore_root_component_in_filepath and so on
-  
-  
-##   set pathInBU [expr {($commonRootDirOrNone == "")?                          \
- #                   [::ok_utils::_ok_rename_root_in_filepath_string $fPath] :    \
- #                   [ok_strip_prefix_from_filepath $fPath $commonRootDirOrNone   \
- #                             ::ok_utils::_ok_rename_root_component_in_filepath]}]
- #     set restoreToPath [file normalze [file join 
- ##
-
-  #TODO
+  return  $pathInBU
 }

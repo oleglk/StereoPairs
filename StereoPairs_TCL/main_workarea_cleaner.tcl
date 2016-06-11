@@ -52,9 +52,10 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   if { 0 == [_workarea_cleaner_arrange_workarea] }  { return  0  };  # error already printed
   
   if { 1 == [_workarea_cleaner_is_unhide_mode] } {
-    ok_warn_msg "Restoring hidden files isn't implemented yet"
-    return  0
+    return  [ok_restore_files_from_backup_dir $STS(restoreFromDir) \
+                                    $STS(workAreaRootPath) $STS(doSimulateOnly)]
   }
+  
   # set variables required for maintaining backup/trash directory
   set ::ok_utils::WORK_AREA_ROOT_DIR    "" ;   # OK for this use-case
   set ::ok_utils::BACKUP_ROOT_NAME      $STS(backupDir)

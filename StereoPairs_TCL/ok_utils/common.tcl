@@ -31,6 +31,7 @@ namespace eval ::ok_utils:: {
 	ok_copy_file_if_target_inexistent \
 	ok_move_file_if_target_inexistent \
 	ok_filepath_is_writable \
+  ok_filepath_is_existent_dir \
 	ok_delete_file \
 	ok_force_delete_dir \
 	ok_mkdir \
@@ -417,6 +418,12 @@ proc ::ok_utils::ok_filepath_is_writable { fullPath } {
     }
     return  1
 }
+
+
+proc ::ok_utils::ok_filepath_is_existent_dir {fullPath} {
+  return  [expr {([file exists $fullPath]) && ([file isdirectory $fullPath])}]
+}
+
 
 # Safely deletes 'filePath'
 proc ::ok_utils::ok_delete_file {filePath} {
