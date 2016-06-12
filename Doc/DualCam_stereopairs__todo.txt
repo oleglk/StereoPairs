@@ -1,5 +1,17 @@
 # TODO: workarea_cleaner
 - check why "020416__Balcony/.../dsc00908.jpg.pp3" isn't hidden
+-- it's because its RAW original was already under Unmatched/ directory; compare the below traces fpr unmatched and matched image:
+===============================================
+# _SelectSettingsFilesInFileList: File 'D:/Photo/DualCam_Inp/020416__Balcony/L/Unmatched/DSC00899.ARW' is not a RAW converter settings file
+# FindAllInputsForOneImageInDir: Found 1 file(s) related to image 'DSC00908.ARW'; pattern: 'D:/Photo/DualCam_Inp/020416__Balcony/L/Unmatched/DSC00908.*'
+# _SelectSettingsFilesInFileList: File 'D:/Photo/DualCam_Inp/020416__Balcony/L/Unmatched/DSC00908.ARW' is not a RAW converter settings file
+# FindAllInputsForOneImageInDir: Found 2 file(s) related to image 'DSC00900-00625_r.ARW'; pattern: 'D:/Photo/DualCam_Inp/020416__Balcony/R/DSC00900-00625_r.*'
+# _SelectSettingsFilesInFileList: File 'D:/Photo/DualCam_Inp/020416__Balcony/R/DSC00900-00625_r.ARW' is not a RAW converter settings file
+-I- Settings file 'D:/Photo/DualCam_Inp/020416__Balcony/R/DSC00900-00625_r.ARW.pp3' comes from RAW converter 'RawTherapee'
+===============================================
+
+
+
 + check why 'D:/Photo/DualCam_Inp/280516__KishGlen/TRASH/2016-06-09_22-22-50__HideUnusedFiles__1/D_colon__slash_/Photo/Du
 alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 ++ the bug is in ok_find_filepaths_common_prefix - investigate it

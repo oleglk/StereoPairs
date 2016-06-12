@@ -93,8 +93,8 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   set intermediateImages [_workarea_cleaner_find_intermediate_images]
   # it's OK to have no intermediate image files
 
-  set hideCandidates [concat \
-                          $cnvSettingsFiles $originalImages $intermediateImages]
+  set hideCandidates [lsort -unique [concat \
+                        $cnvSettingsFiles $originalImages $intermediateImages]]
   if { 0 == [llength $hideCandidates] }  {
     ok_warn_msg "No candidate files to hide were found; there's nothing to do."
     return  0
