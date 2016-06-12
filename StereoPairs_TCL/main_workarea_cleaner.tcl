@@ -299,9 +299,9 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
     }
   } else { ;  # deduce workarea root from image dir-s
     set waDirs [ok_discard_empty_list_elements \
-          [list $::STS(origImgRootPath) $::STS(stdImgRootPath) $::STS(backupDir)]]
+        [list $::STS(origImgRootPath) $::STS(stdImgRootPath) $::STS(backupDir)]]
     if { "" != [set ::STS(workAreaRootPath) \
-                                    [ok_find_filepaths_common_prefix $waDirs]] } {
+                                  [ok_find_filepaths_common_prefix $waDirs]] } {
       ok_info_msg "Common work-area root directory is '$::STS(workAreaRootPath)'"
       set ::ok_utils::WORK_AREA_ROOT_DIR $::STS(workAreaRootPath)
     } else {

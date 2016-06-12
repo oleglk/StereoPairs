@@ -504,15 +504,18 @@ proc ::ok_utils::ok_find_filepaths_common_prefix {pathList}  {
   set prefixList [list];  # will contain ordered list of path components
   for {set i 0} {$i < $lng} {incr i 1}  {
     set currComponent [lindex [lindex $listOfComponentLists 0] $i]; # [i] of 1st path
+    set matchEnded 0
     foreach onePathCompList [lrange $listOfComponentLists 1 end] {
       set componentToCheck [lindex $onePathCompList $i]
       if { $currComponent != $componentToCheck }  {
         ok_trace_msg "Prefix match ended at '$currComponent' vs '$componentToCheck' in {$onePathCompList}"
         ok_trace_msg "List of matched prefix components: {$prefixList}"
-        break
+        set matchEnded 1;   break
       }
+    }
+    if { ! $matchEnded } {
       lappend prefixList $currComponent
-      ok_trace_msg "Prefix match continues at '$currComponent'"
+      ok_trace_msg "Prefix match continues at '$currComponent'"   
     }
   }
   ok_trace_msg "Done  searching for common prefix in {$normPathList}"
