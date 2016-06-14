@@ -18,6 +18,7 @@ package require img_proc;   namespace import -force ::img_proc::*
 proc _pair_matcher_set_defaults {}  {
   set ::STS(timeDiff)         0
   set ::STS(minSuccessRate)   0
+  set ::STS(globalImgSettingsDir)  "" ;  # global settings dir; relevant for some converters
   set ::STS(origImgRootPath)  ""
   set ::STS(origImgDirLeft)   ""
   set ::STS(origImgDirRight)  ""
@@ -672,22 +673,26 @@ proc _hide_unmatched_images_by_rename_dict {origPaths renameDict}  {
     if { 1 == [dict exists $renameDict $origPath] }  {
       continue;   # matched image
     }
-    incr umCnt 1
+    set settingsFilesForOne [FindSettingsFilesForListedImages \
+                                                  [list $origPath] cntMissing 0]
+    incr umCnt [expr {1 + [llength $settingsFilesForOne]}]
     set destDirPath [file join [file dirname $origPath] $::STS(dirForUnmatched)]
     # 'destDirPath' should exist
-    set tclResult [catch {
-      set res [file rename $origPath $destDirPath] } execResult]
-    if { $tclResult != 0 } {
-      ok_err_msg "$execResult!";  incr errCnt 1
-    } else {
-      incr hideCnt 1
-      ok_info_msg "Moved unmatched image '$origPath' into '$destDirPath'"
+    foreach fP [concat $origPath $settingsFilesForOne] {
+      set tclResult [catch {
+        set res [file rename $fP $destDirPath] } execResult]
+      if { $tclResult != 0 } {
+        ok_err_msg "$execResult!";  incr errCnt 1
+      } else {
+        incr hideCnt 1
+        ok_info_msg "Moved file '$fP' (related to unmatched image '$origPath') into '$destDirPath'"
+      }
     }
   }
   if { $umCnt == $hideCnt } {
-    ok_info_msg "Found and hided $hideCnt unmatched original image(s)"
+    ok_info_msg "Found and hided $hideCnt file(s) related to unmatched original image(s)"
   } else {
-    ok_warn_msg "Found $umCnt unmatched original image(s); hided $hideCnt; $errCnt error(s) occured"
+    ok_warn_msg "Found $umCnt file(s) related to unmatched original image(s); hided $hideCnt; $errCnt error(s) occured"
   }
   return  $errCnt
 }
