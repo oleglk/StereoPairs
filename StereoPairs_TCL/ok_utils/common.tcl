@@ -386,8 +386,13 @@ proc ::ok_utils::ok_rename_file_add_suffix {inpFileName suffix} {
 }
 
 # Safely copies 'inpFileName' into 'destDir' unless it already exists there
-proc ::ok_utils::ok_copy_file_if_target_inexistent {inpFilePath destDir} {
-    set tclExecResult [catch {
+proc ::ok_utils::ok_copy_file_if_target_inexistent {inpFilePath destDir\
+                                                 {complainIfTargetExists 1}} {
+  if { $complainIfTargetExists == 0 } {
+    set targetPath [file join $destDir [file tail $inpFilePath]]
+    if { [file exists $targetPath] }  { return 1 };  # considered OK
+  }
+  set tclExecResult [catch {
 	file copy -- $inpFilePath $destDir } execResult]
     if { $tclExecResult != 0 } {
 	ok_err_msg "Failed copying image '$inpFilePath' into '$destDir'."
@@ -397,8 +402,13 @@ proc ::ok_utils::ok_copy_file_if_target_inexistent {inpFilePath destDir} {
 }
 
 # Safely moves 'inpFileName' into 'destDir' unless it already exists there
-proc ::ok_utils::ok_move_file_if_target_inexistent {inpFilePath destDir} {
-    set tclExecResult [catch {
+proc ::ok_utils::ok_move_file_if_target_inexistent {inpFilePath destDir \
+                                                 {complainIfTargetExists 1}} {
+  if { $complainIfTargetExists == 0 } {
+    set targetPath [file join $destDir [file tail $inpFilePath]]
+    if { [file exists $targetPath] }  { return 1 };  # considered OK
+  }
+  set tclExecResult [catch {
 	file rename -- $inpFilePath $destDir } execResult]
     if { $tclExecResult != 0 } {
 	ok_err_msg "Failed moving image '$inpFilePath' into '$destDir'."

@@ -678,11 +678,17 @@ proc _hide_unmatched_images_by_rename_dict {origPaths renameDict}  {
     incr umCnt [expr {1 + [llength $settingsFilesForOne]}]
     set destDirPath [file join [file dirname $origPath] $::STS(dirForUnmatched)]
     # 'destDirPath' should exist
-    foreach fP [concat $origPath $settingsFilesForOne] {
-      set tclResult [catch {
-        set res [file rename $fP $destDirPath] } execResult]
-      if { $tclResult != 0 } {
-        ok_err_msg "$execResult!";  incr errCnt 1
+    if { 0 == [ok_move_file_if_target_inexistent $origPath $destDirPath 1] } {
+      incr errCnt 1
+    } else {
+      incr hideCnt 1
+      ok_info_msg "Moved unmatched original image '$origPath' into '$destDirPath'"
+    }
+    set settingsDestDirPath [expr {($::STS(globalImgSettingsDir) == "")? \
+                                  $destDirPath : $::STS(globalImgSettingsDir)}]
+    foreach fP $settingsFilesForOne {
+      if { 0 == [ok_move_file_if_target_inexistent $fP $settingsDestDirPath 1]} {
+        incr errCnt 1
       } else {
         incr hideCnt 1
         ok_info_msg "Moved file '$fP' (related to unmatched image '$origPath') into '$destDirPath'"
@@ -821,7 +827,12 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
   set unhideCnt 0;  set errCnt 0;   set existedCnt 0
   foreach rec $srcPathsAndDestDir {
     set hidePaths [lindex $rec 0];   set destDirPath [lindex $rec 1]
+    set settingsDestDirPath [expr {($::STS(globalImgSettingsDir) == "")? \
+                                  $destDirPath : $::STS(globalImgSettingsDir)}]
     foreach hiddenImgPath $hidePaths {
+      set settingsFilesForOne [FindSettingsFilesForListedImages \
+                                             [list $hiddenImgPath] cntMissing 0]
+      incr hideCnt [llength $settingsFilesForOne]
       set origPath [file join $destDirPath [file tail $hiddenImgPath]]
       if { [file exists $origPath] }  {
         ok_warn_msg "Original image file '$origPath' exists; not overriden"
@@ -831,18 +842,32 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
         ok_info_msg "Would have returned unmatched image '$hiddenImgPath' into '$destDirPath'"
         incr unhideCnt 1;  continue
       }
-      set tclResult [catch {
-        set res [file rename $hiddenImgPath $destDirPath] } execResult]
-      if { $tclResult != 0 } {
-        ok_err_msg "$execResult!";  incr errCnt 1
+      if { 0 == [ok_move_file_if_target_inexistent \
+                                              $hiddenImgPath $destDirPath 1] } {
+        incr errCnt 1
       } else {
         incr unhideCnt 1
         ok_info_msg "Returned unmatched image '$hiddenImgPath' into '$destDirPath'"
       }
+      set settingsDestDirPath [expr {($::STS(globalImgSettingsDir) == "")? \
+                                    $destDirPath : $::STS(globalImgSettingsDir)}]
+      foreach fP $settingsFilesForOne {
+        set origPath [file join $settingsDestDirPath [file tail $fP]]
+        if { [file exists $origPath] }  {
+          ok_warn_msg "Original image related file '$origPath' exists; not overriden"
+          incr existedCnt 1;      continue
+        }
+        if { 0 == [ok_move_file_if_target_inexistent $fP $settingsDestDirPath 1]} {
+          incr errCnt 1
+        } else {
+          incr unhideCnt 1
+          ok_info_msg "Returned file '$fP' (related to unmatched image '$origPath') into '$settingsDestDirPath'"
+        }
+      }
     }
   }
   set actStr [expr {($simulateOnly != 0)? "Would have restored" : "Restored"}]
-  set msg "$actStr $unhideCnt hidden unmatched image(s) out of $hideCnt; $existedCnt original(s) pre-existed; $errCnt error(s) occured"
+  set msg "$actStr $unhideCnt hidden file(s) related to unmatched original image(s) out of $hideCnt; $existedCnt file(s) pre-existed; $errCnt error(s) occured"
   if { $errCnt == 0 } { ok_info_msg $msg } else { ok_err_msg $msg }
   return  [expr {($errCnt == 0)? 1 : 0}]s
 }

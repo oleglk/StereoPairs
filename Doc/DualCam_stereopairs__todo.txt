@@ -16,8 +16,10 @@
 alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 ++ the bug is in ok_find_filepaths_common_prefix - investigate it
 
-- provide global settings dir in pair-matcher CLI - for locating unmatched settings files
++ provide global settings dir in pair-matcher CLI - for locating unmatched settings files
 
 - ? what about simulate-only for hiding unmatched images AND their settings ?
 
-- support restoring settings of unmatched images
++ support restoring settings of unmatched images
+
+- support restoring names of settings files of matched images
