@@ -665,7 +665,8 @@ proc _rename_images_by_rename_dict {renameDict} {
 # Moves unmatched originals into subdirectories STS(dirForUnmatched) of their dir-s
 # 'renameDict' holds pairs <srcPath> => {list of <dstPath>-s}
 # Returns number of errors encountered
-proc _hide_unmatched_images_by_rename_dict {origPaths renameDict}  {
+proc _hide_unmatched_images_by_rename_dict {origPaths renameDict \
+                                                            {simulateOnly 0}}  {
   set hideCnt 0;  set umCnt 0;  set errCnt 0
   set nOrigs [llength $origPaths]
   ok_trace_msg "Begin search for unmatched originals out of $nOrigs image(s)"
@@ -678,20 +679,26 @@ proc _hide_unmatched_images_by_rename_dict {origPaths renameDict}  {
     incr umCnt [expr {1 + [llength $settingsFilesForOne]}]
     set destDirPath [file join [file dirname $origPath] $::STS(dirForUnmatched)]
     # 'destDirPath' should exist
-    if { 0 == [ok_move_file_if_target_inexistent $origPath $destDirPath 1] } {
-      incr errCnt 1
+    set fileDescr "unmatched original image '$origPath' into '$destDirPath'"
+    if { $simulateOnly != 0 }  {
+      ok_info_msg "Would have moved $fileDescr";   incr hideCnt 1
     } else {
-      incr hideCnt 1
-      ok_info_msg "Moved unmatched original image '$origPath' into '$destDirPath'"
-    }
-    set settingsDestDirPath [expr {($::STS(globalImgSettingsDir) == "")? \
-                                  $destDirPath : $::STS(globalImgSettingsDir)}]
-    foreach fP $settingsFilesForOne {
-      if { 0 == [ok_move_file_if_target_inexistent $fP $settingsDestDirPath 1]} {
+      if { 0 == [ok_move_file_if_target_inexistent $origPath $destDirPath 1] } {
         incr errCnt 1
       } else {
-        incr hideCnt 1
-        ok_info_msg "Moved file '$fP' (related to unmatched image '$origPath') into '$destDirPath'"
+        ok_info_msg "Moved $fileDescr";   incr hideCnt 1
+      }
+    }
+    foreach fP $settingsFilesForOne {
+      set fileDescr "file '$fP' (related to unmatched image '$origPath') into '$destDirPath'"
+      if { $simulateOnly != 0 }  {
+        ok_info_msg "Would have moved $fileDescr";   incr hideCnt 1
+      } else {
+        if { 0 == [ok_move_file_if_target_inexistent $fP $destDirPath 1]} {
+          incr errCnt 1
+        } else {
+          ok_info_msg "Moved $fileDescr";   incr hideCnt 1
+        }
       }
     }
   }
@@ -838,16 +845,16 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
         ok_warn_msg "Original image file '$origPath' exists; not overriden"
         incr existedCnt 1;      continue
       }
+      set fileDescr "unmatched image '$hiddenImgPath' into '$destDirPath'"
       if { $simulateOnly != 0 }  {
-        ok_info_msg "Would have returned unmatched image '$hiddenImgPath' into '$destDirPath'"
-        incr unhideCnt 1;  continue
-      }
-      if { 0 == [ok_move_file_if_target_inexistent \
-                                              $hiddenImgPath $destDirPath 1] } {
-        incr errCnt 1
+        ok_info_msg "Would have returned $fileDescr";   incr unhideCnt 1
       } else {
-        incr unhideCnt 1
-        ok_info_msg "Returned unmatched image '$hiddenImgPath' into '$destDirPath'"
+        if { 0 == [ok_move_file_if_target_inexistent \
+                                              $hiddenImgPath $destDirPath 1] } {
+          incr errCnt 1
+        } else {
+          ok_info_msg "Returned $fileDescr";  incr unhideCnt 1
+        }
       }
       set settingsDestDirPath [expr {($::STS(globalImgSettingsDir) == "")? \
                                     $destDirPath : $::STS(globalImgSettingsDir)}]
@@ -857,11 +864,15 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
           ok_warn_msg "Original image related file '$origPath' exists; not overriden"
           incr existedCnt 1;      continue
         }
-        if { 0 == [ok_move_file_if_target_inexistent $fP $settingsDestDirPath 1]} {
-          incr errCnt 1
+        set fileDescr "file '$fP' (related to unmatched image '$origPath') into '$settingsDestDirPath'"
+        if { $simulateOnly != 0 }  {
+          ok_info_msg "Would have returned $fileDescr";   incr unhideCnt 1
         } else {
-          incr unhideCnt 1
-          ok_info_msg "Returned file '$fP' (related to unmatched image '$origPath') into '$settingsDestDirPath'"
+          if { 0 == [ok_move_file_if_target_inexistent $fP $settingsDestDirPath 1]} {
+            incr errCnt 1
+          } else {
+            ok_info_msg "Returned $fileDescr";  incr unhideCnt 1
+          }
         }
       }
     }
