@@ -18,8 +18,10 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 + provide global settings dir in pair-matcher CLI - for locating unmatched settings files
 
-- (in progress) what about simulate-only for hiding unmatched images AND their settings ?
++ what about simulate-only for hiding unmatched images AND their settings ?
 
 + support restoring settings of unmatched images
 
-- support restoring names of settings files of matched images
+? support renaming and restoring names of settings files of matched images
+?? QUESTIONABLE - the mainstream flow suggests renaming originals first
+

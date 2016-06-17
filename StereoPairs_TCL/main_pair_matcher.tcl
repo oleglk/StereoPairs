@@ -563,7 +563,7 @@ proc _read_all_images_timestamps_or_complain {origPathsLeft origPathsRight \
 
 
 # Returns dictionary mapping original (both left and right) image paths
-# to lists of renamed left/right stereopair member path.
+# to lists of renamed left/right stereopair member paths.
 ## Example: assuming 'matchList' includes f01<->f37, f02<->f37 and f04<->f38,
 ## the returned dict should have:
 ##    <dirL>/f01::{<dirL>/f01-f37_l}, <dirL>/f02::{<dirL>/f02-f37_l}
