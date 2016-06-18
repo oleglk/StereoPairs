@@ -703,9 +703,9 @@ proc _hide_unmatched_images_by_rename_dict {origPaths renameDict \
     }
   }
   if { $umCnt == $hideCnt } {
-    ok_info_msg "Found and hided $hideCnt file(s) related to unmatched original image(s)"
+    ok_info_msg "Found and hid $hideCnt file(s) related to unmatched original image(s)"
   } else {
-    ok_warn_msg "Found $umCnt file(s) related to unmatched original image(s); hided $hideCnt; $errCnt error(s) occured"
+    ok_warn_msg "Found $umCnt file(s) related to unmatched original image(s); hid $hideCnt; $errCnt error(s) occured"
   }
   return  $errCnt
 }
