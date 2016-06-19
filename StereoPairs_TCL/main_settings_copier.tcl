@@ -7,7 +7,6 @@ ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 source [file join $SCRIPT_DIR   "ext_tools.tcl"]
 source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
 source [file join $SCRIPT_DIR   "stereopair_naming.tcl"]
-
 source [file join $SCRIPT_DIR   "cnv_settings_finder.tcl"]
 
 package require ok_utils

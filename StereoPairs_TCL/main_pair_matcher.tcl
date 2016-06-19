@@ -7,6 +7,7 @@ ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 source [file join $SCRIPT_DIR   "ext_tools.tcl"]
 source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
 source [file join $SCRIPT_DIR   "stereopair_naming.tcl"]
+source [file join $SCRIPT_DIR   "cnv_settings_finder.tcl"]
 
 package require ok_utils;   namespace import -force ::ok_utils::*
 package require img_proc;   namespace import -force ::img_proc::*
@@ -71,6 +72,13 @@ proc pair_matcher_main {cmdLineAsStr}  {
   if { 0 == [_pair_matcher_find_originals 0 origPathsLeft origPathsRight] }  {
     return  0;  # error already printed
   }
+  # TMP: abort if settings files present - too late to rename
+  if { 0 != [_detect_and_warn_if_settings_exist \
+                [concat $origPathsLeft $origPathsRight] \
+                "conversion settings" "renaming originals"] } {
+    return  0;  # error already printed
+  }
+
   if { 0 == [_pair_matcher_arrange_workarea] }  { return  0  };  # error already printed
   # read timestamps from all the images
   if { 0 == [_read_all_images_timestamps_or_complain \
@@ -771,6 +779,13 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
   #   so that records for one original appear sequentially
   set listOfLists [lsort -dictionary [lrange $listOfLists 1 end]]
   ok_info_msg "Read rename spec of [llength listOfLists] rename-record(s) from '$specPath' - for image(s) under '[file normalize $::STS(origImgRootPath)]"
+
+  set renamedOrigPaths [dict values [eval concat $listOfLists]]
+  if { 0 != [_detect_and_warn_if_settings_exist $renamedOrigPaths \
+            "conversion settings for renamed" "restoring originals' names"] } {
+    return  0;  # error already printed
+  }
+ 
   set listedOriginalsCnt 0; set restoredCnt 0
   set missingCnt 0;   set errCnt 0;   set existedCnt 0
   set lastListedOriginal ""
@@ -884,4 +899,14 @@ proc _pair_matcher_restore_hidden_originals {{simulateOnly 0}}  {
 }
 
 
-
+# TMP: declare abort if settings files present - too late to rename
+proc _detect_and_warn_if_settings_exist {origImgPaths \
+                                        descrOfFile descrOfAction} {
+  set srcSettingsFiles [FindSettingsFilesForListedImages \
+                                                    $origImgPaths cntMissing 0]
+  if { 0 != [llength $srcSettingsFiles] } {
+    ok_err_msg "Aborted since $descrOfFile file(s) found; $descrOfAction may turn them unusable; the recommended workflow enforces renaming prior to conversion"
+    return  1
+  }
+  return  0
+}
