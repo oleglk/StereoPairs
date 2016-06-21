@@ -617,14 +617,14 @@ proc _make_rename_dict_from_match_list {imgPathsLeft imgPathsRight matchList} {
 proc _set_src_and_dest_lr_paths {origPureNameToPathDict origPureName \
                                  dstPairPurename descr renameDictVar}  {
   upvar $renameDictVar renameDict
-  if { 1 == [dict exists $renameDict $dstPairPurename] }  {
-    set targetsList [dict get $renameDict $dstPairPurename]
-  } else {      set targetsList [list]     }
   if { 0 == [dict exists $origPureNameToPathDict $origPureName] }  {
     ok_err_msg "No source path for $descr image '$origPureName'"
     return  0
   }
   set srcPath [dict get $origPureNameToPathDict $origPureName]
+  if { 1 == [dict exists $renameDict $srcPath] }  {
+    set targetsList [dict get $renameDict $srcPath]
+  } else {      set targetsList [list]     }
   set srcDir  [file dirname $srcPath]
   set srcExt  [file extension $srcPath]
   set dstPairName "$dstPairPurename$srcExt"
@@ -774,10 +774,12 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
     ok_err_msg "Failed reading rename spec from '$specPath'"
     return  0
   }
+  ok_trace_msg "rename-spec unsorted: {$listOfLists}"
   # listOfLists == {{header} {origPath productPath} ... {origPath productPath}}
   # skip rename-spec header, then sort 'listOfLists',
   #   so that records for one original appear sequentially
   set listOfLists [lsort -dictionary [lrange $listOfLists 1 end]]
+  ok_trace_msg "rename-spec sorted: {$listOfLists}"
   ok_info_msg "Read rename spec of [llength listOfLists] rename-record(s) from '$specPath' - for image(s) under '[file normalize $::STS(origImgRootPath)]"
 
   set renamedOrigPaths [dict values [eval concat $listOfLists]]
@@ -793,7 +795,15 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
   foreach renameRecord $listOfLists {
     set origPath     [lindex $renameRecord 0]
     set renamedPath  [lindex $renameRecord 1]
-    if { $origPath == $lastRestoredOriginal }  { continue }; # we restored it
+    if { $origPath == $lastRestoredOriginal }  {; # we already restored it
+      if { $simulateOnly == 0 }  {
+        ok_delete_file $renamedPath;  # not needed - its target already restored
+        ok_info_msg "Deleted unneeded '$renamedPath' - its target already restored"
+      } else {
+        ok_info_msg "Would have deleted '$renamedPath' - its target already restored"
+      }
+      continue
+    }
     if { ($lastListedOriginal != "") && ($origPath != $lastListedOriginal) && \
          ($lastListedOriginal != $lastRestoredOriginal) }  {
       ok_warn_msg "Original image file '$lastListedOriginal' not restored"
