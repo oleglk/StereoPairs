@@ -63,12 +63,13 @@ proc pair_matcher_main {cmdLineAsStr}  {
                      $STS(origImgDirLeft) $STS(origImgDirRight) 0]] }  {
     return  0;  # error already printed
   }
-  if { ($STS(doRestoreLR) == 1) }   {
+  if { ($STS(doRestoreLR) == 1) }   { ;   # commanded to restore original' names
     set restoreRes  [_pair_matcher_restore_original_names $STS(doSimulateOnly)]
+    if { $restoreRes == 0 }  { return  0 } ;  # error already printed
     set unhideRes   [_pair_matcher_restore_hidden_originals $STS(doSimulateOnly)]
-    # error, if any, printed
-    return  [expr {(($restoreRes != 0) && ($unhideRes != 0))? 1 : 0}]
+    return  $unhideRes ;    # error, if any, printed
   }
+  # commanded to rename the originals
   if { 0 == [_pair_matcher_find_originals 0 origPathsLeft origPathsRight] }  {
     return  0;  # error already printed
   }
@@ -780,7 +781,7 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
   #   so that records for one original appear sequentially
   set listOfLists [lsort -dictionary [lrange $listOfLists 1 end]]
   ok_trace_msg "rename-spec sorted: {$listOfLists}"
-  ok_info_msg "Read rename spec of [llength listOfLists] rename-record(s) from '$specPath' - for image(s) under '[file normalize $::STS(origImgRootPath)]"
+  ok_info_msg "Read rename spec of [llength $listOfLists] rename-record(s) from '$specPath' - for image(s) under '[file normalize $::STS(origImgRootPath)]"
 
   set renamedOrigPaths [dict values [eval concat $listOfLists]]
   if { 0 != [_detect_and_warn_if_settings_exist $renamedOrigPaths \
