@@ -20,7 +20,7 @@ source [file join $SCRIPT_DIR   "setup_stereopairs.tcl"]
 # |                                                                            |v|
 # +----------------------------------------------------------------------------+-+
 
-set APP_TITLE "Underwater Image Color"
+set APP_TITLE "DualCam Companion"
 
 
 ################################################################################
@@ -60,12 +60,10 @@ proc _ReplaceLogText {str}  {
 
 ################################################################################
 proc _InitValuesForGUI {}  {
-  global PROGRESS WORK_DIR INITIAL_WORK_DIR
-  global INITIAL_CONVERTER_NAME CONVERTER_NAME
+  global PROGRESS GUI_VARS
   ok_trace_msg "Setting hardcoded GUI preferences"
-  set PROGRESS "...Idle..."
-  set CONVERTER_NAME $INITIAL_CONVERTER_NAME
-  set WORK_DIR $INITIAL_WORK_DIR
+  set GUI_VARS(PROGRESS) "...Idle..."
+  set GUI_VARS(WORK_DIR) $GUI_VARS((INITIAL_WORK_DIR)
   set msg [cdToWorkdirOrComplain 0]
   if { $msg != "" }  {
     ok_warn_msg "$msg";   # initial work-dir not required to be valid
@@ -80,23 +78,19 @@ _InitValuesForGUI
 wm title . $APP_TITLE
 
 grid [ttk::frame .top -padding "3 3 12 12"] -column 0 -row 0 -sticky nwes
-grid columnconfigure . 0 -weight 1;     grid columnconfigure .top 0 -weight 0
+grid columnconfigure . 0 -weight 1
+grid columnconfigure .top 0 -weight 0
 grid columnconfigure .top 1 -weight 1;  grid columnconfigure .top 2 -weight 1
 grid columnconfigure .top 3 -weight 1;  grid columnconfigure .top 4 -weight 1
 grid columnconfigure .top 6 -weight 0
-grid rowconfigure . 0 -weight 1;      grid rowconfigure .top 0 -weight 0
+grid rowconfigure . 0 -weight 1
+grid rowconfigure .top 0 -weight 0
 grid rowconfigure .top 1 -weight 0;   grid rowconfigure .top 2 -weight 0
 grid rowconfigure .top 3 -weight 0;   grid rowconfigure .top 4 -weight 0
 grid rowconfigure .top 5 -weight 1
 
-grid [ttk::label .top.rawConvLbl -text "Raw Converter:"] -column 1 -row 1 -sticky w
-#grid [ttk::entry .top.rawConv -width 29 -textvariable CONVERTER_NAME] -column 2 -row 1 -sticky we
-grid [ttk::combobox .top.rawConv -textvariable CONVERTER_NAME] -column 2 -row 1 -sticky we
-bind .top.rawConv <<ComboboxSelected>> GUI_SetRAWConverter
-.top.rawConv configure -values $CONVERTER_NAME_LIST
-.top.rawConv state readonly
 
-grid [ttk::button .top.settings -text "Preferences..." -command GUI_ChangeSettings] -column 3 -row 1 -sticky we
+grid [ttk::button .top.preferences -text "Preferences..." -command GUI_ChangePreferences] -column 3 -row 1 -sticky we
 
 grid [ttk::button .top.help -text "Help" -command GUI_ShowHelp] -column 4 -row 1 -sticky we
 
@@ -105,7 +99,7 @@ grid [ttk::button .top.chooseDir -text "Folder..." -command GUI_ChooseDir] -colu
 
 grid [ttk::entry .top.workDir -width 29 -textvariable WORK_DIR -state disabled] -column 2 -row 2 -columnspan 3 -sticky we
 
-grid [ttk::button .top.extractThumbs -text "Extract\nThumbnails" -command GUI_ExtractThumbnails] -column 1 -row 3 -sticky we
+grid [ttk::button .top.renamePairs -text "Rename\nPairs" -command GUI_RenamePairs] -column 1 -row 3 -sticky we
 
 grid [ttk::button .top.sortThumbs -text "Sort RAWs\nby Thumbnails" -command GUI_SortRAWsByThumbnails] -column 2 -row 3 -sticky we
 
@@ -162,7 +156,7 @@ proc GUI_SetRAWConverter {}  {
 }
 
 
-proc GUI_ChangeSettings {}  {
+proc GUI_ChangePreferences {}  {
   global APP_TITLE
   set res [GUI_PreferencesShow]
   if { $res != 0 }  {
@@ -203,10 +197,10 @@ proc _GUI_SetDir {newWorkDir}  {
 }
 
 
-proc GUI_ExtractThumbnails {}  {
+proc GUI_RenamePairs {}  {
   global APP_TITLE WORK_DIR THUMB_DIR
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  set msg [ExtractThumbsFromAllRaws]
+  set msg [renamePairsFromAllRaws]
   _UpdateGuiEndAction
   if { "" != $msg }  {
     #tk_messageBox -message "-E- Failed to extract thumbnails in '$WORK_DIR':  $msg" -title $APP_TITLE
