@@ -8,6 +8,8 @@ package require ok_utils
 namespace import -force ::ok_utils::*
 
 
+set DIAGNOSTICS_FILE_NAME "dualcam_diagnostics.txt"
+set PREFERENCES_FILE_NAME "dualcam_ini.csv"
 
 
 # Safely attempts to switch workarea root dir to 'workDir'; returns "" on success.

@@ -28,7 +28,16 @@ namespace eval ::ok_utils:: {
 
     variable _CNT_ERR_WARN  0;  # counter of problems
     variable _MSG_CALLBACK  0;  # for  proc _cb {msg} {}
+
+    variable DIAGNOSTICS_FILE_HANDLE 0 ;  # =0 means not yet open
+    variable DIAGNOSTICS_FILE_PATH  ""
 }
+
+
+# this file is reread from multiple files; don't override LOUD_MODE
+### ? is setting LOUD_MODE in the below way is needed when it's in a namespace ?
+#if { 0 == [info exists ::ok_utils::LOUD_MODE] }  {  set ::ok_utils::LOUD_MODE 1 }
+
 
 
 proc ::ok_utils::ok_msg_set_callback {cb}  {
