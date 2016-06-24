@@ -64,7 +64,7 @@ proc _InitValuesForGUI {}  {
   ok_trace_msg "Setting hardcoded GUI preferences"
   set GUI_VARS(PROGRESS) "...Idle..."
   set GUI_VARS(WORK_DIR) $GUI_VARS((INITIAL_WORK_DIR)
-  set msg [cd_to_workdir_or_complain 0]
+  set msg [dualcam_cd_to_workdir_or_complain $GUI_VARS(WORK_DIR) 0]
   if { $msg != "" }  {
     ok_warn_msg "$msg";   # initial work-dir not required to be valid
     return  0
@@ -186,7 +186,7 @@ proc _GUI_SetDir {newWorkDir}  {
   .top.workDir configure -state normal
   set GUI_VARS(WORK_DIR) $newWorkDir
   .top.workDir configure -state disabled
-  set msg [cd_to_workdir_or_complain 1]
+  set msg [dualcam_cd_to_workdir_or_complain $GUI_VARS(WORK_DIR) 1]
   tk_messageBox -message "After cd to work-dir '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
   return  $msg
 }
