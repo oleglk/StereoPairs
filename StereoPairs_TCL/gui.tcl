@@ -97,24 +97,24 @@ grid [ttk::button .top.help -text "Help" -command GUI_ShowHelp] -column 4 -row 1
 grid [ttk::button .top.chooseDir -text "Folder..." -command GUI_ChooseDir] -column 1 -row 2 -sticky we
 #TODO: how-to:  bind .top <KeyPress-f> ".top.chooseDir invoke"
 
-grid [ttk::entry .top.workDir -width 29 -textvariable WORK_DIR -state disabled] -column 2 -row 2 -columnspan 3 -sticky we
+grid [ttk::entry .top.workDir -width 29 -textvariable GUI_VARS(WORK_DIR) -state disabled] -column 2 -row 2 -columnspan 3 -sticky we
 
 grid [ttk::button .top.renamePairs -text "Rename\nPairs" -command GUI_RenamePairs] -column 1 -row 3 -sticky we
 
-grid [ttk::button .top.sortThumbs -text "Sort RAWs\nby Thumbnails" -command GUI_SortRAWsByThumbnails] -column 2 -row 3 -sticky we
+grid [ttk::button .top.cloneSettings -text "Clone\nSettings" -command GUI_CloneSettings] -column 2 -row 3 -sticky we
 
-grid [ttk::button .top.mapDepthColor -text "Map Depth\nto Color" -command GUI_MapDepthToColor] -column 3 -row 3 -sticky we
+grid [ttk::button .top.compareColors -text "Compare\nColors" -command GUI_CompareColors] -column 3 -row 3 -sticky we
 
-grid [ttk::button .top.procAllRAWs -text "Process\nAll Photos" -command GUI_ProcAllRAWs] -column 4 -row 3 -sticky we
+grid [ttk::button .top.hideUnused -text "Hide\nUnused" -command GUI_HideUnused] -column 4 -row 3 -sticky we
 
 
-grid [ttk::button .top.quit -text "Quit" -command GUI_Quit] -column 1 -row 4 -sticky we
+grid [ttk::button .top.restoreNames-text "Restore\nNames" -command GUI_RestoreNames] -column 1 -row 4 -sticky we
 
 grid [ttk::label .top.progressLbl -textvariable PROGRESS] -column 2 -row 4 -sticky we
 
-grid [ttk::button .top.showDepthOvrd -text "Override\nDepth..." -command GUI_ProcShowDepthOvrd] -column 3 -row 4 -sticky we
+grid [ttk::button .top.quit -text "Quit" -command GUI_Quit] -column 3 -row 4 -sticky we
 
-grid [ttk::button .top.procChangedRAWs -text "Process\nChanged Photos" -command GUI_ProcChangedRAWs] -column 4 -row 4 -sticky we
+grid [ttk::button .top.unhideUnused -text "Unhide\nUnused..." -command GUI_UnhideUnused] -column 4 -row 4 -sticky we
 
 
 
@@ -133,7 +133,7 @@ grid [ttk::scrollbar .top.logBoxScroll -orient vertical -command ".top.logBox yv
 
 foreach w [winfo children .top] {grid configure $w -padx 5 -pady 5}
 
-focus .top.rawConv
+focus .top.chooseDir
 
 
 ok_msg_set_callback "_AppendLogText" ;            # only after the GUI is built
@@ -213,7 +213,7 @@ proc GUI_RenamePairs {}  {
 }
 
 
-proc GUI_SortRAWsByThumbnails {}  {
+proc GUI_CloneSettings {}  {
   global APP_TITLE WORK_DIR RAW_COLOR_TARGET_DIR
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   set msg [SortAllRawsByThumbnails]
@@ -230,7 +230,7 @@ proc GUI_SortRAWsByThumbnails {}  {
 
 
 # Builds depth-to-color mapping. Returns 1 on success, 0 on error.
-proc GUI_MapDepthToColor {}  {
+proc GUI_CompareColors {}  {
   global APP_TITLE WORK_DIR DATA_DIR
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   set oldFocus [focus];   # Save old keyboard focus - maybe need to to restore
@@ -266,8 +266,8 @@ proc GUI_MapDepthToColor {}  {
 }
 
 
-proc GUI_ProcAllRAWs {}       {  return  [_GUI_ProcRAWs 0] }
-proc GUI_ProcChangedRAWs {}   {  return  [_GUI_ProcRAWs 1] }
+proc GUI_HideUnused {}       {  return  [_GUI_ProcRAWs 0] }
+proc GUI_UnhideUnused {}   {  return  [_GUI_ProcRAWs 1] }
 
 # Chooses depths for all RAWs, computes their color parameters.
 # Overrides the color parameters in the settings files/
@@ -318,7 +318,7 @@ proc GUI_Quit {}  {
 }
 
 
-proc GUI_ProcShowDepthOvrd {}  {
+proc GUI_RestoreNames {}  {
   global APP_TITLE
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   # No problem of reopen while already shown - we anyway perform "deiconify"
