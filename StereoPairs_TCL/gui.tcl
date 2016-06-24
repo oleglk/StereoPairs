@@ -60,11 +60,11 @@ proc _ReplaceLogText {str}  {
 
 ################################################################################
 proc _InitValuesForGUI {}  {
-  global PROGRESS GUI_VARS
+  global GUI_VARS
   ok_trace_msg "Setting hardcoded GUI preferences"
   set GUI_VARS(PROGRESS) "...Idle..."
   set GUI_VARS(WORK_DIR) $GUI_VARS((INITIAL_WORK_DIR)
-  set msg [cdToWorkdirOrComplain 0]
+  set msg [cd_to_workdir_or_complain 0]
   if { $msg != "" }  {
     ok_warn_msg "$msg";   # initial work-dir not required to be valid
     return  0
@@ -149,34 +149,29 @@ wm protocol . WM_DELETE_WINDOW {
 ################################################################################
 
 
-proc GUI_SetRAWConverter {}  {
-  _UpdateGuiStartAction
-  SetRAWConverter
-  _UpdateGuiEndAction
-}
-
 
 proc GUI_ChangePreferences {}  {
   global APP_TITLE
-  set res [GUI_PreferencesShow]
-  if { $res != 0 }  {
-    set savedOK [PreferencesCollectAndWrite]
-  }
+  tk_messageBox -message "Sorry, preferences not implemented yet]" -title $APP_TITLE
+  #~ set res [GUI_PreferencesShow]
+  #~ if { $res != 0 }  {
+    #~ set savedOK [PreferencesCollectAndWrite]
+  #~ }
 }
 
 
 proc GUI_ShowHelp {}  {
   global APP_TITLE SCRIPT_DIR
-  tk_messageBox -message "Please read [file join $SCRIPT_DIR {..} {Doc} {UG__UW_image_depth.txt}]" -title $APP_TITLE
+  tk_messageBox -message "Please read [file join $SCRIPT_DIR {..} {Doc} {UG__Stereopairs.txt}]" -title $APP_TITLE
 }
 
 
 proc GUI_ChooseDir {}  {
-  global APP_TITLE SCRIPT_DIR WORK_DIR
+  global APP_TITLE SCRIPT_DIR GUI_VARS
   set ret [tk_chooseDirectory]
   if { $ret != "" }  {
     set msg [_GUI_SetDir $ret]
-    #tk_messageBox -message "After cd to work-dir '$WORK_DIR'" -title $APP_TITLE
+    #tk_messageBox -message "After cd to work-dir '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
     if { $msg != "" }  {
       tk_messageBox -message "-E- $msg" -title $APP_TITLE
       return  0
@@ -187,12 +182,12 @@ proc GUI_ChooseDir {}  {
 
 
 proc _GUI_SetDir {newWorkDir}  {
-  global APP_TITLE SCRIPT_DIR WORK_DIR
+  global APP_TITLE SCRIPT_DIR GUI_VARS
   .top.workDir configure -state normal
-  set WORK_DIR $newWorkDir
+  set GUI_VARS(WORK_DIR) $newWorkDir
   .top.workDir configure -state disabled
-  set msg [cdToWorkdirOrComplain 1]
-  #tk_messageBox -message "After cd to work-dir '$WORK_DIR'" -title $APP_TITLE
+  set msg [cd_to_workdir_or_complain 1]
+  tk_messageBox -message "After cd to work-dir '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
   return  $msg
 }
 

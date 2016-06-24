@@ -10,6 +10,31 @@ namespace import -force ::ok_utils::*
 
 set KNOWN_STD_IMG_EXTENSIONS_DICT [dict create jpg JPEG tif TIFF bmp BMP]
 
+
+
+# Safely attempts to switch dir to 'WORK_DIR'; returns "" on success.
+# On error returns error message.
+proc TODO__cd_to_workdir_or_complain {closeOldDiagnostics}  {
+  global WORK_DIR DATA_DIR DIAGNOSTICS_FILE_NAME
+  if { 0 == [IsWorkDirOK] }  {
+    set msg "<$WORK_DIR> is not a valid working directory"
+    return  $msg
+  }
+  set tclResult [catch { set res [cd $WORK_DIR] } execResult]
+  if { $tclResult != 0 } {
+    set msg "Failed changing work directory to <$WORK_DIR>: $execResult!"
+    ok_err_msg $msg
+    return  $msg
+  }
+  if { $closeOldDiagnostics }  {
+    ok_finalize_diagnostics;  # if old file was open, close it
+  }
+  ok_init_diagnostics [file join $WORK_DIR $DATA_DIR $DIAGNOSTICS_FILE_NAME]
+  ok_info_msg "Working directory set to '$WORK_DIR'"
+  return  ""
+}
+
+
 proc FindFilePath {dirPath pureName ext descr {checkExist 0}} {
   set fPath [file join $dirPath "$pureName.$ext"]
   if { $checkExist != 0 } {
