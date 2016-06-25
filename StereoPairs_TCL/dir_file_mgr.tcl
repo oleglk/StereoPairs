@@ -16,7 +16,7 @@ set PREFERENCES_FILE_NAME "dualcam_ini.csv"
 # On error returns error message.
 proc dualcam_cd_to_workdir_or_complain {workDir closeOldDiagnostics}  {
   global STS DIAGNOSTICS_FILE_NAME
-  if { 0 == [is_dir_ok_for_workdir] }  {
+  if { 0 == [is_dir_ok_for_workdir $workDir] }  {
     set msg "<$workDir> is not suitable for working directory"
     return  $msg
   }

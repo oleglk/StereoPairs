@@ -62,8 +62,9 @@ proc _ReplaceLogText {str}  {
 proc _InitValuesForGUI {}  {
   global GUI_VARS
   ok_trace_msg "Setting hardcoded GUI preferences"
+  set GUI_VARS(INITIAL_WORK_DIR) [pwd]; #TODO: should come from preferences
   set GUI_VARS(PROGRESS) "...Idle..."
-  set GUI_VARS(WORK_DIR) $GUI_VARS((INITIAL_WORK_DIR)
+  set GUI_VARS(WORK_DIR) $GUI_VARS(INITIAL_WORK_DIR)
   set msg [dualcam_cd_to_workdir_or_complain $GUI_VARS(WORK_DIR) 0]
   if { $msg != "" }  {
     ok_warn_msg "$msg";   # initial work-dir not required to be valid
@@ -108,7 +109,7 @@ grid [ttk::button .top.compareColors -text "Compare\nColors" -command GUI_Compar
 grid [ttk::button .top.hideUnused -text "Hide\nUnused" -command GUI_HideUnused] -column 4 -row 3 -sticky we
 
 
-grid [ttk::button .top.restoreNames-text "Restore\nNames" -command GUI_RestoreNames] -column 1 -row 4 -sticky we
+grid [ttk::button .top.restoreNames -text "Restore\nNames" -command GUI_RestoreNames] -column 1 -row 4 -sticky we
 
 grid [ttk::label .top.progressLbl -textvariable PROGRESS] -column 2 -row 4 -sticky we
 
@@ -173,6 +174,7 @@ proc GUI_ChooseDir {}  {
     set msg [_GUI_SetDir $ret]
     #tk_messageBox -message "After cd to work-dir '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
     if { $msg != "" }  {
+      _AppendLogText $msg
       tk_messageBox -message "-E- $msg" -title $APP_TITLE
       return  0
     }
@@ -193,15 +195,17 @@ proc _GUI_SetDir {newWorkDir}  {
 
 
 proc GUI_RenamePairs {}  {
-  global APP_TITLE WORK_DIR THUMB_DIR
+  global APP_TITLE GUI_VARS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  set msg [renamePairsFromAllRaws]
+  #TODO: ask for time_diff and dir-s
+  set paramStr "-max_burst_gap 1.0 -time_diff -69 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./Data"
+  set ret [eval exec [list pair_matcher_main $paramStr]]
   _UpdateGuiEndAction
-  if { "" != $msg }  {
-    #tk_messageBox -message "-E- Failed to extract thumbnails in '$WORK_DIR':  $msg" -title $APP_TITLE
+  if { $ret == 0 }  {
+    #tk_messageBox -message "-E- Failed GUI_RenamePairs in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
     return  0
   }
-  set msg "Thumbnails extracted into directory <[file join $WORK_DIR $THUMB_DIR]>"
+  set msg "Stereopair L/R images renamed under '$GUI_VARS(WORK_DIR)'"
   #tk_messageBox -message $msg -title $APP_TITLE
   ok_info_msg $msg
   return  1
@@ -209,9 +213,9 @@ proc GUI_RenamePairs {}  {
 
 
 proc GUI_CloneSettings {}  {
-  global APP_TITLE WORK_DIR RAW_COLOR_TARGET_DIR
+  global APP_TITLE GUI_VARS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  set msg [SortAllRawsByThumbnails]
+  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
   _UpdateGuiEndAction
   if { "" != $msg }  {
     #tk_messageBox -message "-E- Failed to sort RAWs by thumbnails in '$WORK_DIR':  $msg" -title $APP_TITLE
@@ -226,29 +230,9 @@ proc GUI_CloneSettings {}  {
 
 # Builds depth-to-color mapping. Returns 1 on success, 0 on error.
 proc GUI_CompareColors {}  {
-  global APP_TITLE WORK_DIR DATA_DIR
+  global APP_TITLE GUI_VARS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  set oldFocus [focus];   # Save old keyboard focus - maybe need to to restore
-  if { 1 == [GUI_DepthOvrdIsOpen] }  {
-    set msg "Depth-override window needs to be closed before processing depth data"
-    ok_err_msg $msg
-    tk_messageBox -message $msg -title $APP_TITLE -icon error
-    focus $oldFocus;  # return the focus back to pre-dialog state
-    _UpdateGuiEndAction;  return  0
-  }
-  if { 1 == [DepthColorDataFilesExist] }  {
-    set msg1 "Color and depth data files already exist in data directory '[GetDataDirFullPath]'"
-    ##error $msg1;  # OK_TMP
-    set answer [tk_messageBox -type "yesno" -default "yes" \
-      -message "$msg1; continue and override?" -icon question -title $APP_TITLE]
-    if { $answer == "no" }  {
-      ok_warn_msg "$msg1; the user decided to abort"
-      focus $oldFocus;  # return the focus back to pre-dialog state
-      _UpdateGuiEndAction;  return  0
-    }
-    ok_info_msg "$msg1; the user decided to continue and override"
-  }
-  set msg [ProcessDepthData 1] ;  # ignoreGrayTargetsFile=1 - confirmed by user
+  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
   _UpdateGuiEndAction
   if { "" != $msg }  {
     #tk_messageBox -message "-E- Failed to map depth to WB in '$WORK_DIR':  $msg" -title $APP_TITLE
@@ -268,20 +252,10 @@ proc GUI_UnhideUnused {}   {  return  [_GUI_ProcRAWs 1] }
 # Overrides the color parameters in the settings files/
 # Returns 1 on success, 0 on error.
 proc _GUI_ProcRAWs {onlyChanged}  {
-  global APP_TITLE WORK_DIR DATA_DIR
+  global APP_TITLE GUI_VARS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   set msg "" ;  # as if evething is OK
-  if { 1 == [GUI_DepthOvrdIsOpen] }  {
-    ok_trace_msg "Depth-override window was open when RAW processing request obtained"
-    if { 0 == [UpdateAndFlushDepthOvrdCSV] }  {
-      set msg "Failed to read depth-override data from the input form"
-    }
-  } else {
-    ok_trace_msg "Depth-override window was closed when RAW processing request obtained"
-  }
-  if { "" == $msg }  {;  # OK so far
-    set cnt [ProcessUltimateRAWs $onlyChanged]
-  }
+  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
   _UpdateGuiEndAction
   if { $cnt <= 0 }  {
     #tk_messageBox -message "-E- Failed to process settings for all RAWs in '$WORK_DIR':  $msg" -title $APP_TITLE
@@ -295,18 +269,11 @@ proc _GUI_ProcRAWs {onlyChanged}  {
 
 
 proc GUI_Quit {}  {
-  global APP_TITLE SCRIPT_DIR
+  global APP_TITLE GUI_VARS SCRIPT_DIR
   set answer [tk_messageBox -type "yesno" -default "no" \
     -message "Are you sure you want to quit?" -icon question -title $APP_TITLE]
   if { $answer == "no" }  {
     return
-  }
-  if { 1 == [GUI_DepthOvrdIsOpen] }  {
-    set oldFocus [focus];   # Save old keyboard focus
-    if { 0 == [GUI_SaveDepthWndDataIfRequested] } {
-      focus $oldFocus;  # return the focus back to pre-dialog state
-      return
-    }
   }
   ok_finalize_diagnostics
   exit  0
@@ -317,7 +284,7 @@ proc GUI_RestoreNames {}  {
   global APP_TITLE
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   # No problem of reopen while already shown - we anyway perform "deiconify"
-  set res [GUI_DepthOvrdShow]
+  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
   _UpdateGuiEndAction
   # ?TODO?
 }
@@ -326,30 +293,30 @@ proc GUI_RestoreNames {}  {
 ########## Utilities #######
 
 proc _UpdateGuiStartAction {}   {
-  global CNT_PROBLEMS_BEFORE PROGRESS
+  global GUI_VARS
   _CleanLogText
-  set PROGRESS "...Working..."
+  set GUI_VARS(PROGRESS) "...Working..."
   update idletasks
-  set CNT_PROBLEMS_BEFORE [ok_msg_get_errwarn_cnt]
+  set GUI_VARS(CNT_PROBLEMS_BEFORE) [ok_msg_get_errwarn_cnt]
 }
 
 proc _UpdateGuiEndAction {}   {
-  global CNT_PROBLEMS_BEFORE PROGRESS
-  set cnt [expr [ok_msg_get_errwarn_cnt] - $CNT_PROBLEMS_BEFORE]
+  global GUI_VARS
+  set cnt [expr [ok_msg_get_errwarn_cnt] - $GUI_VARS(CNT_PROBLEMS_BEFORE)]
   set msg "The last action encountered $cnt problem(s)"
   if { $cnt > 0 }  { ok_warn_msg $msg } else { ok_info_msg $msg }
-  set PROGRESS "...Idle..."
+  set GUI_VARS(PROGRESS) "...Idle..."
   update idletasks
 }
 
 
 proc _GUI_TryStartAction {}  {
-  global APP_TITLE WORK_DIR
+  global APP_TITLE GUI_VARS
   _UpdateGuiStartAction
-  if { 0 == [CheckWorkArea] }  {
-    #tk_messageBox -message "-E- '$WORK_DIR' lacks essential input files" -title $APP_TITLE
-    ok_err_msg "'$WORK_DIR' lacks essential input files"
-    _UpdateGuiEndAction;  return  0
-  }
+  #~ if { 0 == [CheckWorkArea] }  {
+    #~ #tk_messageBox -message "-E- '$GUI_VARS(WORK_DIR)' lacks essential input files" -title $APP_TITLE
+    #~ ok_err_msg "'$GUI_VARS(WORK_DIR)' lacks essential input files"
+    #~ _UpdateGuiEndAction;  return  0
+  #~ }
   return  1
 }

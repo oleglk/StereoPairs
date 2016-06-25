@@ -45,14 +45,15 @@ namespace import -force ::ok_utils::*
 namespace import -force ::setup::*
 
 # here only top-level files are sourced; these will drag their dependencies
-source [file join $SCRIPT_DIR   "rename_stereo_pairs.tcl"]
-source [file join $SCRIPT_DIR   "fake_fileset.tcl"]
-source [file join $SCRIPT_DIR   "make_stereocards.tcl"]
-source [file join $SCRIPT_DIR   "unused_inputs.tcl"]
+#~ source [file join $SCRIPT_DIR   "rename_stereo_pairs.tcl"]
+#~ source [file join $SCRIPT_DIR   "fake_fileset.tcl"]
+#~ source [file join $SCRIPT_DIR   "make_stereocards.tcl"]
+#~ source [file join $SCRIPT_DIR   "unused_inputs.tcl"]
 source [file join $SCRIPT_DIR   "main_pair_matcher.tcl"]
 source [file join $SCRIPT_DIR   "main_settings_copier.tcl"]
 source [file join $SCRIPT_DIR   "main_color_analyzer.tcl"]
 source [file join $SCRIPT_DIR   "main_workarea_cleaner.tcl"]
+source [file join $SCRIPT_DIR   "dir_file_mgr.tcl"]
 
 ## In oder to enable loading several main-s, avoid duplicating settings-init
 array unset STS ;   # array for global settings ;  unset once per a project
