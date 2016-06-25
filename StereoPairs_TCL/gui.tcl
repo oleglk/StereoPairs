@@ -169,7 +169,7 @@ proc GUI_ShowHelp {}  {
 
 proc GUI_ChooseDir {}  {
   global APP_TITLE SCRIPT_DIR GUI_VARS
-  set ret [tk_chooseDirectory]
+  set ret [tk_chooseDirectory -initialdir $GUI_VARS(WORK_DIR)]
   if { $ret != "" }  {
     set msg [_GUI_SetDir $ret]
     #tk_messageBox -message "After cd to work-dir '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE

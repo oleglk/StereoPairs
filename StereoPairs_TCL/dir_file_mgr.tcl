@@ -29,15 +29,27 @@ proc dualcam_cd_to_workdir_or_complain {workDir closeOldDiagnostics}  {
   if { $closeOldDiagnostics }  {
     ok_finalize_diagnostics;  # if old file was open, close it
   }
-  ok_init_diagnostics [file join $workDir $STS(outDirPath) $DIAGNOSTICS_FILE_NAME]
+  set STS(origImgRootPath)  $workDir
+  set STS(outDirPath)       "Data"  ; # TODO: take from perferences
+
+  ok_init_diagnostics [file join $workDir \
+                                  $STS(outDirPath) $DIAGNOSTICS_FILE_NAME]
   ok_info_msg "Working directory set to '$workDir'"
   return  ""
 }
 
 
 proc is_dir_ok_for_workdir {workDir}  {
-  return [expr { ([ok_filepath_is_existent_dir $workDir]) && \
-                 ([ok_filepath_is_writable $workDir]) }]
+  if { 0 == [ok_filepath_is_existent_dir $workDir] }  {
+    ok_err_msg "There is no directory named '$workDir'"
+    return  0
+  }
+  # unfortunately the check for writability constantly fails on Windows
+  if { 0 == [file writable $workDir] }  {
+    ok_err_msg "Directory '$workDir' is not writable"
+    return  0
+  }
+    return  1
 }
 
 
