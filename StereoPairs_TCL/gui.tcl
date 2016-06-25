@@ -198,7 +198,7 @@ proc GUI_RenamePairs {}  {
   global APP_TITLE GUI_VARS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   #TODO: ask for time_diff and dir-s
-  set paramStr "-max_burst_gap 1.0 -time_diff -69 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./Data"
+  set paramStr "-max_burst_gap 1.0 -time_diff -69 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./Data -simulate_only"
   set ret [pair_matcher_main $paramStr]
   _UpdateGuiEndAction
   if { $ret == 0 }  {
