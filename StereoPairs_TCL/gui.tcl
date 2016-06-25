@@ -199,7 +199,7 @@ proc GUI_RenamePairs {}  {
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   #TODO: ask for time_diff and dir-s
   set paramStr "-max_burst_gap 1.0 -time_diff -69 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./Data"
-  set ret [eval exec [list pair_matcher_main $paramStr]]
+  set ret [pair_matcher_main $paramStr]
   _UpdateGuiEndAction
   if { $ret == 0 }  {
     #tk_messageBox -message "-E- Failed GUI_RenamePairs in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE

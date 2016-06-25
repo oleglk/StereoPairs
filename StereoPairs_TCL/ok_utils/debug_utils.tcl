@@ -137,8 +137,8 @@ proc ::ok_utils::ok_warn_msg {text} {
 }
 
 
-proc ok_msg_get_errwarn_cnt {}  {
-  global _CNT_ERR_WARN
+proc ::ok_utils::ok_msg_get_errwarn_cnt {}  {
+  variable _CNT_ERR_WARN
   return  $_CNT_ERR_WARN
 }
 

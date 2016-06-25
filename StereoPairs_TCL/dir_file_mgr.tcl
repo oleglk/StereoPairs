@@ -30,7 +30,7 @@ proc dualcam_cd_to_workdir_or_complain {workDir closeOldDiagnostics}  {
     ok_finalize_diagnostics;  # if old file was open, close it
   }
   set STS(origImgRootPath)  $workDir
-  set STS(outDirPath)       "Data"  ; # TODO: take from perferences
+  set STS(outDirPath)       "Data"  ; # TODO: take from preferences
 
   ok_init_diagnostics [file join $workDir \
                                   $STS(outDirPath) $DIAGNOSTICS_FILE_NAME]
