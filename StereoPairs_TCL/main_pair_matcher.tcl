@@ -133,7 +133,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   set descrList \
 [list \
   -help {"" "print help"} \
-  -time_diff {val "time difference in miliseconds between the 2nd and 1st cameras"} \
+  -time_diff {val "time difference in seconds between the 2nd and 1st cameras"} \
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
   -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
   -create_sbs	{"" "join matched pairs into SBS images; requires the directory with standard images"} \
