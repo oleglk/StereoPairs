@@ -18,6 +18,9 @@ toplevel .optsWnd
 set pw [ttk::panedwindow .optsWnd.pw -orient vertical]
 grid $pw -column 0 -row 0 -sticky nwes
 
+grid columnconfigure .optsWnd 0 -weight 1
+grid rowconfigure .optsWnd 0 -weight 0;
+
 set f1 [frame $pw.f1]
 set f2 [frame $pw.f2 
 
@@ -29,7 +32,7 @@ $pw paneconfigure $f2 -minsize 50
 
 pack $pw -expand 1 -fill both
 
-# TODO:
+# TODO: learn GUI_FillDepthTable() - var size
 
 ################################################################################
 # 'keyToDescrAndFormat' is a dictionary of <key>::[list <descr> <scan-format>].
