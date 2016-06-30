@@ -4,6 +4,8 @@ package require Tk
 
 set SCRIPT_DIR [file dirname [info script]]
 
+package require ok_utils;   namespace import -force ::ok_utils::*
+
 
 ### Sketch of the GUI #####
 # |                                                                          | |
@@ -23,7 +25,7 @@ set SCRIPT_DIR [file dirname [info script]]
 
 set WND_TITLE "DualCam Companion - options"
 
-set SHOW_TRACE $LOUD_MODE; # a proxy to prevent changing LOUD_MODE without "Save"
+set SHOW_TRACE [ok_loud_mode]; # a proxy to prevent changing LOUD_MODE without "Save"
 
 ################################################################################
 ### Here (on top-level) the preferences-GUI is created but not yet shown.
@@ -111,12 +113,14 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 ################################################################################
 # 'keyToDescrAndFormat' is a dictionary of <key>::[list <descr> <scan-format>].
 # example: {-left_img_subdir {"Subdirectory for left images" "%s"} -time_diff {"time difference in sec between R and L" "%d"}}
+# 'keyToInitVal' is a dictionary of <key>::<initial-value>].
+# example: {-left_img_subdir "L" -time_diff -3450}
 # Returns the dictionary of <key>::<value>
-proc GUI_options_form_show {keyToDescrAndFormat}  {
+proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
   global _CONFIRM_STATUS  
   
   # read proxy variables
-  set ::SHOW_TRACE $::LOUD_MODE
+  set ::SHOW_TRACE [ok_loud_mode]
   
   
   # Save old keyboard focus
@@ -150,6 +154,71 @@ proc GUI_options_form_show {keyToDescrAndFormat}  {
   wm withdraw .optsWnd
 
   return $_CONFIRM_STATUS
+}
+
+
+proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
+  global APP_TITLE
+  #array unset depthOvrdArr;  array unset PURENAME_TO_DEPTH; # essential init-s
+  set tBx .optsWnd.f.optTable
+  $tBx configure -state normal
+  $tBx delete 1.0 end;   # clean all
+  set allKeys [lsort [dict keys $keyToDescrAndFormat]]; # TODO: better sort
+  set cnt 0
+  dict for {key descrAndFormat} $keyToDescrAndFormat {
+    set descr [lindex $descrAndFormat 0]
+    if { 0 == [dict exists $keyToInitVal $key] }  { set val "" } else {
+      set val [dict get $keyToInitVal $key]  
+    }
+    incr cnt [_GUI_AppendOneOptionRecord $key $val $descr];# +1 on success
+  }
+  $tBx configure -state disabled
+  ok_info_msg "Prepared $cnt option record(s)"
+}
+
+
+# Inserts depth entry or error message at the end of the textbox.
+# Returns 1 on success, 0 on error
+proc _GUI_AppendOneDepthOvrdRecord {pureName depthOvrdArrVar} {
+  global NAME_HDR ESTIMDEPTH_HDR CHOSENDEPTH_HDR
+  global PURENAME_TO_DEPTH
+  upvar $depthOvrdArrVar depthOvrdArr
+  set retVal 1
+  if { 0 == [info exists depthOvrdArr($pureName)] }  {
+    set str "Image '$pureName' inexistent in depth-override data"
+    ok_err_msg $str;  set retVal 0
+  } else {
+    ok_trace_msg "Processing depth-ovrd record for '$pureName': {$depthOvrdArr($pureName)}"
+    # build and insert into textbox either depth-ovrd record, or error-message 
+    if { 0 == [TopUtils_ParseDepthOverrideRecord depthOvrdArr $pureName \
+                      globalTime minDepth maxDepth estimatedDepth depth] }  {
+      set str "Invalid depth-override record for '$pureName': '$depthOvrdArr($pureName)'"
+      ok_err_msg $str;  set retVal 0
+    } else {
+####  set str "[_FormatCellToHeader $pureName $NAME_HDR]\t[_FormatCellToHeader $estimatedDepth $ESTIMDEPTH_HDR]\t[_FormatCellToHeader $depth $CHOSENDEPTH_HDR]"
+      set str "[_FormatCellToHeader $pureName $NAME_HDR]\t[_FormatCellToHeader $estimatedDepth $ESTIMDEPTH_HDR]"
+    }
+    set tBx .depthWnd.f.depthTable
+    set PURENAME_TO_DEPTH($pureName) [_FormatCellToHeader $depth $CHOSENDEPTH_HDR]
+    set entryPath ".depthWnd.f.depthTable.depth_$pureName"
+    set tclResult [catch {
+      set res [$tBx  insert end "$str\t"];  # insert text-only line prefix
+      set depthEntry [ttk::entry $entryPath \
+                      -width [string length $CHOSENDEPTH_HDR] \
+                      -textvariable PURENAME_TO_DEPTH($pureName) \
+                      -validate key -validatecommand {ValidateDepthString %P}]
+      set res [$tBx  window create end -window $depthEntry]
+      set retVal [_GUI_AppendOneEntryPlusMinusResetButtons $pureName $estimatedDepth]
+      if { $retVal == 1 }  { incr cnt 1 }
+      set res [$tBx  insert end "\n"]
+      $tBx see end
+    } execResult]
+  }
+  if { $tclResult != 0 } {
+    set msg "Failed appending depth-override record: $execResult!"
+    ok_err_msg $msg;  set retVal 0
+  }
+  return  $retVal
 }
 
 
