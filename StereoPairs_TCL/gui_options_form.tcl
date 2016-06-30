@@ -179,41 +179,32 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
 
 # Inserts depth entry or error message at the end of the textbox.
 # Returns 1 on success, 0 on error
-proc _GUI_AppendOneDepthOvrdRecord {pureName depthOvrdArrVar} {
-  global NAME_HDR ESTIMDEPTH_HDR CHOSENDEPTH_HDR
-  global PURENAME_TO_DEPTH
-  upvar $depthOvrdArrVar depthOvrdArr
+proc _GUI_AppendOneOptionRecord {key val descr} {
+  global KEY_HDR VAL_HDR DESCR_HDR
   set retVal 1
-  if { 0 == [info exists depthOvrdArr($pureName)] }  {
+  ok_trace_msg "Processing option {$key} {$val} {$descr}"
+  # build and insert into textbox the option line
+  # TODO:verify
+  set str "[_FormatCellToHeader $key $KEY_HDR]\t[_FormatCellToHeader $val $VAL_HDR]\t[_FormatCellToHeader $descr $]"
+
+  set tBx .depthWnd.f.depthTable
+  set PURENAME_TO_DEPTH($pureName) [_FormatCellToHeader $depth $CHOSENDEPTH_HDR]
+  set entryPath ".depthWnd.f.depthTable.depth_$pureName"
+  set tclResult [catch {
+    set res [$tBx  insert end "$str\t"];  # insert text-only line prefix
+    set depthEntry [ttk::entry $entryPath \
+                    -width [string length $CHOSENDEPTH_HDR] \
+                    -textvariable PURENAME_TO_DEPTH($pureName) \
+                    -validate key -validatecommand {ValidateDepthString %P}]
+    set res [$tBx  window create end -window $depthEntry]
+    set retVal [_GUI_AppendOneEntryPlusMinusResetButtons $pureName $estimatedDepth]
+    if { $retVal == 1 }  { incr cnt 1 }
+    set res [$tBx  insert end "\n"]
+    $tBx see end
+  } execResult]
     set str "Image '$pureName' inexistent in depth-override data"
     ok_err_msg $str;  set retVal 0
   } else {
-    ok_trace_msg "Processing depth-ovrd record for '$pureName': {$depthOvrdArr($pureName)}"
-    # build and insert into textbox either depth-ovrd record, or error-message 
-    if { 0 == [TopUtils_ParseDepthOverrideRecord depthOvrdArr $pureName \
-                      globalTime minDepth maxDepth estimatedDepth depth] }  {
-      set str "Invalid depth-override record for '$pureName': '$depthOvrdArr($pureName)'"
-      ok_err_msg $str;  set retVal 0
-    } else {
-####  set str "[_FormatCellToHeader $pureName $NAME_HDR]\t[_FormatCellToHeader $estimatedDepth $ESTIMDEPTH_HDR]\t[_FormatCellToHeader $depth $CHOSENDEPTH_HDR]"
-      set str "[_FormatCellToHeader $pureName $NAME_HDR]\t[_FormatCellToHeader $estimatedDepth $ESTIMDEPTH_HDR]"
-    }
-    set tBx .depthWnd.f.depthTable
-    set PURENAME_TO_DEPTH($pureName) [_FormatCellToHeader $depth $CHOSENDEPTH_HDR]
-    set entryPath ".depthWnd.f.depthTable.depth_$pureName"
-    set tclResult [catch {
-      set res [$tBx  insert end "$str\t"];  # insert text-only line prefix
-      set depthEntry [ttk::entry $entryPath \
-                      -width [string length $CHOSENDEPTH_HDR] \
-                      -textvariable PURENAME_TO_DEPTH($pureName) \
-                      -validate key -validatecommand {ValidateDepthString %P}]
-      set res [$tBx  window create end -window $depthEntry]
-      set retVal [_GUI_AppendOneEntryPlusMinusResetButtons $pureName $estimatedDepth]
-      if { $retVal == 1 }  { incr cnt 1 }
-      set res [$tBx  insert end "\n"]
-      $tBx see end
-    } execResult]
-  }
   if { $tclResult != 0 } {
     set msg "Failed appending depth-override record: $execResult!"
     ok_err_msg $msg;  set retVal 0
