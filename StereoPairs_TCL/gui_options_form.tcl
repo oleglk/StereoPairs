@@ -116,6 +116,8 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 # 'keyToInitVal' is a dictionary of <key>::<initial-value>].
 # example: {-left_img_subdir "L" -time_diff -3450}
 # Returns the dictionary of <key>::<value>
+### Example of invocation:
+##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
 proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
   global _CONFIRM_STATUS  
   
@@ -134,8 +136,12 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
   # before grabbing events
 
   catch {tkwait visibility .optsWnd}
+
+  _GUI_fill_options_table $keyToDescrAndFormat $keyToInitVal
+  
   catch {grab set .optsWnd}
 
+  
   # Now drop into the event loop and wait
   # until the _CONFIRM_STATUS variable is
   # set.  This is our signal that the user
@@ -159,7 +165,8 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
 
 proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
   global APP_TITLE
-  #array unset depthOvrdArr;  array unset PURENAME_TO_DEPTH; # essential init-s
+  global KEY_TO_VAL
+  array unset KEY_TO_VAL; # essential init
   set tBx .optsWnd.f.optTable
   $tBx configure -state normal
   $tBx delete 1.0 end;   # clean all
@@ -170,7 +177,7 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
     if { 0 == [dict exists $keyToInitVal $key] }  { set val "" } else {
       set val [dict get $keyToInitVal $key]  
     }
-    incr cnt [_GUI_AppendOneOptionRecord $key $val $descr];# +1 on success
+    incr cnt [_GUI_append_one_option_record $key $val $descr];# +1 on success
   }
   $tBx configure -state disabled
   ok_info_msg "Prepared $cnt option record(s)"
@@ -179,38 +186,48 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
 
 # Inserts depth entry or error message at the end of the textbox.
 # Returns 1 on success, 0 on error
-proc _GUI_AppendOneOptionRecord {key val descr} {
+proc _GUI_append_one_option_record {key val descr} {
   global KEY_HDR VAL_HDR DESCR_HDR
+  global KEY_TO_VAL
   set retVal 1
   ok_trace_msg "Processing option {$key} {$val} {$descr}"
   # build and insert into textbox the option line
   # TODO:verify
-  set str "[_FormatCellToHeader $key $KEY_HDR]\t[_FormatCellToHeader $val $VAL_HDR]\t[_FormatCellToHeader $descr $]"
+  set strKey "[_format_cell_to_header $key $KEY_HDR]"
+  set strDescr "[_format_cell_to_header $descr $DESCR_HDR]"
 
-  set tBx .depthWnd.f.depthTable
-  set PURENAME_TO_DEPTH($pureName) [_FormatCellToHeader $depth $CHOSENDEPTH_HDR]
-  set entryPath ".depthWnd.f.depthTable.depth_$pureName"
+  set tBx .optsWnd.f.optTable
+  set KEY_TO_VAL($key) [_format_cell_to_header $val $VAL_HDR]
+  set entryPath ".optsWnd.f.optTable.val_$key"
   set tclResult [catch {
-    set res [$tBx  insert end "$str\t"];  # insert text-only line prefix
-    set depthEntry [ttk::entry $entryPath \
-                    -width [string length $CHOSENDEPTH_HDR] \
-                    -textvariable PURENAME_TO_DEPTH($pureName) \
-                    -validate key -validatecommand {ValidateDepthString %P}]
-    set res [$tBx  window create end -window $depthEntry]
-    set retVal [_GUI_AppendOneEntryPlusMinusResetButtons $pureName $estimatedDepth]
-    if { $retVal == 1 }  { incr cnt 1 }
+    set res [$tBx  insert end "$strKey\t"];  # insert text-only line prefix
+    set valEntry [ttk::entry $entryPath \
+            -width [string length $VAL_HDR] \
+            -textvariable KEY_TO_VAL($key) \
+            -validate key -validatecommand {_validate_string_by_format_todo %P}]
+    set res [$tBx  window create end -window $valEntry];  # insert value entry
+    set res [$tBx  insert end "\t$strDescr"];  # insert text-only line suffix
     set res [$tBx  insert end "\n"]
     $tBx see end
   } execResult]
-    set str "Image '$pureName' inexistent in depth-override data"
-    ok_err_msg $str;  set retVal 0
-  } else {
   if { $tclResult != 0 } {
-    set msg "Failed appending depth-override record: $execResult!"
+    set msg "Failed appending option record: $execResult!"
     ok_err_msg $msg;  set retVal 0
   }
   return  $retVal
 }
 
 
+proc _format_cell_to_header {cellVal hdrVal}  {
+  if { 1 == [string is double $cellVal] }  {
+    return  [format "%[string length $hdrVal].2f" $cellVal]
+  } else {
+    return  [format "%[string length $hdrVal]s" $cellVal]
+  }
+}
+
+
+proc _validate_string_by_format_todo {theStr} {
+  return  1
+}
 
