@@ -120,6 +120,7 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 ##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
 proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
   global _CONFIRM_STATUS  
+  global KEY_TO_VAL
   
   # read proxy variables
   set ::SHOW_TRACE [ok_loud_mode]
@@ -159,7 +160,12 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
   focus $oldFocus
   wm withdraw .optsWnd
 
-  return $_CONFIRM_STATUS;  # TODO: build and return dict from 'KEY_TO_VAL' array
+  if { $_CONFIRM_STATUS == 1 }  { ; # options accepted; no matter if changes applied
+    set keyToValDict [array get KEY_TO_VAL]; # TCL dict == list of keys and vals
+    return  $keyToValDict
+  } else { ;                        # options rejected
+    return 0
+  }
 }
 
 
@@ -197,7 +203,7 @@ proc _GUI_append_one_option_record {key val descr} {
   set strDescr "[_format_cell_to_header $descr $DESCR_HDR]"
 
   set tBx .optsWnd.f.optTable
-  set KEY_TO_VAL($key) [_format_cell_to_header $val $VAL_HDR]
+  set KEY_TO_VAL($key) [_format_cell_to_header $val $VAL_HDR] ;   # initial val
   set entryPath ".optsWnd.f.optTable.val_$key"
   set tclResult [catch {
     set res [$tBx  insert end "$strKey\t"];  # insert text-only line prefix
