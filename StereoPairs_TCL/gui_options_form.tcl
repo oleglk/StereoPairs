@@ -159,7 +159,7 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
   focus $oldFocus
   wm withdraw .optsWnd
 
-  return $_CONFIRM_STATUS
+  return $_CONFIRM_STATUS;  # TODO: build and return dict from 'KEY_TO_VAL' array
 }
 
 
@@ -184,7 +184,7 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
 }
 
 
-# Inserts depth entry or error message at the end of the textbox.
+# Inserts one option entry line or error message at the end of the textbox.
 # Returns 1 on success, 0 on error
 proc _GUI_append_one_option_record {key val descr} {
   global KEY_HDR VAL_HDR DESCR_HDR
