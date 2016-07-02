@@ -23,19 +23,22 @@ namespace eval ::ok_utils:: {
 # example: {-left_img_subdir "L" -time_diff " -3450 "}
 # Returns the dictionary of <key>::<value>, or 0 on any error
 ### Example of invocation:
-##   ok_key_val_list_scan_strings [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i " 888"] 
-proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal} {
+##   ok_key_val_list_scan_strings [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i " 888"] errStr 
+proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
+                                                              multiLineErrStr} {
+  upvar $multiLineErrStr errStr
   set keyToVal [dict create]
-  set errCnt 0
+  set errCnt 0;  set errStr ""
   dict for {key strVal} $keyToStrVal {
     if { 0 == [dict exists $keyToDescrAndFormat $key] } {
       ok_err_msg "Missing scan format for key '$key'"
       incr errCnt 1;  continue
     }
-    set fmt [lindex [dict get $keyToDescrAndFormat $key] 1]
-    if { 1 != [scan $strVal $fmt val] } {
-      ok_err_msg "Invalid string-value '$strVal' for key '$key'; scan format '$fmt'"
-      incr errCnt 1;  continue
+    set fmt "[lindex [dict get $keyToDescrAndFormat $key] 1]%c"; # %c for leftover
+    if { 1 != [scan [string trim $strVal] $fmt val leftover] } {
+      set msg "Invalid string-value '$strVal' for key '$key'; scan format '$fmt'"
+      append errStr  [expr {($errCnt > 0)? "\n" : ""}]  $msg
+      ok_err_msg $msg;  incr errCnt 1;  continue
     }
     dict append keyToVal $key $val
   }
