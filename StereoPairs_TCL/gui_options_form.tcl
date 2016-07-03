@@ -20,12 +20,12 @@ package require ok_utils;   namespace import -force ::ok_utils::*
 # |                                                                          |V|
 # |                                                                          |V|
 # +--------------------------------------------------------------------------+-+
-# |                    |BTN  save                |BTN close                  | |
+# |                    |BTN  okSave              |BTN close                  | |
 # +--------------------------------------------------------------------------+-+
 
 set WND_TITLE "DualCam Companion - options"
 
-set SHOW_TRACE [ok_loud_mode]; # a proxy to prevent changing LOUD_MODE without "Save"
+set SHOW_TRACE [ok_loud_mode]; # a proxy to prevent changing LOUD_MODE without "OK"
 
 ################################################################################
 ### Here (on top-level) the preferences-GUI is created but not yet shown.
@@ -63,7 +63,7 @@ grid [ttk::scrollbar .optsWnd.f.optTableScroll -orient vertical -command ".optsW
 
 foreach w [winfo children .optsWnd.f] {grid configure $w -padx 5 -pady 5}
 
-grid [ttk::button .optsWnd.f.save -text "Save" -command {set _CONFIRM_STATUS 1}] -column 2 -row 3
+grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 2 -row 3
   # _CONFIRM_STATUS is a global variable that will hold the value
   # corresponding to the button clicked.  It will also serve as our signal
   # to our GUI_PreferencesShow procedure that the user has finished interacting with the dialog
@@ -115,7 +115,7 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 # example: {-left_img_subdir {"Subdirectory for left images" "%s"} -time_diff {"time difference in sec between R and L" "%d"}}
 # 'keyToInitVal' is a dictionary of <key>::<initial-value>].
 # example: {-left_img_subdir "L" -time_diff -3450}
-# Returns the dictionary of <key>::<value>
+# Returns the dictionary of <key>::<value> on success, 0 on error or cancellation
 ### Example of invocation:
 ##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
 proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
@@ -138,25 +138,29 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
 
   catch {tkwait visibility .optsWnd}
 
-  _GUI_fill_options_table $keyToDescrAndFormat $keyToInitVal
+  if { 1 == [_GUI_fill_options_table $keyToDescrAndFormat $keyToInitVal] }  {
+    # ok to present the options
   
-  catch {grab set .optsWnd}
+    catch {grab set .optsWnd}
+    
+    # Now drop into the event loop and wait
+    # until the _CONFIRM_STATUS variable is
+    # set.  This is our signal that the user
+    # has clicked on one of the buttons.
 
+    tkwait variable _CONFIRM_STATUS
+
+    # Release the grab (very important!) and
+    # return focus to its original widget.
+    # Then hide the dialog and return the result.
+
+    grab release .optsWnd
+  } else {  ;   # error(s) in preparing the options
+    set _CONFIRM_STATUS 0 ;   # simulate rejection
+    tk_messageBox -message "-E- Error in options; please check the log" \
+                  -title $::WND_TITLE
+  }
   
-  # Now drop into the event loop and wait
-  # until the _CONFIRM_STATUS variable is
-  # set.  This is our signal that the user
-  # has clicked on one of the buttons.
-
-  tkwait variable _CONFIRM_STATUS
-
-  # Release the grab (very important!) and
-  # return focus to its original widget.
-  # Then hide the dialog and return the result.
-
-  grab release .optsWnd
-  
-  # ? or:   focus .optsWnd.f.rawConv
   focus $oldFocus
   wm withdraw .optsWnd
 
@@ -165,7 +169,7 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
     if { 0 == [set keyToValDict [ok_key_val_list_scan_strings \
                               $keyToDescrAndFormat $keyToStrValDict errStr]] } {
       set msg "Error in options:\n$errStr!"
-      tk_messageBox -message "-E- $msg" -title $APP_TITLE
+      tk_messageBox -message "-E- $msg" -title $::WND_TITLE
       return  0
     }
     return  $keyToValDict
@@ -176,7 +180,7 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
 
 
 proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
-  global APP_TITLE
+  global WND_TITLE
   global KEY_TO_VAL
   array unset KEY_TO_VAL; # essential init
   set tBx .optsWnd.f.optTable
@@ -193,7 +197,7 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
       } execResult]
       if { $tclResult != 0 } {
         set msg "Invalid initial value '$rawVal' for option '$key' : $execResult!"
-        ok_err_msg $msg;  incr errCnt 1
+        ok_err_msg $msg;  incr errCnt 1;  continue
       }
     }
     if { 1 == [_GUI_append_one_option_record $key $val $descr] }  { 

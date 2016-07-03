@@ -45,5 +45,5 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
   }
   set msg "Scanned string value(s) for [dict size $keyToStrVal] key(s); $errCnt error(s) occurred"
   if { $errCnt == 0 } {   ok_trace_msg $msg;  return $keyToVal
-  } else              {   ok_err_msg $msg;    return $keyToVal  }
+  } else              {   ok_err_msg $msg;    return 0  }
 }
