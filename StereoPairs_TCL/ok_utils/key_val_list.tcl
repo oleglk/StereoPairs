@@ -34,9 +34,10 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
       ok_err_msg "Missing scan format for key '$key'"
       incr errCnt 1;  continue
     }
-    set fmt "[lindex [dict get $keyToDescrAndFormat $key] 1]%c"; # %c for leftover
+    set origFmt [lindex [dict get $keyToDescrAndFormat $key] 1]
+    set fmt [format {%s%%c} $origFmt]; # %c - to catch an unexpected leftover
     if { 1 != [scan [string trim $strVal] $fmt val leftover] } {
-      set msg "Invalid string-value '$strVal' for key '$key'; scan format '$fmt'"
+      set msg "Invalid string-value '$strVal' for key '$key'; scan format '$origFmt'"
       append errStr  [expr {($errCnt > 0)? "\n" : ""}]  $msg
       ok_err_msg $msg;  incr errCnt 1;  continue
     }

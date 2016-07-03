@@ -183,16 +183,26 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
   $tBx configure -state normal
   $tBx delete 1.0 end;   # clean all
   set allKeys [lsort [dict keys $keyToDescrAndFormat]]; # TODO: better sort
-  set cnt 0
+  set cnt 0;  set errCnt 0
   dict for {key descrAndFormat} $keyToDescrAndFormat {
-    set descr [lindex $descrAndFormat 0]
+    set descr [lindex $descrAndFormat 0];   set fmt [lindex $descrAndFormat 1]
     if { 0 == [dict exists $keyToInitVal $key] }  { set val "" } else {
-      set val [dict get $keyToInitVal $key]  
+      set tclResult [catch {
+        set rawVal [dict get $keyToInitVal $key]
+        set val [format $fmt $rawVal]
+      } execResult]
+      if { $tclResult != 0 } {
+        set msg "Invalid initial value '$rawVal' for option '$key' : $execResult!"
+        ok_err_msg $msg;  incr errCnt 1
+      }
     }
-    incr cnt [_GUI_append_one_option_record $key $val $descr];# +1 on success
+    if { 1 == [_GUI_append_one_option_record $key $val $descr] }  { 
+      incr cnt 1 } else { incr errCnt 1 }
   }
   $tBx configure -state disabled
-  ok_info_msg "Prepared $cnt option record(s)"
+  set msg "Prepared $cnt option record(s); $errCnt error(s) occurred"
+  if { $errCnt == 0 }   { ok_info_msg $msg } else { ok_err_msg $msg }
+  return  [expr {($errCnt == 0)? 1 : 0}]
 }
 
 
@@ -231,7 +241,9 @@ proc _GUI_append_one_option_record {key val descr} {
 
 
 proc _format_cell_to_header {cellVal hdrVal}  {
-  if { 1 == [string is double $cellVal] }  {
+  if { 1 == [string is integer -strict $cellVal] }  {
+    return  [format "%[string length $hdrVal]d" $cellVal]
+  } elseif { 1 == [string is double -strict $cellVal] }  {
     return  [format "%[string length $hdrVal].2f" $cellVal]
   } else {
     return  [format "%[string length $hdrVal]s" $cellVal]
