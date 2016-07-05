@@ -5,6 +5,9 @@ package require Tk
 set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR   "setup_stereopairs.tcl"]
 
+# GUI-related dependencies
+source [file join $SCRIPT_DIR   "gui_options_form.tcl"]
+
 ### Sketch of the GUI #####
 # |                 |                 |                   |                    | |
 # +----------------------------------------------------------------------------+-+
@@ -198,8 +201,20 @@ proc GUI_RenamePairs {}  {
   global APP_TITLE GUI_VARS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   #TODO: ask for time_diff and dir-s
-  set paramStr "-max_burst_gap 1.0 -time_diff -69 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./Data -simulate_only"
-  set ret [pair_matcher_main $paramStr]
+  set keyToDescrAndFormat [dict create \
+    -max_burst_gap {"max time difference between consequent frames to be considered a burst, sec" "%g"} \
+    -time_diff {"time difference in seconds between the 2nd and 1st cameras" "%d"} \
+    -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
+    -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
+    -out_dir {"output directory" "%s"} \
+  ]
+  set keyToValIni [list -max_burst_gap 1.0 -time_diff -0 -orig_img_dir . -std_img_dir . -out_dir ./Data]
+  set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToValIni]
+  if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
+    set paramStr [join $keyToValUlt " "]
+    append paramStr " -rename_lr -simulate_only"  ; # key-only arg-s
+    set ret [pair_matcher_main $paramStr]
+  } else {  set ret 0 } ; # error already reported
   _UpdateGuiEndAction
   if { $ret == 0 }  {
     #tk_messageBox -message "-E- Failed GUI_RenamePairs in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
