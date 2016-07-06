@@ -54,11 +54,12 @@ grid rowconfigure .optsWnd.f 4 -weight 0
 
 # header-keywords should be no smaller than corresponding cell data fields
 set KEY_HDR "Option-name        "
-set VAL_HDR "Option-value                             "
+set VAL_HDR "Option-value                "; # for now - length by try and error
 set DESCR_HDR "Option-Description"
 grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state normal] -column 1 -row 1 -columnspan 3 -sticky we
 .optsWnd.f.fullHeader insert end "$KEY_HDR\t$VAL_HDR\t$DESCR_HDR"
 .optsWnd.f.fullHeader configure -state disabled
+set FONT_HDR [.optsWnd.f.fullHeader configure -font]
 
 grid [tk::text .optsWnd.f.optTable -width 71 -height 12 -wrap none -state disabled] -column 1 -row 2 -columnspan 3 -sticky wens
 grid [ttk::scrollbar .optsWnd.f.optTableScrollVert -orient vertical -command ".optsWnd.f.optTable yview"] -column 4 -row 2 -columnspan 1 -sticky wns
@@ -220,21 +221,24 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
 proc _GUI_append_one_option_record {key val descr} {
   global KEY_HDR VAL_HDR DESCR_HDR
   global KEY_TO_VAL
+  #global FONT_HDR
   set retVal 1
   ok_trace_msg "Processing option {$key} {$val} {$descr}"
   # build and insert into textbox the option line
   # TODO:verify
+  # TODO: how to size the entry when header widget differs in font size?
   set strKey "[_format_cell_to_header $key $KEY_HDR]"
-  set strDescr "[_format_cell_to_header $descr $DESCR_HDR]"
+  #set strDescr "[_format_cell_to_header $descr $DESCR_HDR]"
+  set strDescr $descr;  # it's the last in line - formatting not needed
 
   set tBx .optsWnd.f.optTable
   set KEY_TO_VAL($key) [_format_cell_to_header $val $VAL_HDR] ;   # initial val
   set entryPath ".optsWnd.f.optTable.val_$key"
   set tclResult [catch {
     set res [$tBx  insert end "$strKey\t"];  # insert text-only line prefix
-    set valEntry [ttk::entry $entryPath \
+    set valEntry [ttk::entry $entryPath     \
             -width [string length $VAL_HDR] \
-            -textvariable KEY_TO_VAL($key) \
+            -textvariable KEY_TO_VAL($key)  \
             -validate key -validatecommand {_validate_string_by_format_todo %P}]
     set res [$tBx  window create end -window $valEntry];  # insert value entry
     set res [$tBx  insert end "\t$strDescr"];  # insert text-only line suffix
