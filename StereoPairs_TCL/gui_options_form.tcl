@@ -20,6 +20,8 @@ package require ok_utils;   namespace import -force ::ok_utils::*
 # |                                                                          |V|
 # |                                                                          |V|
 # +--------------------------------------------------------------------------+-+
+# |<<<====================================================================>>>| |
+# +--------------------------------------------------------------------------+-+
 # |                    |BTN  okSave              |BTN close                  | |
 # +--------------------------------------------------------------------------+-+
 
@@ -47,6 +49,8 @@ grid rowconfigure .optsWnd.f 0 -weight 0
 grid rowconfigure .optsWnd.f 1 -weight 0
 grid rowconfigure .optsWnd.f 2 -weight 1
 grid rowconfigure .optsWnd.f 3 -weight 0
+grid rowconfigure .optsWnd.f 4 -weight 0
+
 
 # header-keywords should be no smaller than corresponding cell data fields
 set KEY_HDR "Option-name        "
@@ -57,16 +61,17 @@ grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state norma
 .optsWnd.f.fullHeader configure -state disabled
 
 grid [tk::text .optsWnd.f.optTable -width 71 -height 12 -wrap none -state disabled] -column 1 -row 2 -columnspan 3 -sticky wens
-grid [ttk::scrollbar .optsWnd.f.optTableScroll -orient vertical -command ".optsWnd.f.optTable yview"] -column 4 -row 2 -columnspan 1 -sticky wns
-.optsWnd.f.optTable configure -yscrollcommand ".optsWnd.f.optTableScroll set"
-
+grid [ttk::scrollbar .optsWnd.f.optTableScrollVert -orient vertical -command ".optsWnd.f.optTable yview"] -column 4 -row 2 -columnspan 1 -sticky wns
+.optsWnd.f.optTable configure -yscrollcommand ".optsWnd.f.optTableScrollVert set"
+grid [ttk::scrollbar .optsWnd.f.optTableScrollHorz -orient horizontal -command ".optsWnd.f.optTable xview"] -column 1 -row 3 -columnspan 3 -sticky wen
+.optsWnd.f.optTable configure -xscrollcommand ".optsWnd.f.optTableScrollHorz set"
 
   # _CONFIRM_STATUS is a global variable that will hold the value
   # corresponding to the button clicked.  It will also serve as our signal
   # to our GUI_PreferencesShow procedure that the user has finished interacting with the dialog
 
-grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 2 -row 3
-grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 3 -row 3
+grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 2 -row 4
+grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 3 -row 4
 
 
 foreach w [winfo children .optsWnd.f] {grid configure $w -padx 5 -pady 5}
