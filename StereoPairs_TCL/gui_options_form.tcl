@@ -49,8 +49,8 @@ grid rowconfigure .optsWnd.f 2 -weight 1
 grid rowconfigure .optsWnd.f 3 -weight 0
 
 # header-keywords should be no smaller than corresponding cell data fields
-set KEY_HDR "Option-name"
-set VAL_HDR "Option-value"
+set KEY_HDR "Option-name        "
+set VAL_HDR "Option-value                             "
 set DESCR_HDR "Option-Description"
 grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state normal] -column 1 -row 1 -columnspan 3 -sticky we
 .optsWnd.f.fullHeader insert end "$KEY_HDR\t$VAL_HDR\t$DESCR_HDR"
@@ -61,15 +61,15 @@ grid [ttk::scrollbar .optsWnd.f.optTableScroll -orient vertical -command ".optsW
 .optsWnd.f.optTable configure -yscrollcommand ".optsWnd.f.optTableScroll set"
 
 
-foreach w [winfo children .optsWnd.f] {grid configure $w -padx 5 -pady 5}
-
-grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 2 -row 3
   # _CONFIRM_STATUS is a global variable that will hold the value
   # corresponding to the button clicked.  It will also serve as our signal
   # to our GUI_PreferencesShow procedure that the user has finished interacting with the dialog
 
+grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 2 -row 3
 grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 3 -row 3
 
+
+foreach w [winfo children .optsWnd.f] {grid configure $w -padx 5 -pady 5}
 
 
 

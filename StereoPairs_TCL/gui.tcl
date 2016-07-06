@@ -17,7 +17,7 @@ source [file join $SCRIPT_DIR   "gui_options_form.tcl"]
 # +----------------------------------------------------------------------------+-+
 # |BTN renamePairs  |BTN cloneSettings|BTN compareColors  |BTN hideUnused      | |
 # +----------------------------------------------------------------------------+-+
-# |BTN restoreNames |PGB progressBar  |BTN quit           |BTN unhideUnused    | |
+# |BTN restoreNames |LBL progressLbl  |BTN quit           |BTN unhideUnused    | |
 # +----------------------------------------------------------------------------+-+
 # |               TXT logBox                                                   |^|
 # |                                                                            |v|
@@ -114,7 +114,7 @@ grid [ttk::button .top.hideUnused -text "Hide\nUnused" -command GUI_HideUnused] 
 
 grid [ttk::button .top.restoreNames -text "Restore\nNames" -command GUI_RestoreNames] -column 1 -row 4 -sticky we
 
-grid [ttk::label .top.progressLbl -textvariable PROGRESS] -column 2 -row 4 -sticky we
+grid [ttk::label .top.progressLbl -textvariable GUI_VARS(PROGRESS)] -column 2 -row 4 -sticky we
 
 grid [ttk::button .top.quit -text "Quit" -command GUI_Quit] -column 3 -row 4 -sticky we
 
