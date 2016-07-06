@@ -268,3 +268,19 @@ proc _validate_string_by_format_todo {theStr} {
   return  1
 }
 
+
+proc _validate_string_by_given_format {formatSpec str} {
+  if { 1 == [scan [string trim $str] "$formatSpec%c" val leftover] }  {
+    return  1
+  } else  { return  0 }
+}
+
+
+# Builds a set of per-format-spec string validation functions.
+# Returns a dict of <key>::<proc>
+## 'keyToDescrAndFormat' is a dictionary of <key>::[list <descr> <scan-format>].
+##   example: {-left_img_subdir {"Subdirectory for left images" "%s"} -time_diff {"time difference in sec between R and L" "%d"}}
+proc _build_validation_functions {keyToDescrAndFormat}  {
+  set keyToProc [dict create]
+  # TODO
+}
