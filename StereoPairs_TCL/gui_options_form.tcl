@@ -189,6 +189,7 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
   global WND_TITLE
   global KEY_TO_VAL
   array unset KEY_TO_VAL; # essential init
+  set keyToValidateCmdPrefix [_build_validation_functions $keyToDescrAndFormat]
   set tBx .optsWnd.f.optTable
   $tBx configure -state normal
   $tBx delete 1.0 end;   # clean all
@@ -206,7 +207,8 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
         ok_err_msg $msg;  incr errCnt 1;  continue
       }
     }
-    if { 1 == [_GUI_append_one_option_record $key $val $descr] }  { 
+    if { 1 == [_GUI_append_one_option_record $key $val $descr \
+                                             $keyToValidateCmdPrefix] }  { 
       incr cnt 1 } else { incr errCnt 1 }
   }
   $tBx configure -state disabled
@@ -218,7 +220,7 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
 
 # Inserts one option entry line or error message at the end of the textbox.
 # Returns 1 on success, 0 on error
-proc _GUI_append_one_option_record {key val descr} {
+proc _GUI_append_one_option_record {key val descr keyToValidateCmd} {
   global KEY_HDR VAL_HDR DESCR_HDR
   global KEY_TO_VAL
   #global FONT_HDR
@@ -239,7 +241,8 @@ proc _GUI_append_one_option_record {key val descr} {
     set valEntry [ttk::entry $entryPath     \
             -width [string length $VAL_HDR] \
             -textvariable KEY_TO_VAL($key)  \
-            -validate key -validatecommand {_validate_string_by_format_todo %P}]
+            -validate key \
+            -validatecommand [list {*}[dict get $keyToValidateCmd $key] %P] ]
     set res [$tBx  window create end -window $valEntry];  # insert value entry
     set res [$tBx  insert end "\t$strDescr"];  # insert text-only line suffix
     set res [$tBx  insert end "\n"]
@@ -270,10 +273,27 @@ proc _validate_string_by_format_todo {theStr} {
 
 
 proc _validate_string_by_given_format {formatSpec str} {
+  ok_trace_msg "formatSpec='$formatSpec' str='$str'"
   if { 1 == [scan [string trim $str] "$formatSpec%c" val leftover] }  {
     return  1
   } else  { return  0 }
 }
+
+
+#~ # Builds a set of per-format-spec string validation functions.
+#~ # Returns a dict of <key>::<proc>
+#~ ## 'keyToDescrAndFormat' is a dictionary of <key>::[list <descr> <scan-format>].
+#~ ##   example: {-left_img_subdir {"Subdirectory for left images" "%s"} -time_diff {"time difference in sec between R and L" "%d"}}
+#~ proc _build_validation_functions {keyToDescrAndFormat}  {
+  #~ set keyToCmdPrefix [dict create]; # will map keys to validate-cmd prefixes
+  #~ dict for {key descrAndFormat} $keyToDescrAndFormat {
+    #~ set fmt [lindex $descrAndFormat 1]
+    #~ dict set keyToCmdPrefix $key \
+                    #~ [list _validate_string_by_given_format $fmt]
+  #~ }
+  #~ ok_trace_msg "Validation commands: {$keyToCmdPrefix}"
+  #~ return  $keyToCmdPrefix
+#~ }
 
 
 # Builds a set of per-format-spec string validation functions.
@@ -281,6 +301,24 @@ proc _validate_string_by_given_format {formatSpec str} {
 ## 'keyToDescrAndFormat' is a dictionary of <key>::[list <descr> <scan-format>].
 ##   example: {-left_img_subdir {"Subdirectory for left images" "%s"} -time_diff {"time difference in sec between R and L" "%d"}}
 proc _build_validation_functions {keyToDescrAndFormat}  {
-  set keyToProc [dict create]
-  # TODO
+  set keyToCmd [dict create]; # will map keys to validate-cmd prefixes
+  
+  dict for {key descrAndFormat} $keyToDescrAndFormat {
+    set fmt [lindex $descrAndFormat 1]
+    if { $fmt == "%d" } {
+      dict set keyToCmd $key \
+                    [list _validate_string_by_given_format $fmt]
+    } TODO
+  }
+  ok_trace_msg "Validation commands: {$keyToCmd}"
+  return  $keyToCmd
+}
+
+
+proc _validate_string {valAsStr} {
+  return  [_validate_string_by_given_format "%s" $valAsStr]
+}
+
+proc _validate_integer {valAsStr} {
+  return  [_validate_string_by_given_format "%d" $valAsStr]
 }
