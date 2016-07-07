@@ -305,11 +305,19 @@ proc _build_validation_functions {keyToDescrAndFormat}  {
   
   dict for {key descrAndFormat} $keyToDescrAndFormat {
     set fmt [lindex $descrAndFormat 1]
-    if { $fmt == "%d" } {
+    switch ( $fmt ) {
+    
+    "%d"  {
       dict set keyToCmd $key \
-                    [list _validate_string_by_given_format $fmt]
-    } TODO
-  }
+                    [list _validate_integer $fmt]
+    }
+    "%s"  {
+      dict set keyToCmd $key \
+                    [list _validate_string $fmt]
+    }
+    default {
+      ok_err_msg "Unknown format {$fmt}"
+    }
   ok_trace_msg "Validation commands: {$keyToCmd}"
   return  $keyToCmd
 }
