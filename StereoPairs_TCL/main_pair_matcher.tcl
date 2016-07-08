@@ -179,7 +179,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
     return  0
   }
   set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
-  ok_info_msg "==== Now TODO by the following spec: ===="
+  ok_info_msg "==== Now find image pair matches by the following spec: ===="
   ok_info_msg $cmdStrNoHelp
   return  1
 }
