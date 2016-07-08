@@ -62,3 +62,16 @@ proc is_dir_ok_for_workdir {workDir}  {
 
 ################################################################################
 
+
+
+proc dualcam_find_preferences_file {{checkExist 1}}  {
+  global PREFERENCES_FILE_NAME
+  set pPath [file join [file normalize "~"] $PREFERENCES_FILE_NAME]
+  if { $checkExist && (0 == [file exists $pPath]) } {
+    ok_err_msg "Preferences file $pPath not found"
+    return ""
+  }
+  return $pPath
+}
+
+
