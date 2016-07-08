@@ -35,8 +35,13 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
       incr errCnt 1;  continue
     }
     set origFmt [lindex [dict get $keyToDescrAndFormat $key] 1]
-    set fmt [format {%s%%c} $origFmt]; # %c - to catch an unexpected leftover
-    if { 1 != [scan [string trim $strVal] $fmt val leftover] } {
+    if { $origFmt == "%s" }  {
+      set val [string trim $strVal];  # to allow spaces inside the string
+    } else {
+      set fmt [format {%s%%c} $origFmt]; # %c - to catch an unexpected leftover
+      set cntMatched [scan [string trim $strVal] $fmt val leftover]
+    }
+    if { $cntMatched != 1 } {
       set msg "Invalid string-value '$strVal' for key '$key'; scan format '$origFmt'"
       append errStr  [expr {($errCnt > 0)? "\n" : ""}]  $msg
       ok_err_msg $msg;  incr errCnt 1;  continue

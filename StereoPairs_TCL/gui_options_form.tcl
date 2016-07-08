@@ -124,9 +124,15 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 # Returns the dictionary of <key>::<value> on success, 0 on error or cancellation
 ### Example of invocation:
 ##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
-proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal}  {
+proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal {title ""}}  {
   global _CONFIRM_STATUS  
   global KEY_TO_VAL
+  global WND_TITLE
+  
+  if { $title != "" }   {
+    set WND_TITLE $title
+    wm title .optsWnd $WND_TITLE
+  }
   
   # read proxy variables
   set ::SHOW_TRACE [ok_loud_mode]
@@ -225,16 +231,21 @@ proc _GUI_append_one_option_record {key val descr formatSpec} {
   global KEY_TO_VAL
   #global FONT_HDR
   set retVal 1
-  ok_trace_msg "Processing option {$key} {$val} {$descr}"
+  ok_trace_msg "Processing option {$key} {$val} {$descr} {$formatSpec}"
   # build and insert into textbox the option line
   # TODO:verify
+  if { 0 == [_validate_string_by_given_format $formatSpec $val] }  {
+    ok_err_msg "Invalid initial value '$val' for option '$key'"
+    return  0
+  }
   # TODO: how to size the entry when header widget differs in font size?
   set strKey "[_format_cell_to_header $key $KEY_HDR]"
   #set strDescr "[_format_cell_to_header $descr $DESCR_HDR]"
   set strDescr $descr;  # it's the last in line - formatting not needed
 
   set tBx .optsWnd.f.optTable
-  set KEY_TO_VAL($key) [_format_cell_to_header $val $VAL_HDR] ;   # initial val
+  #set KEY_TO_VAL($key) [_format_cell_to_header $val $VAL_HDR] ;   # initial val
+  set KEY_TO_VAL($key) $val ;   # initial val; no text formatting needed
   set entryPath ".optsWnd.f.optTable.val_$key"
   set tclResult [catch {
     set res [$tBx  insert end "$strKey\t"];  # insert text-only line prefix
