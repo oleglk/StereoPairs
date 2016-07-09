@@ -37,6 +37,7 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
     set origFmt [lindex [dict get $keyToDescrAndFormat $key] 1]
     if { $origFmt == "%s" }  {
       set val [string trim $strVal];  # to allow spaces inside the string
+      set cntMatched 1
     } else {
       set fmt [format {%s%%c} $origFmt]; # %c - to catch an unexpected leftover
       set cntMatched [scan [string trim $strVal] $fmt val leftover]

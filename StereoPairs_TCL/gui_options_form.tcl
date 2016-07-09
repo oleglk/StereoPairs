@@ -57,9 +57,16 @@ set KEY_HDR "Option-name        "
 set VAL_HDR "Option-value                "; # for now - length by try and error
 set DESCR_HDR "Option-Description"
 grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state normal] -column 1 -row 1 -columnspan 3 -sticky we
-.optsWnd.f.fullHeader insert end "$KEY_HDR\t$VAL_HDR\t$DESCR_HDR"
-.optsWnd.f.fullHeader configure -state disabled
-set FONT_HDR [.optsWnd.f.fullHeader configure -font]
+.optsWnd.f.fullHeader  insert end "$KEY_HDR\t";  # insert text-only line prefix
+ttk::entry .optsWnd.f.fullHeader.valEntry  -width [string length $VAL_HDR]
+.optsWnd.f.fullHeader.valEntry  insert 0 $VAL_HDR
+.optsWnd.f.fullHeader.valEntry  configure -state readonly
+.optsWnd.f.fullHeader  window create end -window .optsWnd.f.fullHeader.valEntry
+.optsWnd.f.fullHeader  insert end "\t$DESCR_HDR"
+.optsWnd.f.fullHeader  configure -state disabled
+#~ .optsWnd.f.fullHeader  insert end "$KEY_HDR\t$VAL_HDR\t$DESCR_HDR"
+#~ .optsWnd.f.fullHeader  configure -state disabled
+#~ set FONT_HDR [.optsWnd.f.fullHeader configure -font]
 
 grid [tk::text .optsWnd.f.optTable -width 71 -height 12 -wrap none -state disabled] -column 1 -row 2 -columnspan 3 -sticky wens
 grid [ttk::scrollbar .optsWnd.f.optTableScrollVert -orient vertical -command ".optsWnd.f.optTable yview"] -column 4 -row 2 -columnspan 1 -sticky wns
