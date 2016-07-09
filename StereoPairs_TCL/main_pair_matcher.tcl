@@ -152,6 +152,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   # create dummy command line with the default parameters and copy it
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
+  #TODO: take defaults from preferences
   ok_set_cmd_line_params defCml cmlD { \
    {-time_diff 0} {-min_success_rate 50} \
    {-out_pairlist_filename "lr_pairs.csv"} {-dir_for_unmatched "Unmatched"} \
