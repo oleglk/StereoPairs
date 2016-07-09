@@ -5,6 +5,8 @@ package require Tk
 set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR   "setup_stereopairs.tcl"]
 
+source [file join $SCRIPT_DIR   "preferences_mgr.tcl"]
+
 # GUI-related dependencies
 source [file join $SCRIPT_DIR   "gui_options_form.tcl"]
 
@@ -65,7 +67,8 @@ proc _ReplaceLogText {str}  {
 proc _InitValuesForGUI {}  {
   global GUI_VARS
   ok_trace_msg "Setting hardcoded GUI preferences"
-  set GUI_VARS(INITIAL_WORK_DIR) [pwd]; #TODO: should come from preferences
+  if { 0 == [preference_get_val -INITIAL_WORK_DIR GUI_VARS(INITIAL_WORK_DIR)] } {
+    ok_err_msg "Fatal: missing preference for INITIAL_WORK_DIR";  return  0  }
   set GUI_VARS(PROGRESS) "...Idle..."
   set GUI_VARS(WORK_DIR) $GUI_VARS(INITIAL_WORK_DIR)
   set msg [dualcam_cd_to_workdir_or_complain $GUI_VARS(WORK_DIR) 0]
@@ -73,6 +76,7 @@ proc _InitValuesForGUI {}  {
     ok_warn_msg "$msg";   # initial work-dir not required to be valid
     return  0
   }
+  return  1
 }
 ################################################################################
 _InitValuesForGUI

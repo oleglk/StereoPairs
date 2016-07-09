@@ -16,23 +16,23 @@ proc _set_initial_values {}  {
 
   array unset PREFS
   
+  set PREFS(-INITIAL_WORK_DIR)  [pwd]
   # pair matcher:
-
-  set PREFS(-time_diff)         0
-  set PREFS(-min_success_rate)   50
-  set PREFS(-orig_img_dir)  [pwd]
+  set PREFS(-time_diff)           0
+  set PREFS(-min_success_rate)    50
+  set PREFS(-orig_img_dir)        $PREFS(-INITIAL_WORK_DIR)
   set PREFS(-orig_img_subdir_name_left)   "L"
   set PREFS(-orig_img_subdir_name_right)  "R"
-  set PREFS(-std_img_dir)   $PREFS(origImgRootPath)
-  set PREFS(-out_dir)       "Data"
+  set PREFS(-std_img_dir)         $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-out_dir)             "Data"
   set PREFS(-out_pairlist_filename)  "lr_pairs.csv"
-  set PREFS(-use_pairlist)  ""
-  set PREFS(-dir_for_unmatched)  "Unmatched"
-  set PREFS(-create_sbs)      NO
-  set PREFS(-rename_lr)       YES
-  set PREFS(-time_from )    "exif"
-  set PREFS(-max_burst_gap )      0.9
-  set PREFS(-simulate_only)   NO
+  set PREFS(-use_pairlist)        ""
+  set PREFS(-dir_for_unmatched)   "Unmatched"
+  set PREFS(-create_sbs)          NO
+  set PREFS(-rename_lr)           YES
+  set PREFS(-time_from)           "exif"
+  set PREFS(-max_burst_gap)       0.9
+  set PREFS(-simulate_only)       YES
   
   # settings copier
   set PREFS(global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
@@ -52,5 +52,22 @@ proc _set_initial_values {}  {
   #~ set SHOW_TRACE 1
 }
 ################################################################################
-_SetInitialValues
+_set_initial_values
 ################################################################################
+
+
+proc preference_get_val {key valRef} {
+  global PREFS
+  upvar $valRef val
+  if { [info exists PREFS($key)] }  {
+    set val $PREFS($key)
+    return  1
+  }
+  return  0;  # inexistent key
+}
+
+
+proc preference_set_val {key val} {
+  global PREFS
+  set PREFS($key) $val
+}
