@@ -215,8 +215,17 @@ proc GUI_RenamePairs {}  {
   set keyToValIni [list -max_burst_gap 1.0 -time_diff -0 -orig_img_dir . -std_img_dir . -out_dir ./Data]
   set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToValIni]
   if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
+    # extract key-only arg-s
+    set keyOnlyArgsStr ""
+    foreach keyOnlyArg [list -rename_lr -simulate_only]   {
+      if { ([dict exists $keyToValUlt $keyOnlyArg]) }   {
+        set val [preference_read_boolean [dict get $keyToValUlt $keyOnlyArg]]
+        dict unset keyToValUlt $keyOnlyArg
+        if { $val == 1) }  { append keyOnlyArgsStr " $keyOnlyArg" }
+      }
+    }
     set paramStr [join $keyToValUlt " "]
-    append paramStr " -rename_lr -simulate_only"  ; # key-only arg-s
+    append paramStr keyOnlyArgsStr
     set ret [pair_matcher_main $paramStr]
   } else {  set ret 0 } ; # error already reported
   _UpdateGuiEndAction

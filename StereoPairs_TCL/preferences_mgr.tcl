@@ -15,7 +15,12 @@ proc _set_initial_values {}  {
   ok_trace_msg "Setting hardcoded functional preferences"
 
   array unset PREFS
-  
+
+  set PREFS(BOOLEANS_DICT) [dict create 1 1  0 0  no 0  NO 0  No 0  nO 0   n 0 \
+                                        yes 1  YES 1  Yes 1  yES 1   y 1       \
+                                        false 0  FALSE 0  False 0  fALSE 0     \
+                                        true 1  TRUE 1  True 1  tRUE 1]  
+
   set PREFS(-INITIAL_WORK_DIR)  [pwd]
   # pair matcher:
   set PREFS(-time_diff)           0
@@ -70,4 +75,15 @@ proc preference_get_val {key valRef} {
 proc preference_set_val {key val} {
   global PREFS
   set PREFS($key) $val
+}
+
+
+proc preference_read_boolean {boolAsStr boolAsIntVar}  {
+  global PREFS
+  upvar $boolAsIntVar boolAsInt
+  if { 0 == [dict exists PREFS(BOOLEANS_DICT)] }  {
+    return  0;  # indicates not found
+  }
+  set boolAsInt [dict get $PREFS(BOOLEANS_DICT) $boolAsStr]
+  return  1;  # indicates found
 }
