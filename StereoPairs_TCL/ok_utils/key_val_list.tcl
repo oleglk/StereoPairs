@@ -10,8 +10,9 @@ if { [info exists OK_TCLSRC_ROOT] } {;   # assume running as a part of LazyConv
 
 namespace eval ::ok_utils:: {
 
-  namespace export      \
-    ok_key_val_list_scan_strings
+  namespace export                \
+    ok_key_val_list_scan_strings  \
+    ok_key_val_list_to_string
 }
 
 
@@ -53,3 +54,21 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
   if { $errCnt == 0 } {   ok_trace_msg $msg;  return $keyToVal
   } else              {   ok_err_msg $msg;    return 0  }
 }
+
+
+proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList}  {
+  if { $keyToValDict == 0 }  {  return  ""  }
+  # extract key-only arg-s
+  set keyOnlyArgsStr ""
+  foreach keyOnlyArg $keyOnlyArgList   {
+    if { ([dict exists $keyToValDict $keyOnlyArg]) }   {
+      set val [preference_read_boolean [dict get $keyToValDict $keyOnlyArg]]
+      dict unset keyToValDict $keyOnlyArg; #  prevent it appearing with value
+      if { $val == 1) }  { append keyOnlyArgsStr " $keyOnlyArg" }
+    }
+  }
+  set paramStr [join $keyToValDict " "]
+  append paramStr $keyOnlyArgsStr
+  return  $paramStr
+}
+ 
