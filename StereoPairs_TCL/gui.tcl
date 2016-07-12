@@ -213,10 +213,12 @@ proc GUI_RenamePairs {}  {
     -out_dir {"output directory" "%s"} \
   ]
   if { 0 == [set keyToValIni [preferences_fetch_values [list \
-          max_burst_gap -time_diff -orig_img_dir -std_img_dir -out_dir] 0]] }  {
+          -max_burst_gap -time_diff -orig_img_dir -std_img_dir -out_dir] 0]] }  {
     return  0;  # error already printed
   }
-  set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToValIni]
+  set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
+                                          $keyToValIni $GUI_VARS(WORK_DIR) "."]
+  set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToVal]
   if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
     set keyOnlyArgsList [list -rename_lr -simulate_only] 
     set paramStr [ok_key_val_list_to_string $keyToValUlt $keyOnlyArgsList]

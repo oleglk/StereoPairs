@@ -19,7 +19,10 @@ proc _set_initial_values {}  {
   set PREFS(BOOLEANS_DICT) [dict create 1 1  0 0  no 0  NO 0  No 0  nO 0   n 0 \
                                         yes 1  YES 1  Yes 1  yES 1   y 1       \
                                         false 0  FALSE 0  False 0  fALSE 0     \
-                                        true 1  TRUE 1  True 1  tRUE 1]  
+                                        true 1  TRUE 1  True 1  tRUE 1]
+
+  # directory paths that might become absolute
+  set PREFS(DIR_KEYS) [lsort [list -orig_img_dir -std_img_dir -out_dir]]
 
   set PREFS(-INITIAL_WORK_DIR)  [pwd]
   # pair matcher:
@@ -103,6 +106,25 @@ proc preferences_fetch_values {keyList allowMissing} {
       ok_err_msg "Missing preference for '$key'"
       return  0
     }
+  }
+  return  $retDict
+}
+
+
+proc preferences_strip_rootdir_prefix_from_dirs {prefDict rootDir newPrefix} {
+  global PREFS
+  set retDict [dict create]
+  foreach key [dict keys $prefDict] {
+    set val [dict get $prefDict $key]
+    set newVal $val
+    set isDir [expr {0 <= [lsearch -sorted $PREFS(DIR_KEYS) $key]}]
+    if { $isDir } {
+      if { 1 == [ok_is_underlying_filepath $val $rootDir] } {
+        set suffix [ok_strip_prefix_from_filepath $val $rootDir]
+        set newVal [file join $newPrefix $suffix]
+      }
+    }
+    dict set retDict $key $newVal
   }
   return  $retDict
 }
