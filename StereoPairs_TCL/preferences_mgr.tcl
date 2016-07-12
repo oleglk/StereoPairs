@@ -61,7 +61,7 @@ _set_initial_values
 ################################################################################
 
 
-proc preference_get_val {key valRef} {
+proc preferences_get_val {key valRef} {
   global PREFS
   upvar $valRef val
   if { [info exists PREFS($key)] }  {
@@ -72,18 +72,37 @@ proc preference_get_val {key valRef} {
 }
 
 
-proc preference_set_val {key val} {
+proc preferences_set_val {key val} {
   global PREFS
   set PREFS($key) $val
 }
 
 
-proc preference_read_boolean {boolAsStr boolAsIntVar}  {
+proc preferences_read_boolean {boolAsStr boolAsIntVar}  {
   global PREFS
   upvar $boolAsIntVar boolAsInt
-  if { 0 == [dict exists PREFS(BOOLEANS_DICT)] }  {
+  if { 0 == [info exists PREFS(BOOLEANS_DICT)] }  {
+    return  0;  # should not get there
+  }
+  if { 0 == [dict exists $PREFS(BOOLEANS_DICT) $boolAsStr] }  {
     return  0;  # indicates not found
   }
   set boolAsInt [dict get $PREFS(BOOLEANS_DICT) $boolAsStr]
   return  1;  # indicates found
+}
+
+
+# Returns dict of key::val; if 'allowMissing'==0 and some keys missing, returns 0
+proc preferences_fetch_values {keyList allowMissing} {
+  global PREFS
+  set retDict [dict create]
+  foreach key $keyList {
+    if { [info exists PREFS($key)] } {
+      dict set retDict $key $PREFS($key)
+    } elseif { $allowMissing == 0 } {
+      ok_err_msg "Missing preference for '$key'"
+      return  0
+    }
+  }
+  return  $retDict
 }

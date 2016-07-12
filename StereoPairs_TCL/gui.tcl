@@ -67,7 +67,7 @@ proc _ReplaceLogText {str}  {
 proc _InitValuesForGUI {}  {
   global GUI_VARS
   ok_trace_msg "Setting hardcoded GUI preferences"
-  if { 0 == [preference_get_val -INITIAL_WORK_DIR GUI_VARS(INITIAL_WORK_DIR)] } {
+  if { 0 == [preferences_get_val -INITIAL_WORK_DIR GUI_VARS(INITIAL_WORK_DIR)]} {
     ok_err_msg "Fatal: missing preference for INITIAL_WORK_DIR";  return  0  }
   set GUI_VARS(PROGRESS) "...Idle..."
   set GUI_VARS(WORK_DIR) $GUI_VARS(INITIAL_WORK_DIR)
@@ -202,7 +202,7 @@ proc _GUI_SetDir {newWorkDir}  {
 
 
 proc GUI_RenamePairs {}  {
-  global APP_TITLE GUI_VARS
+  global APP_TITLE GUI_VARS PREFS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   #TODO: ask for time_diff and dir-s
   set keyToDescrAndFormat [dict create \
@@ -212,7 +212,10 @@ proc GUI_RenamePairs {}  {
     -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
     -out_dir {"output directory" "%s"} \
   ]
-  set keyToValIni [list -max_burst_gap 1.0 -time_diff -0 -orig_img_dir . -std_img_dir . -out_dir ./Data]
+  if { 0 == [set keyToValIni [preferences_fetch_values [list \
+          max_burst_gap -time_diff -orig_img_dir -std_img_dir -out_dir] 0]] }  {
+    return  0;  # error already printed
+  }
   set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToValIni]
   if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
     set keyOnlyArgsList [list -rename_lr -simulate_only] 
