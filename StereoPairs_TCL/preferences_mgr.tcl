@@ -28,10 +28,10 @@ proc _set_initial_values {}  {
   # pair matcher:
   set PREFS(-time_diff)           0
   set PREFS(-min_success_rate)    50
-  set PREFS(-orig_img_dir)        $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-orig_img_dir)        "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
   set PREFS(-orig_img_subdir_name_left)   "L"
   set PREFS(-orig_img_subdir_name_right)  "R"
-  set PREFS(-std_img_dir)         $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-std_img_dir)         "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
   set PREFS(-out_dir)             "Data"
   set PREFS(-out_pairlist_filename)  "lr_pairs.csv"
   set PREFS(-use_pairlist)        ""

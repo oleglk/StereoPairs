@@ -62,9 +62,13 @@ proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList}  {
   set keyOnlyArgsStr ""
   foreach keyOnlyArg $keyOnlyArgList   {
     if { ([dict exists $keyToValDict $keyOnlyArg]) }   {
-      set val [preference_read_boolean [dict get $keyToValDict $keyOnlyArg]]
-      dict unset keyToValDict $keyOnlyArg; #  prevent it appearing with value
-      if { $val == 1) }  { append keyOnlyArgsStr " $keyOnlyArg" }
+      set boolAsStr [dict get $keyToValDict $keyOnlyArg]
+      if { 1 == [preferences_read_boolean $boolAsStr boolAsInt] } {
+        dict unset keyToValDict $keyOnlyArg; #  prevent it appearing with value
+        if { $boolAsInt == 1 }  { append keyOnlyArgsStr " $keyOnlyArg" }
+      } else {
+        ok_err_msg "Invalid boolean value '$boolAsStr' for key '$keyOnlyArg'"
+      }
     }
   }
   set paramStr [join $keyToValDict " "]

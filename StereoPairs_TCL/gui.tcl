@@ -211,14 +211,16 @@ proc GUI_RenamePairs {}  {
     -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
     -out_dir {"output directory" "%s"} \
+    -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
   if { 0 == [set keyToValIni [preferences_fetch_values [list \
-          -max_burst_gap -time_diff -orig_img_dir -std_img_dir -out_dir] 0]] }  {
+          -max_burst_gap -time_diff -orig_img_dir -std_img_dir -out_dir \
+          -simulate_only] 0]] }  {
     return  0;  # error already printed
   }
-  set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
-                                          $keyToValIni $GUI_VARS(WORK_DIR) "."]
-  set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToVal]
+  #~ set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
+                                          #~ $keyToValIni $GUI_VARS(WORK_DIR) "."]
+  set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToValIni]
   if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
     set keyOnlyArgsList [list -rename_lr -simulate_only] 
     set paramStr [ok_key_val_list_to_string $keyToValUlt $keyOnlyArgsList]
