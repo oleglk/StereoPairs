@@ -213,14 +213,15 @@ proc GUI_RenamePairs {}  {
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  if { 0 == [set keyToValIni [preferences_fetch_values [list \
-          -max_burst_gap -time_diff -orig_img_dir -std_img_dir -out_dir \
-          -simulate_only] 0]] }  {
+  set keysInOrder [list -time_diff -orig_img_dir -std_img_dir -out_dir \
+                        -max_burst_gap -simulate_only]
+  if { 0 == [set keyToValIni [preferences_fetch_values $keysInOrder 0]] }  {
     return  0;  # error already printed
   }
   #~ set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
                                           #~ $keyToValIni $GUI_VARS(WORK_DIR) "."]
-  set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToValIni]
+  set keyToValUlt [GUI_options_form_show $keyToDescrAndFormat $keyToValIni \
+                                        "Pair-Matcher Parameters" $keysInOrder]
   if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
     set keyOnlyArgsList [list -rename_lr -simulate_only] 
     set paramStr [ok_key_val_list_to_string $keyToValUlt $keyOnlyArgsList]

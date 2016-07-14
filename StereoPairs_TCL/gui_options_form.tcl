@@ -131,11 +131,20 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 # Returns the dictionary of <key>::<value> on success, 0 on error or cancellation
 ### Example of invocation:
 ##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
-proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal {title ""}}  {
+proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal \
+                            {title ""} {keyOrder {}}}  {
   global _CONFIRM_STATUS  
   global KEY_TO_VAL
   global WND_TITLE
   
+  set allKeys [dict keys $keyToDescrAndFormat]
+  if { $keyOrder == {} }   {
+    set keyOrder $allKeys
+  } elseif { 0 == [ok_unordered_lists_are_equal $keyOrder $allKeys] } {
+    set msg "Invalid key order {$keyOrder} for {$allKeys}"
+    tk_messageBox -message "-E- $msg" -title $::WND_TITLE
+    return  0
+  }
   if { $title != "" }   {
     set WND_TITLE $title
     wm title .optsWnd $WND_TITLE
@@ -157,7 +166,8 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal {title ""}}  {
 
   catch {tkwait visibility .optsWnd}
 
-  if { 1 == [_GUI_fill_options_table $keyToDescrAndFormat $keyToInitVal] }  {
+  if { 1 == [_GUI_fill_options_table \
+                          $keyToDescrAndFormat $keyToInitVal $keyOrder] }  {
     # ok to present the options
   
     catch {grab set .optsWnd}
@@ -198,7 +208,7 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal {title ""}}  {
 }
 
 
-proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
+proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal keyOrder}  {
   global WND_TITLE
   global KEY_TO_VAL
   array unset KEY_TO_VAL; # essential init
@@ -207,8 +217,14 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal}  {
   $tBx configure -state normal
   $tBx delete 1.0 end;   # clean all
   set allKeys [lsort [dict keys $keyToDescrAndFormat]]; # TODO: better sort
+  if { 0 == [ok_unordered_lists_are_equal $keyOrder $allKeys] } {
+    set msg "Invalid key order {$keyOrder} for {$allKeys}"
+    tk_messageBox -message "-E- $msg" -title $::WND_TITLE
+    return  0
+  }
   set cnt 0;  set errCnt 0
-  dict for {key descrAndFormat} $keyToDescrAndFormat {
+  foreach key $keyOrder {
+    set descrAndFormat [dict get $keyToDescrAndFormat $key]; # existence checked
     set descr [lindex $descrAndFormat 0];   set fmt [lindex $descrAndFormat 1]
     if { 0 == [dict exists $keyToInitVal $key] }  { set val "" } else {
       set tclResult [catch {

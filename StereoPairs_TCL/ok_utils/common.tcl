@@ -12,6 +12,7 @@ namespace eval ::ok_utils:: {
     namespace export \
 	ok_list_to_set \
   ok_list_to_dict_set \
+  ok_unordered_lists_are_equal \
 	ok_name_in_array \
 	ok_discard_empty_list_elements \
 	ok_subtract_list_from_list \
@@ -69,6 +70,12 @@ proc ::ok_utils::ok_list_to_dict_set {theList} {
   }
   return $theDict
 }
+
+
+proc ::ok_utils::ok_unordered_lists_are_equal {list1 list2}  {
+  return [expr {[lsort $list1] == [lsort $list2]}]
+}
+
 
 # Checks whether 'name' appears in 'arrayName'
 proc ::ok_utils::ok_name_in_array {name arrayName} {
