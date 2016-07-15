@@ -309,7 +309,8 @@ proc _validate_string_by_format_todo {theStr} {
 
 proc _validate_string_by_given_format {formatSpec str} {
   ok_trace_msg "formatSpec='$formatSpec' str='$str'"
-  if { $formatSpec == "%s" }  { return  1 } ;   # any string allowed
+  if { $formatSpec == "%s" }  { return  1 };   # any string allowed
+  if { $str == "" }  { return  1 }; # empty string allowed not to disturb edit-s
   if { 1 == [scan [string trim $str] "$formatSpec%c" val leftover] }  {
     return  1
   } else  { return  0 }
