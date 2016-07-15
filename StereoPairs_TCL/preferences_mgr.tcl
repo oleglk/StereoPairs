@@ -66,6 +66,11 @@ proc _set_initial_values {}  {
   set PREFS(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
   set PREFS(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
 ################################################################################
+  set PREFS(LR_NAME_RESTORER__keyToDescrAndFormat) $PREFS(PAIR_MATCHER__keyToDescrAndFormat)
+  set PREFS(LR_NAME_RESTORER__keysInOrder) $PREFS(PAIR_MATCHER__keysInOrder)
+  set PREFS(LR_NAME_RESTORER__keyOnlyArgsList) $PREFS(PAIR_MATCHER__keyOnlyArgsList)
+  set PREFS(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
+################################################################################
   
   
   #~ set INITIAL_WORK_DIR [pwd]

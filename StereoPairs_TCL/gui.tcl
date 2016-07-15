@@ -204,7 +204,6 @@ proc _GUI_SetDir {newWorkDir}  {
 proc GUI_RenamePairs {}  {
   global APP_TITLE GUI_VARS PREFS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  #TODO: ask for time_diff and dir-s
   if { 0 == [set keyToValIni [preferences_fetch_values $PREFS(PAIR_MATCHER__keysInOrder) 0]] }  {
     return  0;  # error already printed
   }
@@ -300,12 +299,30 @@ proc GUI_Quit {}  {
 
 
 proc GUI_RestoreNames {}  {
-  global APP_TITLE
+  global APP_TITLE GUI_VARS PREFS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  # No problem of reopen while already shown - we anyway perform "deiconify"
-  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
+  if { 0 == [set keyToValIni [preferences_fetch_values $PREFS(LR_NAME_RESTORER__keysInOrder) 0]] }  {
+    return  0;  # error already printed
+  }
+  set keyToValUlt [GUI_options_form_show \
+                    $PREFS(LR_NAME_RESTORER__keyToDescrAndFormat) $keyToValIni \
+                    "Left/Right-Image Names Restoration Parameters" \
+                    $PREFS(LR_NAME_RESTORER__keysInOrder)]
+  if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
+    set paramStr [ok_key_val_list_to_string $keyToValUlt \
+                                          $PREFS(LR_NAME_RESTORER__keyOnlyArgsList)]
+    append paramStr " " $PREFS(LR_NAME_RESTORER__hardcodedArgsStr)
+    set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
+  } else {  set ret 0 } ; # error already reported
   _UpdateGuiEndAction
-  # ?TODO?
+  if { $ret == 0 }  {
+    #tk_messageBox -message "-E- Failed GUI_RestoreNames in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
+    return  0
+  }
+  set msg "Stereopair L/R image names restored under '$GUI_VARS(WORK_DIR)'"
+  #tk_messageBox -message $msg -title $APP_TITLE
+  ok_info_msg $msg
+  return  1
 }
 
 
