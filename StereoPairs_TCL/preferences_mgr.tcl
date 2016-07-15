@@ -52,6 +52,21 @@ proc _set_initial_values {}  {
 #  set PREFS(-)  ""
 
   
+################################################################################
+  set PREFS(PAIR_MATCHER__keyToDescrAndFormat) [dict create \
+    -max_burst_gap {"max time difference between consequent frames to be considered a burst, sec" "%g"} \
+    -time_diff {"time difference in seconds between the 2nd and 1st cameras" "%d"} \
+    -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
+    -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
+    -out_dir {"output directory" "%s"} \
+    -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
+  ]
+  set PREFS(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir -std_img_dir -out_dir \
+                        -max_burst_gap -simulate_only]
+  set PREFS(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
+  set PREFS(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
+################################################################################
+  
   
   #~ set INITIAL_WORK_DIR [pwd]
   #~ set WORK_DIR $INITIAL_WORK_DIR
