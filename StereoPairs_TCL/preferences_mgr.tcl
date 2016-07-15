@@ -53,6 +53,8 @@ proc _set_initial_values {}  {
 
   
 ################################################################################
+## Per-application option lists to be used in GUI frontend                    ##
+################################################################################
   set PREFS(PAIR_MATCHER__keyToDescrAndFormat) [dict create \
     -max_burst_gap {"max time difference between consequent frames to be considered a burst, sec" "%g"} \
     -time_diff {"time difference in seconds between the 2nd and 1st cameras" "%d"} \
@@ -66,8 +68,10 @@ proc _set_initial_values {}  {
   set PREFS(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
   set PREFS(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
 ################################################################################
-  set PREFS(LR_NAME_RESTORER__keyToDescrAndFormat) $PREFS(PAIR_MATCHER__keyToDescrAndFormat)
-  set PREFS(LR_NAME_RESTORER__keysInOrder) $PREFS(PAIR_MATCHER__keysInOrder)
+  set PREFS(LR_NAME_RESTORER__keyToDescrAndFormat)  [dict remove \
+    $PREFS(PAIR_MATCHER__keyToDescrAndFormat) -max_burst_gap -time_diff]
+  set PREFS(LR_NAME_RESTORER__keysInOrder)          [ok_lremove \
+    $PREFS(PAIR_MATCHER__keysInOrder)   [list -max_burst_gap -time_diff]]
   set PREFS(LR_NAME_RESTORER__keyOnlyArgsList) $PREFS(PAIR_MATCHER__keyOnlyArgsList)
   set PREFS(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
 ################################################################################

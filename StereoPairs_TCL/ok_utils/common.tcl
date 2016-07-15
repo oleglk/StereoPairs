@@ -13,6 +13,8 @@ namespace eval ::ok_utils:: {
 	ok_list_to_set \
   ok_list_to_dict_set \
   ok_unordered_lists_are_equal \
+  ok_lremove_in_place \
+  ok_lremove \
 	ok_name_in_array \
 	ok_discard_empty_list_elements \
 	ok_subtract_list_from_list \
@@ -74,6 +76,26 @@ proc ::ok_utils::ok_list_to_dict_set {theList} {
 
 proc ::ok_utils::ok_unordered_lists_are_equal {list1 list2}  {
   return [expr {[lsort $list1] == [lsort $list2]}]
+}
+
+
+# A procedure to delete a given element from a list
+# copied from http://docs.activestate.com/activetcl/8.5/tcl/TclCmd/lreplace.htm
+proc ::ok_utils::ok_lremove_in_place {listVariable value} {
+    upvar 1 $listVariable var
+    set idx [lsearch -exact $var $value]
+    set var [lreplace $var $idx $idx]
+}
+
+
+# A procedure to delete a given element from a list
+proc ::ok_utils::ok_lremove {listValue valuesToremove} {
+  set newList $listValue
+  foreach value $valuesToremove {
+    set idx [lsearch -exact $newList $value]
+    set newList [lreplace $newList $idx $idx]
+  }
+  return  $newList
 }
 
 
