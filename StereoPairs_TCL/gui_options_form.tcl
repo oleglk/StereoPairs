@@ -39,24 +39,22 @@ toplevel .optsWnd
 
 grid [ttk::frame .optsWnd.f -padding "3 3 12 12"] -column 0 -row 0 -sticky nwes
 grid columnconfigure .optsWnd 0 -weight 1
-grid columnconfigure .optsWnd.f 0 -weight 0
+grid columnconfigure .optsWnd.f 0 -weight 1
 grid columnconfigure .optsWnd.f 1 -weight 1
 grid columnconfigure .optsWnd.f 2 -weight 1
-grid columnconfigure .optsWnd.f 3 -weight 1
-grid columnconfigure .optsWnd.f 4 -weight 0
+grid columnconfigure .optsWnd.f 3 -weight 0
 grid rowconfigure .optsWnd 0 -weight 1
-grid rowconfigure .optsWnd.f 0 -weight 0
-grid rowconfigure .optsWnd.f 1 -weight 0
-grid rowconfigure .optsWnd.f 2 -weight 1
+grid rowconfigure .optsWnd.f 0 -weight 0 -minsize 50
+grid rowconfigure .optsWnd.f 1 -weight 1
+grid rowconfigure .optsWnd.f 2 -weight 0
 grid rowconfigure .optsWnd.f 3 -weight 0
-grid rowconfigure .optsWnd.f 4 -weight 0
 
 
 # header-keywords should be no smaller than corresponding cell data fields
 set KEY_HDR "Option-name        "
 set VAL_HDR "Option-value                "; # for now - length by try and error
 set DESCR_HDR "Option-Description"
-grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state normal] -column 1 -row 1 -columnspan 3 -sticky we
+grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state normal] -column 0 -row 0 -columnspan 3 -sticky wens
 .optsWnd.f.fullHeader  insert end "$KEY_HDR\t";  # insert text-only line prefix
 ttk::entry .optsWnd.f.fullHeader.valEntry  -width [string length $VAL_HDR]
 .optsWnd.f.fullHeader.valEntry  insert 0 $VAL_HDR
@@ -68,18 +66,18 @@ ttk::entry .optsWnd.f.fullHeader.valEntry  -width [string length $VAL_HDR]
 #~ .optsWnd.f.fullHeader  configure -state disabled
 #~ set FONT_HDR [.optsWnd.f.fullHeader configure -font]
 
-grid [tk::text .optsWnd.f.optTable -width 71 -height 12 -wrap none -state disabled] -column 1 -row 2 -columnspan 3 -sticky wens
-grid [ttk::scrollbar .optsWnd.f.optTableScrollVert -orient vertical -command ".optsWnd.f.optTable yview"] -column 4 -row 2 -columnspan 1 -sticky wns
+grid [tk::text .optsWnd.f.optTable -width 71 -height 12 -wrap none -state disabled] -column 0 -row 1 -columnspan 3 -sticky wens
+grid [ttk::scrollbar .optsWnd.f.optTableScrollVert -orient vertical -command ".optsWnd.f.optTable yview"] -column 3 -row 1 -columnspan 1 -sticky wns
 .optsWnd.f.optTable configure -yscrollcommand ".optsWnd.f.optTableScrollVert set"
-grid [ttk::scrollbar .optsWnd.f.optTableScrollHorz -orient horizontal -command ".optsWnd.f.optTable xview"] -column 1 -row 3 -columnspan 3 -sticky wen
+grid [ttk::scrollbar .optsWnd.f.optTableScrollHorz -orient horizontal -command ".optsWnd.f.optTable xview"] -column 0 -row 2 -columnspan 3 -sticky wen
 .optsWnd.f.optTable configure -xscrollcommand ".optsWnd.f.optTableScrollHorz set"
 
   # _CONFIRM_STATUS is a global variable that will hold the value
   # corresponding to the button clicked.  It will also serve as our signal
   # to our GUI_PreferencesShow procedure that the user has finished interacting with the dialog
 
-grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 2 -row 4
-grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 3 -row 4
+grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 1 -row 3
+grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 2 -row 3
 
 
 foreach w [winfo children .optsWnd.f] {grid configure $w -padx 5 -pady 5}
