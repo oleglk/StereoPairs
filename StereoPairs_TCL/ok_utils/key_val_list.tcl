@@ -12,7 +12,15 @@ namespace eval ::ok_utils:: {
 
   namespace export                \
     ok_key_val_list_scan_strings  \
-    ok_key_val_list_to_string
+    ok_key_val_list_to_string     \
+    ok_read_boolean
+
+  # keywords telling boolean values
+  variable BOOLEANS_DICT [dict create 1 1  0 0  no 0  NO 0  No 0  nO 0   n 0  \
+                                        yes 1  YES 1  Yes 1  yES 1   y 1      \
+                                        false 0  FALSE 0  False 0  fALSE 0    \
+                                        true 1  TRUE 1  True 1  tRUE 1]
+
 }
 
 
@@ -63,7 +71,7 @@ proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList}  {
   foreach keyOnlyArg $keyOnlyArgList   {
     if { ([dict exists $keyToValDict $keyOnlyArg]) }   {
       set boolAsStr [dict get $keyToValDict $keyOnlyArg]
-      if { 1 == [preferences_read_boolean $boolAsStr boolAsInt] } {
+      if { 1 == [ok_read_boolean $boolAsStr boolAsInt] } {
         dict unset keyToValDict $keyOnlyArg; #  prevent it appearing with value
         if { $boolAsInt == 1 }  { append keyOnlyArgsStr " $keyOnlyArg" }
       } else {
@@ -75,4 +83,18 @@ proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList}  {
   append paramStr $keyOnlyArgsStr
   return  $paramStr
 }
- 
+
+
+proc ::ok_utils::ok_read_boolean {boolAsStr boolAsIntVar}  {
+  variable BOOLEANS_DICT
+  upvar $boolAsIntVar boolAsInt
+  if { 0 == [info exists BOOLEANS_DICT] }  {
+    ok_err_msg "Missing dictionary of boolean constants in 'BOOLEANS_DICT'"
+    return  0;  # should not get there
+  }
+  if { 0 == [dict exists $BOOLEANS_DICT $boolAsStr] }  {
+    return  0;  # indicates not found
+  }
+  set boolAsInt [dict get $BOOLEANS_DICT $boolAsStr]
+  return  1;  # indicates found
+}

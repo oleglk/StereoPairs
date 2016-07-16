@@ -16,11 +16,6 @@ proc _set_initial_values {}  {
 
   array unset PREFS
 
-  set PREFS(BOOLEANS_DICT) [dict create 1 1  0 0  no 0  NO 0  No 0  nO 0   n 0 \
-                                        yes 1  YES 1  Yes 1  yES 1   y 1       \
-                                        false 0  FALSE 0  False 0  fALSE 0     \
-                                        true 1  TRUE 1  True 1  tRUE 1]
-
   # directory paths that might become absolute
   set PREFS(DIR_KEYS) [lsort [list -orig_img_dir -std_img_dir -out_dir]]
 
@@ -39,7 +34,7 @@ proc _set_initial_values {}  {
   set PREFS(-create_sbs)          NO
   set PREFS(-rename_lr)           YES
   set PREFS(-time_from)           "exif"
-  set PREFS(-max_burst_gap)       0.9
+  set PREFS(-max_burst_gap)       1.0
   set PREFS(-simulate_only)       YES
   
   # settings copier
@@ -102,20 +97,6 @@ proc preferences_get_val {key valRef} {
 proc preferences_set_val {key val} {
   global PREFS
   set PREFS($key) $val
-}
-
-
-proc preferences_read_boolean {boolAsStr boolAsIntVar}  {
-  global PREFS
-  upvar $boolAsIntVar boolAsInt
-  if { 0 == [info exists PREFS(BOOLEANS_DICT)] }  {
-    return  0;  # should not get there
-  }
-  if { 0 == [dict exists $PREFS(BOOLEANS_DICT) $boolAsStr] }  {
-    return  0;  # indicates not found
-  }
-  set boolAsInt [dict get $PREFS(BOOLEANS_DICT) $boolAsStr]
-  return  1;  # indicates found
 }
 
 
