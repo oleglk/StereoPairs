@@ -361,7 +361,7 @@ proc _find_and_dump_pair_matches {namesToTimesLeft namesToTimesRight} {
       lappend flatListOfMatchesRL [list $nameP $name $deltaT]; # {nameL nameR dt}
     }
   }
-  ok_info_msg "Found [llength $flatListOfMatchesLR] left-to-right and [llength $flatListOfMatchesRL] rifht-to-left candidate match(es)"
+  ok_info_msg "Found [llength $flatListOfMatchesLR] left-to-right and [llength $flatListOfMatchesRL] right-to-left candidate match(es)"
   set flatListOfMatches [concat $flatListOfMatchesLR $flatListOfMatchesRL]
   if { 0 == [llength $flatListOfMatches] } {
     ok_err_msg "No matches found; please check time difference between the cameras"

@@ -64,7 +64,8 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
 }
 
 
-proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList}  {
+proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList errCnt} {
+  upvar $errCnt nErrors;  set nErrors 0
   if { $keyToValDict == 0 }  {  return  ""  }
   # extract key-only arg-s
   set keyOnlyArgsStr ""
@@ -76,6 +77,7 @@ proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList}  {
         if { $boolAsInt == 1 }  { append keyOnlyArgsStr " $keyOnlyArg" }
       } else {
         ok_err_msg "Invalid boolean value '$boolAsStr' for key '$keyOnlyArg'"
+        incr nErrors 1
       }
     }
   }

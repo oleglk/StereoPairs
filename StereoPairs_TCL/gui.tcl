@@ -214,7 +214,12 @@ proc GUI_RenamePairs {}  {
                     "Pair-Matcher Parameters" $PREFS(PAIR_MATCHER__keysInOrder)]
   if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
     set paramStr [ok_key_val_list_to_string $keyToValUlt \
-                                          $PREFS(PAIR_MATCHER__keyOnlyArgsList)]
+                                  $PREFS(PAIR_MATCHER__keyOnlyArgsList) errCnt]
+    if { $errCnt > 0 } {
+      set msg "$errCnt error(s) in the command parameters"
+      tk_messageBox -message "-E- $msg"  -title $APP_TITLE
+      ok_err_msg $msg;      return  0
+    }
     append paramStr " " $PREFS(PAIR_MATCHER__hardcodedArgsStr)
     set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
   } else {  set ret 0 } ; # error already reported
@@ -310,7 +315,12 @@ proc GUI_RestoreNames {}  {
                     $PREFS(LR_NAME_RESTORER__keysInOrder)]
   if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
     set paramStr [ok_key_val_list_to_string $keyToValUlt \
-                                          $PREFS(LR_NAME_RESTORER__keyOnlyArgsList)]
+                              $PREFS(LR_NAME_RESTORER__keyOnlyArgsList) errCnt]
+    if { $errCnt > 0 } {
+      set msg "$errCnt error(s) in the command parameters"
+      tk_messageBox -message "-E- $msg"  -title $APP_TITLE
+      ok_err_msg $msg;      return  0
+    }
     append paramStr " " $PREFS(LR_NAME_RESTORER__hardcodedArgsStr)
     set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
   } else {  set ret 0 } ; # error already reported
