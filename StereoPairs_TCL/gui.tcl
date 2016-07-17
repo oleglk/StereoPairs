@@ -204,25 +204,12 @@ proc _GUI_SetDir {newWorkDir}  {
 proc GUI_RenamePairs {}  {
   global APP_TITLE GUI_VARS PREFS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  if { 0 == [set keyToValIni [preferences_fetch_values $PREFS(PAIR_MATCHER__keysInOrder) 0]] }  {
-    return  0;  # error already printed
+  set paramStr [_GUI_RequestOptions "Pair-Matcher" \
+                                    "PAIR_MATCHER" errCnt]
+  if { $errCnt > 0 } {
+    return  0;  # error already reported
   }
-  #~ set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
-                                          #~ $keyToValIni $GUI_VARS(WORK_DIR) "."]
-  set keyToValUlt [GUI_options_form_show \
-                    $PREFS(PAIR_MATCHER__keyToDescrAndFormat) $keyToValIni \
-                    "Pair-Matcher Parameters" $PREFS(PAIR_MATCHER__keysInOrder)]
-  if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
-    set paramStr [ok_key_val_list_to_string $keyToValUlt \
-                                  $PREFS(PAIR_MATCHER__keyOnlyArgsList) errCnt]
-    if { $errCnt > 0 } {
-      set msg "$errCnt error(s) in the command parameters"
-      tk_messageBox -message "-E- $msg"  -title $APP_TITLE
-      ok_err_msg $msg;      return  0
-    }
-    append paramStr " " $PREFS(PAIR_MATCHER__hardcodedArgsStr)
-    set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
-  } else {  set ret 0 } ; # error already reported
+  set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction
   if { $ret == 0 }  {
     #tk_messageBox -message "-E- Failed GUI_RenamePairs in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
@@ -271,24 +258,60 @@ proc GUI_CompareColors {}  {
 proc GUI_HideUnused {}       {  return  [_GUI_ProcRAWs 0] }
 proc GUI_UnhideUnused {}   {  return  [_GUI_ProcRAWs 1] }
 
-# Chooses depths for all RAWs, computes their color parameters.
-# Overrides the color parameters in the settings files/
-# Returns 1 on success, 0 on error.
-proc _GUI_ProcRAWs {onlyChanged}  {
-  global APP_TITLE GUI_VARS
-  if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  set msg "" ;  # as if evething is OK
-  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
-  _UpdateGuiEndAction
-  if { $cnt <= 0 }  {
-    #tk_messageBox -message "-E- Failed to process settings for all RAWs in '$WORK_DIR':  $msg" -title $APP_TITLE
-    return  0
+
+################################################################################
+################################################################################
+# GUI-involved utility that provides options/preferences for a tool cmd-line
+# Returns the cmd-line as a string.
+proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
+  upvar $errCnt nErrors
+  global APP_TITLE GUI_VARS PREFS
+  set nErrors 0
+  set key_keysInOrder         [format "%s__keysInOrder"         $toolKeyPrefix]
+  set key_keyToDescrAndFormat [format "%s__keyToDescrAndFormat" $toolKeyPrefix]
+  set key_keyOnlyArgsList     [format "%s__keyOnlyArgsList"     $toolKeyPrefix]
+  set key_hardcodedArgsStr    [format "%s__hardcodedArgsStr"    $toolKeyPrefix]
+  if { 0 == [set keyToValIni [preferences_fetch_values \
+                                              $PREFS($key_keysInOrder) 0]] }  {
+    set nErrors 1
+    return  "";  # error already printed
   }
-  set msg "WB settings for all RAWs overriden in directory <[file join $WORK_DIR $DATA_DIR]>"
-  #tk_messageBox -message $msg -title $APP_TITLE
-  ok_info_msg $msg
-  return  1
+  #~ set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
+                                          #~ $keyToValIni $GUI_VARS(WORK_DIR) "."]
+  set keyToValUlt [GUI_options_form_show \
+                $PREFS($key_keyToDescrAndFormat) $keyToValIni \
+                "$toolDescrStr Parameters" $PREFS($key_keysInOrder)]
+  if { $keyToValUlt == 0 }  { return  "" };   # error already reported
+  set paramStr [ok_key_val_list_to_string $keyToValUlt \
+                                          $PREFS($key_keyOnlyArgsList) nErrors]
+  if { $nErrors > 0 } {
+    set msg "$nErrors error(s) in the command parameters"
+    tk_messageBox -message "-E- $msg"  -title "$APP_TITLE / $toolDescrStr"
+    ok_err_msg $msg;      return  ""
+  }
+  append paramStr " " $PREFS($key_hardcodedArgsStr)
+  return  $paramStr
 }
+
+
+#~ # Chooses depths for all RAWs, computes their color parameters.
+#~ # Overrides the color parameters in the settings files/
+#~ # Returns 1 on success, 0 on error.
+#~ proc _GUI_ProcRAWs {onlyChanged}  {
+  #~ global APP_TITLE GUI_VARS
+  #~ if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
+  #~ set msg "" ;  # as if evething is OK
+  #~ ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
+  #~ _UpdateGuiEndAction
+  #~ if { $cnt <= 0 }  {
+    #~ #tk_messageBox -message "-E- Failed to process settings for all RAWs in '$WORK_DIR':  $msg" -title $APP_TITLE
+    #~ return  0
+  #~ }
+  #~ set msg "WB settings for all RAWs overriden in directory <[file join $WORK_DIR $DATA_DIR]>"
+  #~ #tk_messageBox -message $msg -title $APP_TITLE
+  #~ ok_info_msg $msg
+  #~ return  1
+#~ }
 
 
 proc GUI_Quit {}  {
@@ -306,24 +329,12 @@ proc GUI_Quit {}  {
 proc GUI_RestoreNames {}  {
   global APP_TITLE GUI_VARS PREFS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  if { 0 == [set keyToValIni [preferences_fetch_values $PREFS(LR_NAME_RESTORER__keysInOrder) 0]] }  {
-    return  0;  # error already printed
+  set paramStr [_GUI_RequestOptions "Left/Right Image Names Restoration" \
+                                    "LR_NAME_RESTORER" errCnt]
+  if { $errCnt > 0 } {
+    return  0;  # error already reported
   }
-  set keyToValUlt [GUI_options_form_show \
-                    $PREFS(LR_NAME_RESTORER__keyToDescrAndFormat) $keyToValIni \
-                    "Left/Right-Image Names Restoration Parameters" \
-                    $PREFS(LR_NAME_RESTORER__keysInOrder)]
-  if { $keyToValUlt != 0 }  { ;   # otherwise error already reported
-    set paramStr [ok_key_val_list_to_string $keyToValUlt \
-                              $PREFS(LR_NAME_RESTORER__keyOnlyArgsList) errCnt]
-    if { $errCnt > 0 } {
-      set msg "$errCnt error(s) in the command parameters"
-      tk_messageBox -message "-E- $msg"  -title $APP_TITLE
-      ok_err_msg $msg;      return  0
-    }
-    append paramStr " " $PREFS(LR_NAME_RESTORER__hardcodedArgsStr)
-    set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
-  } else {  set ret 0 } ; # error already reported
+  set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction
   if { $ret == 0 }  {
     #tk_messageBox -message "-E- Failed GUI_RestoreNames in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
