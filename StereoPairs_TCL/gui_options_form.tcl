@@ -51,7 +51,7 @@ grid rowconfigure .optsWnd.f 3 -weight 0
 
 
 # header-keywords should be no smaller than corresponding cell data fields
-set KEY_HDR "Option-name        "
+set KEY_HDR "Option-name              "
 set VAL_HDR "Option-value                "; # for now - length by try and error
 set DESCR_HDR "Option-Description"
 grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state normal] -column 0 -row 0 -columnspan 3 -sticky wens

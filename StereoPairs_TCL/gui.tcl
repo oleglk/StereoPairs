@@ -207,7 +207,7 @@ proc GUI_RenamePairs {}  {
   set paramStr [_GUI_RequestOptions "Pair-Matcher" \
                                     "PAIR_MATCHER" errCnt]
   if { $errCnt > 0 } {
-    return  0;  # error already reported
+    _UpdateGuiEndAction;  return  0;  # error already reported
   }
   set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction
@@ -228,7 +228,7 @@ proc GUI_CloneSettings {}  {
   set paramStr [_GUI_RequestOptions "Settings-Copier" \
                                     "SETTINGS_COPIER" errCnt]
   if { $errCnt > 0 } {
-    return  0;  # error already reported
+    _UpdateGuiEndAction;  return  0;  # error already reported
   }
   set ret [settings_copier_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction
@@ -268,6 +268,7 @@ proc GUI_UnhideUnused {}   {  return  [_GUI_ProcRAWs 1] }
 ################################################################################
 # GUI-involved utility that provides options/preferences for a tool cmd-line
 # Returns the cmd-line as a string.
+# 'errCnt' > 0 means either errors or cancellation.
 proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
   upvar $errCnt nErrors
   global APP_TITLE GUI_VARS PREFS
@@ -286,7 +287,10 @@ proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
   set keyToValUlt [GUI_options_form_show \
                 $PREFS($key_keyToDescrAndFormat) $keyToValIni \
                 "$toolDescrStr Parameters" $PREFS($key_keysInOrder)]
-  if { $keyToValUlt == 0 }  { return  "" };   # error already reported
+  if { $keyToValUlt == 0 }  {
+    set nErrors 1;  # to force cancellation for any reason
+    return  "";   # error, if any, already reported
+  }
   set paramStr [ok_key_val_list_to_string $keyToValUlt \
                                           $PREFS($key_keyOnlyArgsList) nErrors]
   if { $nErrors > 0 } {
@@ -337,7 +341,7 @@ proc GUI_RestoreNames {}  {
   set paramStr [_GUI_RequestOptions "Left/Right Image Names Restoration" \
                                     "LR_NAME_RESTORER" errCnt]
   if { $errCnt > 0 } {
-    return  0;  # error already reported
+    _UpdateGuiEndAction;  return  0;  # error already reported
   }
   set ret [pair_matcher_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction

@@ -17,4 +17,7 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 - check workarea for compliance before each action
 
+- backup overriden settings files
+
+
 
