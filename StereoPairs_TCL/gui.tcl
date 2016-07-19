@@ -223,17 +223,22 @@ proc GUI_RenamePairs {}  {
 
 
 proc GUI_CloneSettings {}  {
-  global APP_TITLE GUI_VARS
+  global APP_TITLE GUI_VARS PREFS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
+  set paramStr [_GUI_RequestOptions "Settings-Copier" \
+                                    "SETTINGS_COPIER" errCnt]
+  if { $errCnt > 0 } {
+    return  0;  # error already reported
+  }
+  set ret [settings_copier_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction
-  if { "" != $msg }  {
-    #tk_messageBox -message "-E- Failed to sort RAWs by thumbnails in '$WORK_DIR':  $msg" -title $APP_TITLE
+  if { $ret == 0 }  {
+    #tk_messageBox -message "-E- Failed GUI_RenamePairs in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
     return  0
   }
-  set msg "RAW files of WB targets moved into directory <[file join $WORK_DIR $RAW_COLOR_TARGET_DIR]>"
+  set msg "Stereopair L/R images renamed under '$GUI_VARS(WORK_DIR)'"
   #tk_messageBox -message $msg -title $APP_TITLE
-  # success msg printed by SortAllRawsByThumbnails
+  ok_info_msg $msg
   return  1
 }
 
@@ -272,7 +277,7 @@ proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
   set key_keyOnlyArgsList     [format "%s__keyOnlyArgsList"     $toolKeyPrefix]
   set key_hardcodedArgsStr    [format "%s__hardcodedArgsStr"    $toolKeyPrefix]
   if { 0 == [set keyToValIni [preferences_fetch_values \
-                                              $PREFS($key_keysInOrder) 0]] }  {
+                                            $PREFS($key_keysInOrder) 0 0]] }  {
     set nErrors 1
     return  "";  # error already printed
   }

@@ -194,7 +194,7 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal \
   if { $_CONFIRM_STATUS == 1 }  { ; # options accepted; no matter if changes applied
     set keyToStrValDict [array get KEY_TO_VAL]; # TCL dict == list of keys and vals
     if { 0 == [set keyToValDict [ok_key_val_list_scan_strings \
-                              $keyToDescrAndFormat $keyToStrValDict errStr]] } {
+                            $keyToDescrAndFormat $keyToStrValDict 1 errStr]] } {
       set msg "Error in options:\n$errStr!"
       tk_messageBox -message "-E- $msg" -title $::WND_TITLE
       return  0

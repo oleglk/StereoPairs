@@ -31,10 +31,11 @@ namespace eval ::ok_utils:: {
 # 'keyToStrVal' is a dictionary of <key>::<value-as-string>].
 # example: {-left_img_subdir "L" -time_diff " -3450 "}
 # Returns the dictionary of <key>::<value>, or 0 on any error
+# If 'emptyValMeansNone'==1, a key with empty value isn't included in the dict
 ### Example of invocation:
-##   ok_key_val_list_scan_strings [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i " 888"] errStr 
+##   ok_key_val_list_scan_strings [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i " 888"] 1 errStr 
 proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
-                                                              multiLineErrStr} {
+                                            emptyValMeansNone multiLineErrStr} {
   upvar $multiLineErrStr errStr
   set keyToVal [dict create]
   set errCnt 0;  set errStr ""
@@ -43,6 +44,7 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
       ok_err_msg "Missing scan format for key '$key'"
       incr errCnt 1;  continue
     }
+    if { ($emptyValMeansNone != 0) && ($strVal == "") }  { continue }
     set origFmt [lindex [dict get $keyToDescrAndFormat $key] 1]
     if { $origFmt == "%s" }  {
       set val [string trim $strVal];  # to allow spaces inside the string

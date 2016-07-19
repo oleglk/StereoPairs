@@ -38,7 +38,7 @@ proc _set_initial_values {}  {
   set PREFS(-simulate_only)       YES
   
   # settings copier
-  set PREFS(global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
+  set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
   set PREFS(-backup_dir)  "Backup"
   set PREFS(-copy_from)  "left"
   set PREFS(-)  ""
@@ -69,6 +69,20 @@ proc _set_initial_values {}  {
     $PREFS(PAIR_MATCHER__keysInOrder)   [list -max_burst_gap -time_diff]]
   set PREFS(LR_NAME_RESTORER__keyOnlyArgsList) $PREFS(PAIR_MATCHER__keyOnlyArgsList)
   set PREFS(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
+################################################################################
+  set PREFS(SETTINGS_COPIER__keyToDescrAndFormat) [dict create \
+    -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
+    -orig_img_dir {"directory with image files whose settings are dealt with; left (right) images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
+    -out_dir {"output directory" "%s"} \
+    -backup_dir {"directory to move overriden settings files to" "%s"} \
+    -copy_from {"'left' == copy settings from left to right, 'right' == from right to left" "%s"} \
+    -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
+  ]
+  set PREFS(SETTINGS_COPIER__keysInOrder) [list -global_img_settings_dir \
+                  -orig_img_dir -out_dir -backup_dir -copy_from -simulate_only]
+  set PREFS(SETTINGS_COPIER__keyOnlyArgsList) [list -simulate_only]
+  set PREFS(SETTINGS_COPIER__hardcodedArgsStr) ""
+################################################################################
 ################################################################################
   
   
@@ -101,12 +115,15 @@ proc preferences_set_val {key val} {
 
 
 # Returns dict of key::val; if 'allowMissing'==0 and some keys missing, returns 0
-proc preferences_fetch_values {keyList allowMissing} {
+# If 'emptyValMeansNone'==1, a key with empty value isn't included in the dict
+proc preferences_fetch_values {keyList allowMissing emptyValMeansNone} {
   global PREFS
   set retDict [dict create]
   foreach key $keyList {
     if { [info exists PREFS($key)] } {
-      dict set retDict $key $PREFS($key)
+      if { ($PREFS($key) != "") || ($emptyValMeansNone == 0) }  {
+        dict set retDict $key $PREFS($key)
+      }
     } elseif { $allowMissing == 0 } {
       ok_err_msg "Missing preference for '$key'"
       return  0
