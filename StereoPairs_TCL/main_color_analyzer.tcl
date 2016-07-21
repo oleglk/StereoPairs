@@ -422,14 +422,17 @@ proc _report_pairname_to_color_diff {pairNameAndColorChannelDiffList}  {
       ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%)} record {$rec}"
       incr errCnt 1;  continue
     }
+    set diffDescr ""
     foreach ch [list [list $diffR red] [list $diffG green] [list $diffB blue]] {
-      set exceeds 0;  set d [lindex $ch 0]; set c [lindex $ch 1]
+      set d [lindex $ch 0]; set c [lindex $ch 1]
       if { $d >= $::STS(colorDiffThresh) }  {
-        ok_warn_msg "Difference of $d% in $c channel of '$pairname' exceeds threshold of $::STS(colorDiffThresh)%"
-        set exceeds 1 
+        append diffDescr [format " %s(%d%%)" $c $d]
       }
     }
-    if { $exceeds }  {  incr aboveThreshCnt 1 }
+    if { $diffDescr != "" }  {
+      ok_warn_msg "Difference above the threshold of $::STS(colorDiffThresh)% in '$pairname': $diffDescr"
+      incr aboveThreshCnt 1
+    }
   }
   if { ($errCnt == 0) && ($aboveThreshCnt == 0) }  {
     ok_info_msg "None of [llength $pairNameAndColorChannelDiffList] stereopair(s) have color difference above the threshold of $::STS(colorDiffThresh)%"
