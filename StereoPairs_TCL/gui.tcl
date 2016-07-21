@@ -233,10 +233,10 @@ proc GUI_CloneSettings {}  {
   set ret [settings_copier_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction
   if { $ret == 0 }  {
-    #tk_messageBox -message "-E- Failed GUI_RenamePairs in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
+    #tk_messageBox -message "-E- Failed GUI_CloneSettings in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
     return  0
   }
-  set msg "Stereopair L/R images renamed under '$GUI_VARS(WORK_DIR)'"
+  set msg "Stereopair L/R image-conversion settings cloned under '$GUI_VARS(WORK_DIR)'"
   #tk_messageBox -message $msg -title $APP_TITLE
   ok_info_msg $msg
   return  1
@@ -245,18 +245,22 @@ proc GUI_CloneSettings {}  {
 
 # Builds depth-to-color mapping. Returns 1 on success, 0 on error.
 proc GUI_CompareColors {}  {
-  global APP_TITLE GUI_VARS
+  global APP_TITLE GUI_VARS PREFS
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  ##TODO:IMPLEMENT set ret [eval exec [list MYCOMMAND PARAMSTR]]
+  set paramStr [_GUI_RequestOptions "Color-Analyzer" \
+                                    "COLOR_ANALYZER" errCnt]
+  if { $errCnt > 0 } {
+    _UpdateGuiEndAction;  return  0;  # error already reported
+  }
+  set ret [color_analyzer_main $paramStr] ;   # THE EXECUTION
   _UpdateGuiEndAction
-  if { "" != $msg }  {
-    #tk_messageBox -message "-E- Failed to map depth to WB in '$WORK_DIR':  $msg" -title $APP_TITLE
+  if { $ret == 0 }  {
+    #tk_messageBox -message "-E- Failed GUI_CompareColors in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
     return  0
   }
-  set msg "Depth-to-color mapping data created in directory <[file join $WORK_DIR $DATA_DIR]>"
+  set msg "Stereopair L/R image colors compared under '$GUI_VARS(WORK_DIR)'"
   #tk_messageBox -message $msg -title $APP_TITLE
   ok_info_msg $msg
-  return  1
 }
 
 

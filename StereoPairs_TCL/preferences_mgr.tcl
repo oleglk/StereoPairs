@@ -41,9 +41,16 @@ proc _set_initial_values {}  {
   set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
   set PREFS(-backup_dir)  "Backup"
   set PREFS(-copy_from)  "left"
-  set PREFS(-)  ""
-  set PREFS(-)  ""
-  set PREFS(-)  ""
+
+  # color analyzer/comparator
+  set PREFS(-img_dir)  "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-left_img_subdir)         "L/TIFF"
+  set PREFS(-right_img_subdir)        "R/TIFF"
+  set PREFS(-ext_left)                "tif"
+  set PREFS(-ext_right)               "tif"
+  set PREFS(-out_dir)                 "Data"
+  set PREFS(-warn_color_diff_above)   30
+
 #  set PREFS(-)  ""
 
   
@@ -82,6 +89,21 @@ proc _set_initial_values {}  {
                   -orig_img_dir -out_dir -backup_dir -copy_from -simulate_only]
   set PREFS(SETTINGS_COPIER__keyOnlyArgsList) [list -simulate_only]
   set PREFS(SETTINGS_COPIER__hardcodedArgsStr) ""
+################################################################################
+set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
+  -img_dir {"root input directory" "%s"} \
+  -left_img_subdir {"subdirectory for left images; left images expected in 'img_dir'/'left_img_subdir'" "%s"} \
+  -right_img_subdir {"subdirectory for right images; right images expected in 'img_dir'/'right_img_subdir'" "%s"} \
+  -ext_left {"file extension of left images; standard type only (tif/jpg/etc.)" "%s"} \
+  -ext_right {"file extension of right images; standard type only (tif/jpg/etc.)" "%s"} \
+  -out_dir {"output directory" "%s"} \
+  -warn_color_diff_above {"minimal left-right color difference (%) to warn on" "%d"} ]
+  set PREFS(COLOR_ANALYZER__keysInOrder) [list -img_dir \
+                  -left_img_subdir -right_img_subdir -ext_left -ext_right \
+                  -out_dir -warn_color_diff_above]
+  set PREFS(COLOR_ANALYZER__keyOnlyArgsList) [list]
+  set PREFS(COLOR_ANALYZER__hardcodedArgsStr) ""
+################################################################################
 ################################################################################
 ################################################################################
   
