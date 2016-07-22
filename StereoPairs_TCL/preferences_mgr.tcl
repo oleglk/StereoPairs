@@ -50,6 +50,9 @@ proc _set_initial_values {}  {
   set PREFS(-ext_right)               "tif"
   set PREFS(-out_dir)                 "Data"
   set PREFS(-warn_color_diff_above)   30
+  
+  # workarea cleaner
+  #TODO
 
 #  set PREFS(-)  ""
 
@@ -104,6 +107,23 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set PREFS(COLOR_ANALYZER__keyOnlyArgsList) [list]
   set PREFS(COLOR_ANALYZER__hardcodedArgsStr) ""
 ################################################################################
+  set PREFS(WORKAREA_CLEANER__keyToDescrAndFormat) [dict create \
+    -restore_from_dir {"directory to unhide/restore files from" "%s"} \
+    -workarea_root_dir {"workarea root directory - where to unhide/restore files to" "%s"} \
+    -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
+    -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
+    -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW and/or intermediate images); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
+    -final_img_dir {"directory with ultimate stereopair images" "%s"} \
+    -out_dir {"output directory" "%s"} \
+    -backup_dir {"directory to move overriden settings files to" "%s"} \
+    -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
+  ]
+  set PREFS(WORKAREA_CLEANER__keysInOrder) [list \
+                -restore_from_dir -workarea_root_dir -global_img_settings_dir \
+                -orig_img_dir -std_img_dir -final_img_dir -out_dir -backup_dir \
+                -simulate_only]
+  set PREFS(WORKAREA_CLEANER__keyOnlyArgsList) [list -simulate_only]
+  set PREFS(WORKAREA_CLEANER__hardcodedArgsStr) ""
 ################################################################################
 ################################################################################
   
