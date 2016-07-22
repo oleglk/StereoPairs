@@ -264,7 +264,26 @@ proc GUI_CompareColors {}  {
 }
 
 
-proc GUI_HideUnused {}       {  return  [_GUI_ProcRAWs 0] }
+proc GUI_HideUnused {}       {
+  global APP_TITLE GUI_VARS PREFS
+  if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
+  set paramStr [_GUI_RequestOptions "Workarea-Cleaner" \
+                                    "WORKAREA_CLEANER" errCnt]
+  if { $errCnt > 0 } {
+    _UpdateGuiEndAction;  return  0;  # error already reported
+  }
+  set ret [workarea_cleaner_main $paramStr] ;   # THE EXECUTION
+  _UpdateGuiEndAction
+  if { $ret == 0 }  {
+    #tk_messageBox -message "-E- Failed GUI_HideUnused in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
+    return  0
+  }
+  set msg "Unused stereopair image- and related files hidden under '$GUI_VARS(WORK_DIR)'"
+  #tk_messageBox -message $msg -title $APP_TITLE
+  ok_info_msg $msg
+}
+
+
 proc GUI_UnhideUnused {}   {  return  [_GUI_ProcRAWs 1] }
 
 

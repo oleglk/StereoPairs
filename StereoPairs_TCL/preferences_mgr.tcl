@@ -20,6 +20,9 @@ proc _set_initial_values {}  {
   set PREFS(DIR_KEYS) [lsort [list -orig_img_dir -std_img_dir -out_dir]]
 
   set PREFS(-INITIAL_WORK_DIR)  [pwd]
+  
+  # TODO: common - collect all shared options here
+  
   # pair matcher:
   set PREFS(-time_diff)           0
   set PREFS(-min_success_rate)    50
@@ -52,7 +55,13 @@ proc _set_initial_values {}  {
   set PREFS(-warn_color_diff_above)   30
   
   # workarea cleaner
-  #TODO
+  set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
+  set PREFS(-orig_img_dir)        "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-std_img_dir)         "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-final_img_dir)       "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-out_dir)             "Data"
+  set PREFS(-backup_dir)          "Backup"
+  set PREFS(-simulate_only)       YES
 
 #  set PREFS(-)  ""
 
@@ -108,6 +117,22 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set PREFS(COLOR_ANALYZER__hardcodedArgsStr) ""
 ################################################################################
   set PREFS(WORKAREA_CLEANER__keyToDescrAndFormat) [dict create \
+    -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
+    -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
+    -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW and/or intermediate images); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
+    -final_img_dir {"directory with ultimate stereopair images" "%s"} \
+    -out_dir {"output directory" "%s"} \
+    -backup_dir {"directory to move overriden settings files to" "%s"} \
+    -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
+  ]
+  set PREFS(WORKAREA_CLEANER__keysInOrder) [list -global_img_settings_dir \
+                -orig_img_dir -std_img_dir -final_img_dir -out_dir -backup_dir \
+                -simulate_only]
+  set PREFS(WORKAREA_CLEANER__keyOnlyArgsList) [list -simulate_only]
+  set PREFS(WORKAREA_CLEANER__hardcodedArgsStr) ""
+################################################################################
+################################################################################
+  set PREFS(WORKAREA_RESTORER__keyToDescrAndFormat) [dict create \
     -restore_from_dir {"directory to unhide/restore files from" "%s"} \
     -workarea_root_dir {"workarea root directory - where to unhide/restore files to" "%s"} \
     -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
@@ -118,12 +143,12 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
     -backup_dir {"directory to move overriden settings files to" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  set PREFS(WORKAREA_CLEANER__keysInOrder) [list \
+  set PREFS(WORKAREA_RESTORER__keysInOrder) [list \
                 -restore_from_dir -workarea_root_dir -global_img_settings_dir \
                 -orig_img_dir -std_img_dir -final_img_dir -out_dir -backup_dir \
                 -simulate_only]
-  set PREFS(WORKAREA_CLEANER__keyOnlyArgsList) [list -simulate_only]
-  set PREFS(WORKAREA_CLEANER__hardcodedArgsStr) ""
+  set PREFS(WORKAREA_RESTORER__keyOnlyArgsList) [list -simulate_only]
+  set PREFS(WORKAREA_RESTORER__hardcodedArgsStr) ""
 ################################################################################
 ################################################################################
   
