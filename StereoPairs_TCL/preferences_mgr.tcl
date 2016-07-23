@@ -141,14 +141,14 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
 ################################################################################
   # -restore_from_dir to be requested by file dialog
   # -workarea_root_dir is the main-gui root directory
+  # -global_img_settings_dir is implied - full paths encoded in the backup
   set PREFS(WORKAREA_RESTORER__keyToDescrAndFormat) [dict create \
     -workarea_root_dir {"full path of the directory where to unhide/restore files to" "%s"} \
-    -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  set PREFS(WORKAREA_RESTORER__keysInOrder) [list \
-                -global_img_settings_dir -out_dir -simulate_only]
+  set PREFS(WORKAREA_RESTORER__keysInOrder) [list -workarea_root_dir \
+                -out_dir -simulate_only]
   set PREFS(WORKAREA_RESTORER__keyOnlyArgsList) [list -simulate_only]
   set PREFS(WORKAREA_RESTORER__hardcodedArgsStr) ""
 ################################################################################

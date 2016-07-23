@@ -54,7 +54,7 @@ grid rowconfigure .optsWnd.f 3 -weight 0
 set KEY_HDR "Option-name              "
 set VAL_HDR "Option-value                "; # for now - length by try and error
 set DESCR_HDR "Option-Description"
-grid [tk::text .optsWnd.f.fullHeader -width 60 -height 1 -wrap none -state normal] -column 0 -row 0 -columnspan 3 -sticky wens
+grid [tk::text .optsWnd.f.fullHeader -width 71 -height 1 -wrap none -state normal] -column 0 -row 0 -columnspan 3 -sticky wens
 .optsWnd.f.fullHeader  insert end "$KEY_HDR\t";  # insert text-only line prefix
 ttk::entry .optsWnd.f.fullHeader.valEntry  -width [string length $VAL_HDR]
 .optsWnd.f.fullHeader.valEntry  insert 0 $VAL_HDR
