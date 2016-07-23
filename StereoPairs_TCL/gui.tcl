@@ -284,7 +284,32 @@ proc GUI_HideUnused {}       {
 }
 
 
-proc GUI_UnhideUnused {}   {  return  [_GUI_ProcRAWs 1] }
+proc GUI_UnhideUnused {}   {
+  global APP_TITLE GUI_VARS PREFS
+  if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
+  set paramStr [_GUI_RequestOptions "Workarea-Restorer" \
+                                    "WORKAREA_RESTORER" errCnt]
+  set restoreFromDir [tk_chooseDirectory -initialdir $GUI_VARS(WORK_DIR)]
+  if { $restoreFromDir != "" }  {
+    append paramStr " -restore_from_dir $restoreFromDir"
+  } else {
+    set msg "Workarea restoration canceled"
+    tk_messageBox -message $msg -title $APP_TITLE
+    ok_info_msg $msg
+  }
+  if { $errCnt > 0 } {
+    _UpdateGuiEndAction;  return  0;  # error already reported
+  }
+  set ret [workarea_cleaner_main $paramStr] ; # EXECUTION; same proc as cleaner
+  _UpdateGuiEndAction
+  if { $ret == 0 }  {
+    #tk_messageBox -message "-E- Failed GUI_UnhideUnused in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
+    return  0
+  }
+  set msg "Unused stereopair image- and related files restpred under '$GUI_VARS(WORK_DIR)'"
+  #tk_messageBox -message $msg -title $APP_TITLE
+  ok_info_msg $msg
+}
 
 
 ################################################################################

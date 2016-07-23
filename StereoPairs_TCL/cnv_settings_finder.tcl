@@ -98,7 +98,8 @@ proc FindSettingsFilesForListedImages {imgPaths cntMissing {priErr 1}} {
     } else {
       set settingsDir [file dirname $imgPath];  # settings alongside the image
     }
-    set allFilesForOneImage [FindAllInputsForOneImageInDir $imgName $settingsDir]
+    set allFilesForOneImage [FindAllInputsForOneImageInDir $imgName \
+                                                           $settingsDir $priErr]
     set relevantSettingsFiles [_SelectSettingsFilesInFileList \
                                                          $allFilesForOneImage]
     if { 0 == [llength $relevantSettingsFiles] }  {
@@ -125,7 +126,8 @@ proc FindAllSettingsFilesForOneRaw {rawPath {priErr 1}} {
   } else {
     set settingsDir $rawDir
   }
-  set allFilesForOneRaw [FindAllInputsForOneImageInDir $rawName $settingsDir]
+  set allFilesForOneRaw [FindAllInputsForOneImageInDir $rawName $settingsDir \
+                                                       $priErr]
   # the RAW itself could be included; drop it then
   for {set i 0} {$i < [llength $allFilesForOneRaw]} {incr i 1} {
     set filePath [lindex $allFilesForOneRaw $i]

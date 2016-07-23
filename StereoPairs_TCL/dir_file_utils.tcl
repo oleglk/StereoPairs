@@ -315,12 +315,12 @@ proc PurenameToGlobPattern {purename} {
 
 
 # Returns list of files related to image 'imageName' in directory 'imgDirPath'
-proc FindAllInputsForOneImageInDir {imageName imgDirPath} {
+proc FindAllInputsForOneImageInDir {imageName imgDirPath {priErr 1}} {
   set purename [AnyFileNameToPurename $imageName]; # TODO: ImageNameToPurename
   set fullPattern [file join $imgDirPath [PurenameToGlobPattern $purename]]
   set res [list]
   set tclResult [catch { set res [glob $fullPattern] } execResult]
-  if { $tclResult != 0 } {
+  if { ($tclResult != 0) && ($priErr == 1) } {
     ok_err_msg "Failed searching for input files associated with image '$imageName' (pattern: '$fullPattern': $execResult"
     return  [list]
   }
