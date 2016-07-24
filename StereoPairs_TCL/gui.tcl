@@ -294,6 +294,12 @@ proc GUI_UnhideUnused {}   {
     tk_messageBox -message $msg -title $APP_TITLE;    ok_info_msg $msg
     return  0
   }
+  if { 0 == [preferences_is_backup_dir_path $restoreFromDir] }  {
+    set msg "'-E- $restoreFromDir' is not a backup directory"
+    tk_messageBox -message $msg -title $APP_TITLE;    ok_err_msg $msg
+    return  0
+  }
+
   set paramStr [_GUI_RequestOptions "Workarea-Restorer" \
                                     "WORKAREA_RESTORER" errCnt]
   if { $errCnt > 0 } {

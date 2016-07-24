@@ -18,6 +18,10 @@ proc _set_initial_values {}  {
 
   # directory paths that might become absolute
   set PREFS(DIR_KEYS) [lsort [list -orig_img_dir -std_img_dir -out_dir]]
+  
+  # name-keywords for backup/thrash directories
+  set PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED) "HideUnusedFiles"
+  set PREFS(BACKUP_DIRNAME_KEYS) [list $PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED)]
 
   set PREFS(-INITIAL_WORK_DIR)  [pwd]
   
@@ -218,4 +222,19 @@ proc preferences_strip_rootdir_prefix_from_dirs {prefDict rootDir newPrefix} {
     dict set retDict $key $newVal
   }
   return  $retDict
+}
+
+
+# Directory accepted as backup/thrash
+# if its leaf name includes a known dirname key (case-insensitive)
+proc preferences_is_backup_dir_path {dirPath} {
+  global PREFS
+  set leafNameUppercase [string toupper [file tail $dirPath]]
+  foreach dirNameKey $PREFS(BACKUP_DIRNAME_KEYS) {
+    set dirNameKeyUppercase [string toupper $dirNameKey]
+    if { 0 <= [string first $dirNameKeyUppercase $leafNameUppercase] }  {
+      return  1
+    }
+  }
+  return  0
 }

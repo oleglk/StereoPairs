@@ -44,7 +44,7 @@ set ORIG_EXT_DICT    0 ;  # per-dir extensions of original out-of-camera images
 ################################################################################
 
 proc workarea_cleaner_main {cmdLineAsStr}  {
-  global STS SCRIPT_DIR ORIG_EXT_DICT
+  global STS SCRIPT_DIR ORIG_EXT_DICT PREFS
   _workarea_cleaner_set_defaults ;  # calling it in a function for repeated invocations
   if { 0 == [workarea_cleaner_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
@@ -116,8 +116,8 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
     return  0
   }
   
-  return  [ok_move_files_to_backup_dir "HideUnusedFiles" $filesToHide \
-                            $::STS(workAreaRootPath) $::STS(doSimulateOnly) ""]
+  return  [ok_move_files_to_backup_dir $PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED) \
+                $filesToHide $::STS(workAreaRootPath) $::STS(doSimulateOnly) ""]
 }
 
 
