@@ -18,6 +18,7 @@ namespace import -force ::ok_utils::*
 
 # TODO: extract a common part from _settings_copier_set_defaults() for the whole project
 proc _settings_copier_set_defaults {}  {
+  set ::STS(workAreaRootPath) "" ;  # we may deduce common root for all dir-s
   set ::STS(origImgRootPath)  ""
   set ::STS(globalImgSettingsDir)  "" ;  # global settings dir; relevant for some converters
   set ::STS(origImgDirLeft)   ""
@@ -263,6 +264,18 @@ proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
   set stStr [string map [list $srcPurename $dstPurename] $stStr]
   set ext [file extension $srcPath]
   set dstPath [file join $dstDir "$dstPurename$ext"]
+  if { [file exists $dstPath] }  {
+    ok_trace_msg "Cloning of settings file '$srcPath' will override '$dstPath'"
+  } else {
+    ok_trace_msg "Cloning of settings file '$srcPath' will create first version of '$dstPath'"
+  }
+  if { [file exists $dstPath] && \
+        (0 == [ok_move_files_to_backup_dir \
+                 $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS) [list $srcPath] \
+                 $::STS(workAreaRootPath) $doSimulateOnly ""]) } {
+    incr cntErr 1;  ok_err_msg "Will not clone settings file '$srcPath'"
+    continue
+  }
   if { $::STS(doSimulateOnly) != 0 }  {
     ok_info_msg "Would have cloned conversion settings from '$srcPath' into '$dstPath'"
     return  1

@@ -297,7 +297,7 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
       set ::STS(workAreaRootPath)      [file normalize $cml(-workarea_root_dir)]
       set ::ok_utils::WORK_AREA_ROOT_DIR $::STS(workAreaRootPath)
     }
-  } else { ;  # deduce workarea root from image dir-s
+  } else { ;  # deduce workarea root from image dir-s; TODO: make utility
     set waDirs [ok_discard_empty_list_elements \
         [list $::STS(origImgRootPath) $::STS(stdImgRootPath) $::STS(backupDir)]]
     if { "" != [set ::STS(workAreaRootPath) \

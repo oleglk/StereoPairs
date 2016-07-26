@@ -20,7 +20,8 @@ proc _set_initial_values {}  {
   set PREFS(DIR_KEYS) [lsort [list -orig_img_dir -std_img_dir -out_dir]]
   
   # name-keywords for backup/thrash directories
-  set PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED) "HideUnusedFiles"
+  set PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED)      "HideUnusedFiles"
+  set PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)  "BackupSettingsFiles"
   set PREFS(BACKUP_DIRNAME_KEYS) [list $PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED)]
 
   set PREFS(-INITIAL_WORK_DIR)  [pwd]

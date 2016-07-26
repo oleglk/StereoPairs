@@ -225,67 +225,6 @@ proc _color_analyzer_find_lr_images {imgPathsLeftVar imgPathsRightVar}  {
 }
 
 
-# Replicates and replaces image name(s) inside
-proc _clone_settings_files {srcSettingsFiles destDir doSimulateOnly}  {
-  global STS
-  if { ![file exists $destDir] } {
-    ok_err_msg "Inexistent destination directory for settings files '$destDir'"
-    return  -1
-  }
-  if { ![file isdirectory $destDir] } {
-    ok_err_msg "Non-directory '$destDir' specified as destination directory for settings files"
-    return  -1
-  }
-  set cntGood 0;  set cntErr 0
-  foreach pt $srcSettingsFiles {
-    set nameOnly [file tail $pt]
-    # settings-file purename examples: "dsc0001-2100_l", "dsc0001-2100_l.arw"
-    # do handle optional RAW extension in settings file name for some converters
-    set settingsPurename [file rootname $nameOnly];# qqq_l.arw.xmp -> qqq_l.arw
-    set srcPurename [AnyFileNameToPurename $nameOnly];# qqq_l.arw.xmp -> qqq_l
-    set dstPurename [spm_purename_to_peer_purename $srcPurename]
-    if { [string length $settingsPurename] > [string length $srcPurename] }  {
-      set suffixStart [string length $srcPurename]
-      set suffix [string range $settingsPurename $suffixStart end]
-      set dstPurename [format "%s%s" $dstPurename $suffix]
-    }
-    set dstPath [file join $destDir $dstPurename]]
-    if { 0 == [_clone_one_cnv_settings_file $pt $dstPurename $destDir \
-                                            $doSimulateOnly] }  {
-              incr cntErr 1;  # error already printed
-    } else {  incr cntGood 1  }
-  }
-  set cntDone [expr [llength $srcSettingsFiles] - $cntErr]
-  if { $cntGood > 0 } {
-    ok_info_msg "Cloned settings file(s) for $cntDone RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'; $cntErr error(s) occured"
-  }
-  if { $cntErr > 0 } {
-    ok_err_msg "Failed to clone settings file(s) for $cntErr RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'"
-  }
-  return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
-}
-
-
-proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
-  if { "" == [set stStr [ReadSettingsFile $srcPath]] }   {
-    return  0;  # error already printed
-  }
-  set srcPurename [AnyFileNameToPurename [file tail $srcPath]]
-  set stStr [string map [list $srcPurename $dstPurename] $stStr]
-  set ext [file extension $srcPath]
-  set dstPath [file join $dstDir "$dstPurename$ext"]
-  if { $::STS(doSimulateOnly) != 0 }  {
-    ok_info_msg "Would have cloned conversion settings from '$srcPath' into '$dstPath'"
-    return  1
-  }
-  if { 0 == [WriteSettingsFile $stStr $dstPath] }   {
-    return  0;  # error already printed
-  }
-  ok_info_msg "Cloned conversion settings from '$srcPath' into '$dstPath'"
-  return  1
-}
-
-
 proc _color_analyzer_arrange_workarea {}  {
   if { 0 == [ok_create_absdirs_in_list \
               [list $::STS(outDirPath)] \
