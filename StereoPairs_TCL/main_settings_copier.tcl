@@ -70,6 +70,11 @@ proc settings_copier_main {cmdLineAsStr}  {
     set dstDir $STS(globalImgSettingsDir)
   }
 
+  # set variables required for maintaining backup/trash directory
+  set ::ok_utils::WORK_AREA_ROOT_DIR    "" ;   # OK for this use-case
+  set ::ok_utils::BACKUP_ROOT_NAME      $STS(backupDir)
+  set ::ok_utils::_LAST_BACKUP_DIR_PATH ""
+
   set srcSettingsFiles [FindSettingsFilesForListedImages $srcOrigPaths \
                                                          cntMissing 1]
   if { 0 == [llength $srcSettingsFiles] } { return  0 };  # error printed
@@ -175,7 +180,17 @@ proc _settings_copier_parse_cmdline {cmlArrName}  {
   if { 1 == [info exists cml(-backup_dir)] }  {
     set ::STS(backupDir) $cml(-backup_dir)
   }
- if { 1 == [info exists cml(-copy_from)] }  {
+  # deduce workarea root from image and backup dir-s; TODO: make utility
+  set waDirs [ok_discard_empty_list_elements \
+      [list $::STS(origImgRootPath) $::STS(backupDir)]]
+  if { "" != [set ::STS(workAreaRootPath) \
+                                [ok_find_filepaths_common_prefix $waDirs]] } {
+    ok_info_msg "Common work-area root directory is '$::STS(workAreaRootPath)'"
+    set ::ok_utils::WORK_AREA_ROOT_DIR $::STS(workAreaRootPath)
+  } else {
+    ok_info_msg "No common work-area root directory assumed"
+  }
+  if { 1 == [info exists cml(-copy_from)] }  {
     switch -nocase -- [string tolower $cml(-copy_from)]  {
       "left"   {  set ::STS(copyFromLR) "left"   }
       "right"  {  set ::STS(copyFromLR) "right"  }
@@ -269,12 +284,13 @@ proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
   } else {
     ok_trace_msg "Cloning of settings file '$srcPath' will create first version of '$dstPath'"
   }
-  if { [file exists $dstPath] && \
-        (0 == [ok_move_files_to_backup_dir \
+  if { [file exists $dstPath] }  {
+    if { 0 == [ok_move_files_to_backup_dir \
                  $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS) [list $srcPath] \
                  $::STS(workAreaRootPath) $doSimulateOnly ""]) } {
-    incr cntErr 1;  ok_err_msg "Will not clone settings file '$srcPath'"
-    continue
+      incr cntErr 1;  ok_err_msg "Will not clone settings file '$srcPath'"
+      continue
+    }
   }
   if { $::STS(doSimulateOnly) != 0 }  {
     ok_info_msg "Would have cloned conversion settings from '$srcPath' into '$dstPath'"
