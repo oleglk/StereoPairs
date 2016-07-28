@@ -14,7 +14,10 @@ namespace import -force ::ok_utils::*
 
 
 ###################### Global variables ############################
+set _LAST_BU_DIR_FOR_SETTINGS "" ; # copy-settings action deals with single dir
 #DO NOT: array unset STS ;   # array for global settings; unset once per project
+################################################################################
+
 
 # TODO: extract a common part from _settings_copier_set_defaults() for the whole project
 proc _settings_copier_set_defaults {}  {
@@ -39,8 +42,9 @@ set ORIG_EXT_DICT    0 ;  # per-dir extensions of original out-of-camera images
 ################################################################################
 
 proc settings_copier_main {cmdLineAsStr}  {
-  global STS SCRIPT_DIR ORIG_EXT_DICT
+  global STS SCRIPT_DIR ORIG_EXT_DICT _LAST_BU_DIR_FOR_SETTINGS
   _settings_copier_set_defaults ;  # calling it in a function for repeated invocations
+  set _LAST_BU_DIR_FOR_SETTINGS ""; # to be defined by 1st backup action
   if { 0 == [settings_copier_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
@@ -257,12 +261,17 @@ proc _clone_settings_files {srcSettingsFiles destDir doSimulateOnly}  {
     set dstPath [file join $destDir $dstPurename]]
     if { 0 == [_clone_one_cnv_settings_file $pt $dstPurename $destDir \
                                             $doSimulateOnly] }  {
-              incr cntErr 1;  # error already printed
+      incr cntErr 1;  # error already printed
+      if { $::_LAST_BU_DIR_FOR_SETTINGS == "" } {
+        ok_err_msg "Aborted cloning settings since failed to provide a backup directory"
+        break
+      }
     } else {  incr cntGood 1  }
   }
   set cntDone [expr [llength $srcSettingsFiles] - $cntErr]
   if { $cntGood > 0 } {
-    ok_info_msg "Cloned settings file(s) for $cntDone RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'; $cntErr error(s) occured"
+    set actDescr [expr {($doSimulateOnly==1)? "Would have cloned" : "Cloned"}]
+    ok_info_msg "$actDescr settings file(s) for $cntDone RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'; $cntErr error(s) occured"
   }
   if { $cntErr > 0 } {
     ok_err_msg "Failed to clone settings file(s) for $cntErr RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'"
@@ -285,9 +294,16 @@ proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
     ok_trace_msg "Cloning of settings file '$srcPath' will create first version of '$dstPath'"
   }
   if { [file exists $dstPath] }  {
+    # guarantee that all old settings files moved to one backup/thrash dir
+    if { $::_LAST_BU_DIR_FOR_SETTINGS == "" }  {
+      set ::_LAST_BU_DIR_FOR_SETTINGS [ok_provide_backup_dir \
+                                  $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)]
+      if { $::_LAST_BU_DIR_FOR_SETTINGS == "" } { return  0 };  # error printed
+    }
     if { 0 == [ok_move_files_to_backup_dir \
-                 $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS) [list $srcPath] \
-                 $::STS(workAreaRootPath) $doSimulateOnly ""]) } {
+                $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS) [list $dstPath] \
+                $::STS(workAreaRootPath) $doSimulateOnly  \
+                $::_LAST_BU_DIR_FOR_SETTINGS] } {
       incr cntErr 1;  ok_err_msg "Will not clone settings file '$srcPath'"
       continue
     }
