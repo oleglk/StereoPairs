@@ -239,3 +239,86 @@ proc preferences_is_backup_dir_path {dirPath} {
   }
   return  0
 }
+
+
+################################################################################
+## Functions that read and write preference file
+################################################################################
+
+# Retrieves preferences from ::PREFS array.
+# Returns list of {key val} pair lists that includes keys starting from "-".
+# TODO: what about -INITIAL_WORK_DIR?
+proc PreferencesCollect {}  {
+  global PREFS  ; # array of key::val
+  # TODO: implement
+}
+
+proc PreferencesCollectAndWrite {}  {
+  if { 0 == [set prefAsListOfPairs [PreferencesCollect]] }  {
+    return  0;  # error already printed
+   }
+   return  [PreferencesWriteIntoFile $prefAsListOfPairs]
+}
+
+
+proc PreferencesReadAndApply {}  {
+  if { 0 == [set prefAsListOfPairs [PreferencesReadFromFile]] }  {
+    return  0;  # error already printed
+   }
+   return  [PreferencesApply $prefAsListOfPairs]
+}
+
+
+# Saves the obtained list of pairs (no header) in the predefined path.
+# Returns 1 on success, 0 on error.
+proc PreferencesWriteIntoFile {prefAsListOfPairs}  {
+  set pPath [dualcam_find_preferences_file 0]
+  if { 0 == [CanWriteFile $pPath] }  {
+    ok_err_msg "Cannot write into preferences file <$pPath>"
+    return  0
+  }
+  # prepare wrapped header; "concat" data-list to it 
+  set header [list [list "param-name" "param-val"]]
+  set prefListWithHeader [concat $header $prefAsListOfPairs]
+  return  [ok_write_list_of_lists_into_csv_file $prefListWithHeader \
+                                                $pPath ","]
+}
+
+
+# Reads and returns list of pairs (no header) from the predefined path.
+# Returns 0 on error.
+proc PreferencesReadFromFile {}  {
+  if { 0 == [set pPath [dualcam_find_preferences_file 1]] }  {
+    ok_warn_msg "Inexistent preferences file <$pPath>; will use built-in values"
+    return  0
+  }
+  set prefListWithHeader [ok_read_csv_file_into_list_of_lists $pPath "," "#" 0]
+  if { $prefListWithHeader == 0 } {
+    ok_err_msg "Failed reading preferences from file '$pPath'"
+    return  0
+  }
+  return  [lrange $prefListWithHeader 1 end]
+}
+
+
+# Installs preferred values from the obtained list of pairs (no header).
+# The StereoPairs app is built so that nothing should occur immediately
+# upon changing a preference, so the values are just set in ::PREFS
+# Returns 1 on success, 0 on error.
+proc PreferencesApply {prefListNoHeader}  {
+  global PREFS  ; # array of key::val
+  if { 0 == [llength $prefListNoHeader] }  {
+    ok_err_msg "Got empty list of preferences"
+    return 0
+  }
+  if { 0 == [SafeListOfListsToArray $prefListNoHeader PREFS] }  {
+    ok_err_msg "Invalid/corrupted list of preferences: ($prefListNoHeaderS)"
+    return 0
+  }
+  set errCnt 0
+  # TODO: implement
+  
+  #~ # apply proxy variables - read from file
+  #~ set LOUD_MODE $SHOW_TRACE
+  return  [expr $errCnt == 0]
+}
