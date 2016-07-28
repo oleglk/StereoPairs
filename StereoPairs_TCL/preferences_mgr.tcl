@@ -248,30 +248,30 @@ proc preferences_is_backup_dir_path {dirPath} {
 # Retrieves preferences from ::PREFS array.
 # Returns list of {key val} pair lists that includes keys starting from "-".
 # TODO: what about -INITIAL_WORK_DIR?
-proc PreferencesCollect {}  {
+proc preferences_collect {}  {
   global PREFS  ; # array of key::val
   # TODO: implement
 }
 
-proc PreferencesCollectAndWrite {}  {
-  if { 0 == [set prefAsListOfPairs [PreferencesCollect]] }  {
+proc preferences_collect_and_write {}  {
+  if { 0 == [set prefAsListOfPairs [preferences_collect]] }  {
     return  0;  # error already printed
    }
-   return  [PreferencesWriteIntoFile $prefAsListOfPairs]
+   return  [preferences_write_into_file $prefAsListOfPairs]
 }
 
 
-proc PreferencesReadAndApply {}  {
-  if { 0 == [set prefAsListOfPairs [PreferencesReadFromFile]] }  {
+proc preferences_read_and_apply {}  {
+  if { 0 == [set prefAsListOfPairs [preferences_read_from_file]] }  {
     return  0;  # error already printed
    }
-   return  [PreferencesApply $prefAsListOfPairs]
+   return  [preferences_app[y $prefAsListOfPairs]
 }
 
 
 # Saves the obtained list of pairs (no header) in the predefined path.
 # Returns 1 on success, 0 on error.
-proc PreferencesWriteIntoFile {prefAsListOfPairs}  {
+proc preferences_write_into_file {prefAsListOfPairs}  {
   set pPath [dualcam_find_preferences_file 0]
   if { 0 == [CanWriteFile $pPath] }  {
     ok_err_msg "Cannot write into preferences file <$pPath>"
@@ -287,7 +287,7 @@ proc PreferencesWriteIntoFile {prefAsListOfPairs}  {
 
 # Reads and returns list of pairs (no header) from the predefined path.
 # Returns 0 on error.
-proc PreferencesReadFromFile {}  {
+proc preferences_read_from_file {}  {
   if { 0 == [set pPath [dualcam_find_preferences_file 1]] }  {
     ok_warn_msg "Inexistent preferences file <$pPath>; will use built-in values"
     return  0
@@ -305,7 +305,7 @@ proc PreferencesReadFromFile {}  {
 # The StereoPairs app is built so that nothing should occur immediately
 # upon changing a preference, so the values are just set in ::PREFS
 # Returns 1 on success, 0 on error.
-proc PreferencesApply {prefListNoHeader}  {
+proc preferences_app[y {prefListNoHeader}  {
   global PREFS  ; # array of key::val
   if { 0 == [llength $prefListNoHeader] }  {
     ok_err_msg "Got empty list of preferences"
