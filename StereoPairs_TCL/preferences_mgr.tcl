@@ -250,8 +250,14 @@ proc preferences_is_backup_dir_path {dirPath} {
 # TODO: what about -INITIAL_WORK_DIR?
 proc preferences_collect {}  {
   global PREFS  ; # array of key::val
-  # TODO: implement
+  set prefAsPlainList [array get PREFS "-*"] ;  # has keys/vals alternaring
+  set prefAsListOfPairs [list]
+  dict for {key val} $prefAsPlainList {
+    lappend prefAsListOfPairs [list $key $val]
+  }
+  return  $prefAsListOfPairs
 }
+
 
 proc preferences_collect_and_write {}  {
   if { 0 == [set prefAsListOfPairs [preferences_collect]] }  {
@@ -265,7 +271,7 @@ proc preferences_read_and_apply {}  {
   if { 0 == [set prefAsListOfPairs [preferences_read_from_file]] }  {
     return  0;  # error already printed
    }
-   return  [preferences_app[y $prefAsListOfPairs]
+   return  [preferences_apply $prefAsListOfPairs]
 }
 
 
@@ -305,13 +311,13 @@ proc preferences_read_from_file {}  {
 # The StereoPairs app is built so that nothing should occur immediately
 # upon changing a preference, so the values are just set in ::PREFS
 # Returns 1 on success, 0 on error.
-proc preferences_app[y {prefListNoHeader}  {
+proc preferences_apply {prefListNoHeader}  {
   global PREFS  ; # array of key::val
   if { 0 == [llength $prefListNoHeader] }  {
     ok_err_msg "Got empty list of preferences"
     return 0
   }
-  if { 0 == [SafeListOfListsToArray $prefListNoHeader PREFS] }  {
+  if { 0 == [ok_list_of_lists_to_array $prefListNoHeader PREFS] }  {
     ok_err_msg "Invalid/corrupted list of preferences: ($prefListNoHeaderS)"
     return 0
   }

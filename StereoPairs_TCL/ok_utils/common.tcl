@@ -20,6 +20,7 @@ namespace eval ::ok_utils:: {
 	ok_subtract_list_from_list \
 	ok_copy_array \
 	ok_list_to_array \
+  ok_list_of_lists_to_array \
 	ok_build_dest_filepath \
 	ok_insert_suffix_into_filename \
 	ok_insert_io_filenames_into_list \
@@ -162,6 +163,22 @@ proc ::ok_utils::ok_list_to_array {srcList dstArrName} {
 	return  0
     }
     return  1
+}
+
+
+# Inserts mapping-pairs from nested list-of-pairs 'srcList' into array 'dstArrName'.
+# Returns 1 on success, 0 on failure.
+proc ::ok_utils::ok_list_of_lists_to_array {srcList dstArrName} {
+  upvar $dstArrName dstArr
+  array unset dstArr
+  set errCnt 0
+  foreach pair $srcList {
+    if { 2 != [llength $pair] }   {
+      incr errCnt 1;  continue
+    }
+    set dstArr([lindex $pair 0])  [lindex $pair 1]
+  }
+  return  [expr $errCnt == 0]
 }
 
 
