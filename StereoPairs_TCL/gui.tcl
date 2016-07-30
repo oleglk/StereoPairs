@@ -357,6 +357,30 @@ proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
 }
 
 
+################################################################################
+################################################################################
+# GUI-involved utility that edits and saves preferences
+# Returns 1 on success, 0 on error.
+proc _GUI_EditPreferences {}  {
+  upvar $errCnt nErrors
+  global APP_TITLE GUI_VARS PREFS
+  set nErrors 0
+  set key_keysInOrder         "ALL_PREFERENCES__keysInOrder"
+  set key_keyToDescrAndFormat "ALL_PREFERENCES__keyToDescrAndFormat"
+  if { 0 == [set keyToValIni [preferences_fetch_values \
+                                            $PREFS($key_keysInOrder) 0 0]] }  {
+    return  0;  # error already printed
+  }
+  set keyToValUlt [GUI_options_form_show \
+                $PREFS($key_keyToDescrAndFormat) $keyToValIni \
+                "$toolDescrStr Parameters" $PREFS($key_keysInOrder)]
+  if { $keyToValUlt == 0 }  {
+    return  0;   # error, if any, already reported
+  }
+  return  1
+}
+
+
 #~ # Chooses depths for all RAWs, computes their color parameters.
 #~ # Overrides the color parameters in the settings files/
 #~ # Returns 1 on success, 0 on error.

@@ -157,6 +157,21 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set PREFS(WORKAREA_RESTORER__keyOnlyArgsList) [list -simulate_only]
   set PREFS(WORKAREA_RESTORER__hardcodedArgsStr) ""
 ################################################################################
+
+################################################################################
+## ALL_PREFERENCES__keyToDescrAndFormat should automatically assemble ALL RECORDS
+  set descrFormatDictArrayEntries [array get PREFS "*__keyToDescrAndFormat"]
+  set descrFormatDicts [dict values $descrFormatDictArrayEntries]
+  set PREFS(ALL_PREFERENCES__keyToDescrAndFormat) [dict merge $descrFormatDicts]
+  # TODO: prepend COMMON section when available
+  set PREFS(ALL_PREFERENCES__keysInOrder) [concat     \
+              $PREFS(PAIR_MATCHER__keysInOrder)       \
+              $PREFS(LR_NAME_RESTORER__keysInOrder)   \
+              $PREFS(SETTINGS_COPIER__keysInOrder)    \
+              $PREFS(COLOR_ANALYZER__keysInOrder)     \
+              $PREFS(WORKAREA_CLEANER__keysInOrder)   \
+              $PREFS(WORKAREA_RESTORER__keysInOrder)  ]
+  
 ################################################################################
   
   
