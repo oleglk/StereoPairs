@@ -26,16 +26,19 @@ proc _set_initial_values {}  {
 
   set PREFS(-INITIAL_WORK_DIR)  [pwd]
   
-  # TODO: common - collect all shared options here
+  # common - all shared options come here
+  set PREFS(-orig_img_dir)        "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-std_img_dir)         "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set PREFS(-out_dir)             "Data"
+  set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
+  set PREFS(-backup_dir)  "Backup"
+  set PREFS(-simulate_only)       YES
   
   # pair matcher:
   set PREFS(-time_diff)           0
   set PREFS(-min_success_rate)    50
-  set PREFS(-orig_img_dir)        "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
   set PREFS(-orig_img_subdir_name_left)   "L"
   set PREFS(-orig_img_subdir_name_right)  "R"
-  set PREFS(-std_img_dir)         "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
-  set PREFS(-out_dir)             "Data"
   set PREFS(-out_pairlist_filename)  "lr_pairs.csv"
   set PREFS(-use_pairlist)        ""
   set PREFS(-dir_for_unmatched)   "Unmatched"
@@ -43,11 +46,8 @@ proc _set_initial_values {}  {
   set PREFS(-rename_lr)           YES
   set PREFS(-time_from)           "exif"
   set PREFS(-max_burst_gap)       1.0
-  set PREFS(-simulate_only)       YES
   
   # settings copier
-  set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
-  set PREFS(-backup_dir)  "Backup"
   set PREFS(-copy_from)  "left"
 
   # color analyzer/comparator
@@ -56,23 +56,13 @@ proc _set_initial_values {}  {
   set PREFS(-right_img_subdir)        "R/TIFF"
   set PREFS(-ext_left)                "tif"
   set PREFS(-ext_right)               "tif"
-  set PREFS(-out_dir)                 "Data"
   set PREFS(-warn_color_diff_above)   30
   
   # workarea cleaner
-  set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
-  set PREFS(-orig_img_dir)        "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
-  set PREFS(-std_img_dir)         "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
   set PREFS(-final_img_dir)       "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
-  set PREFS(-out_dir)             "Data"
-  set PREFS(-backup_dir)          "Backup"
-  set PREFS(-simulate_only)       YES
 
   # workarea restorer
   set PREFS(-workarea_root_dir)  "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
-  set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
-  set PREFS(-out_dir)             "Data"
-  set PREFS(-simulate_only)       YES
   # TODO
 
 #  set PREFS(-)  ""
@@ -164,13 +154,15 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set descrFormatDicts [dict values $descrFormatDictArrayEntries]
   set PREFS(ALL_PREFERENCES__keyToDescrAndFormat) [dict merge $descrFormatDicts]
   # TODO: prepend COMMON section when available
-  set PREFS(ALL_PREFERENCES__keysInOrder) [concat     \
+  set keysInOrderWithRepetitions [concat             \
               $PREFS(PAIR_MATCHER__keysInOrder)       \
               $PREFS(LR_NAME_RESTORER__keysInOrder)   \
               $PREFS(SETTINGS_COPIER__keysInOrder)    \
               $PREFS(COLOR_ANALYZER__keysInOrder)     \
               $PREFS(WORKAREA_CLEANER__keysInOrder)   \
               $PREFS(WORKAREA_RESTORER__keysInOrder)  ]
+  set PREFS(ALL_PREFERENCES__keysInOrder) [ok_group_repeated_elements_in_list \
+                                                  $keysInOrderWithRepetitions 0]
   
 ################################################################################
   

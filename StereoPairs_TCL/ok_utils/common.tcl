@@ -17,6 +17,7 @@ namespace eval ::ok_utils:: {
   ok_lremove \
 	ok_name_in_array \
 	ok_discard_empty_list_elements \
+  ok_group_repeated_elements_in_list \
 	ok_subtract_list_from_list \
 	ok_copy_array \
 	ok_list_to_array \
@@ -121,6 +122,21 @@ proc ::ok_utils::ok_discard_empty_list_elements {inpList} {
 	}
     }
     return  $outList
+}
+
+
+# Returns a list that is a copy of 'inpList' but with each repeating element
+# appearing only once in the head/tail - if 'headOrTail' == 0/1
+proc ::ok_utils::ok_group_repeated_elements_in_list {inpList headOrTail} {
+  set countDict [dict create]
+  foreach element $inpList {  dict set  countDict $element 0  }
+  foreach element $inpList {  dict incr countDict $element 1  }
+  set repKeys [list];   set uniKeys [list]
+  dict for {key count} $countDict {
+    if { $count == 1 }  { lappend uniKeys $key } else { lappend repKeys $key }
+  }
+  if { $headOrTail == 0 } { return  [concat $repKeys $uniKeys]
+  } else                  { return  [concat $uniKeys $repKeys] }
 }
 
 
