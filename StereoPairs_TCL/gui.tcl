@@ -159,12 +159,16 @@ wm protocol . WM_DELETE_WINDOW {
 
 
 proc GUI_ChangePreferences {}  {
-  global APP_TITLE
-  tk_messageBox -message "Sorry, preferences not implemented yet]" -title $APP_TITLE
-  #~ set res [GUI_PreferencesShow]
-  #~ if { $res != 0 }  {
-    #~ set savedOK [PreferencesCollectAndWrite]
-  #~ }
+  global APP_TITLE GUI_VARS PREFS
+  if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
+  if { 0 == [_GUI_EditPreferences] } {
+    _UpdateGuiEndAction;  return  0;  # just cancel
+  }
+  _UpdateGuiEndAction
+  #~ set msg "TODO '$GUI_VARS(WORK_DIR)'"
+  #~ #tk_messageBox -message $msg -title $APP_TITLE
+  #~ ok_info_msg $msg
+  return  1
 }
 
 
@@ -360,9 +364,8 @@ proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
 ################################################################################
 ################################################################################
 # GUI-involved utility that edits and saves preferences
-# Returns 1 on success, 0 on error.
+# Returns 1 on accept, 0 on cancellation.
 proc _GUI_EditPreferences {}  {
-  upvar $errCnt nErrors
   global APP_TITLE GUI_VARS PREFS
   set nErrors 0
   set key_keysInOrder         "ALL_PREFERENCES__keysInOrder"
@@ -373,10 +376,15 @@ proc _GUI_EditPreferences {}  {
   }
   set keyToValUlt [GUI_options_form_show \
                 $PREFS($key_keyToDescrAndFormat) $keyToValIni \
-                "$toolDescrStr Parameters" $PREFS($key_keysInOrder)]
+                "Edit Preferences" $PREFS($key_keysInOrder)]
   if { $keyToValUlt == 0 }  {
-    return  0;   # error, if any, already reported
+    return  0;   # error, if any, already reported; or it's a cancellation
   }
+  if { 0 == [ok_list_to_array $keyToValUlt keyToValUltAsArray] }  {
+    return  0;  # error already printed
+  }
+  ok_copy_array keyToValUltAsArray PREFS ;  # merges 'keyToValUlt' into 'PREFS'
+  # TODO: save the new preferences from 'PREFS'
   return  1
 }
 

@@ -152,7 +152,8 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
 ## ALL_PREFERENCES__keyToDescrAndFormat should automatically assemble ALL RECORDS
   set descrFormatDictArrayEntries [array get PREFS "*__keyToDescrAndFormat"]
   set descrFormatDicts [dict values $descrFormatDictArrayEntries]
-  set PREFS(ALL_PREFERENCES__keyToDescrAndFormat) [dict merge $descrFormatDicts]
+  set PREFS(ALL_PREFERENCES__keyToDescrAndFormat) \
+                                              [dict merge {*}$descrFormatDicts]
   # TODO: prepend COMMON section when available
   set keysInOrderWithRepetitions [concat             \
               $PREFS(PAIR_MATCHER__keysInOrder)       \

@@ -17,16 +17,17 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 - check workarea for compliance before each action
 
-- backup overriden settings files
-- avoid per-file dir-s while backup overriden settings files
++ backup overriden settings files
++ avoid per-file dir-s while backup overriden settings files
 
-- HOWTO: refuse "unhide" if supplied dir is not a "backup"
++ HOWTO: refuse "unhide" if supplied dir is not a "backup"
 -- for instance, require that it lies under the -backup_dir ?
 -- better: always create a backup/hide indicator file by "hide" action; do pay attention at namerestoration action too
--- or better: detect allowed subdirectory names by action key
+++ or better: detect allowed subdirectory names by action key
 
 - rethink:   { set ::ok_utils::WORK_AREA_ROOT_DIR    "" ;   # OK for this use-case}
 
+- compute WB diff for color comparator as R/G, G/B ratios
 
 
 

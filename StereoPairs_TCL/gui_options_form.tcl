@@ -141,6 +141,7 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal \
   } elseif { 0 == [ok_unordered_lists_are_equal $keyOrder $allKeys] } {
     set msg "Invalid key order {$keyOrder} for {$allKeys}"
     tk_messageBox -message "-E- $msg" -title $::WND_TITLE
+    ok_err_msg $msg
     return  0
   }
   if { $title != "" }   {
