@@ -130,11 +130,12 @@ proc ::ok_utils::ok_write_list_of_lists_into_csv_file {topList fullPath {sepChar
 
 # Reads lists from file 'fullPath' into array 'arrName';
 # each first list element used as array key.
+# If 'requireEqualLength'==1, aborts if not all lines have equal num of fields
 # If 'LineCheckCB' callback supplied, it's called on each line except the header;
 #   if 'LineCheckCB' returns non-empty string, error reported and reading stopped.
 # Returns 1 on success, 0 on error.
 proc ::ok_utils::ok_read_csv_file_into_array_of_lists {arrName fullPath sepChar \
-                                                              {LineCheckCB 0}} {
+                                          requireEqualLength {LineCheckCB 0}} {
   upvar $arrName theArr
   set descr "data-file '$fullPath'"
   set goodCnt 0
@@ -143,7 +144,7 @@ proc ::ok_utils::ok_read_csv_file_into_array_of_lists {arrName fullPath sepChar 
   set inF [open $fullPath r]
   	while { [gets $inF line] >= 0 } {
       set lst [ok_discard_empty_list_elements [ok_csv2list $line $sepChar]]
-      if { ($prevLst != {}) && ($goodCnt > 1) && \
+      if { ($requireEqualLength != 0) && ($prevLst != {}) && ($goodCnt > 1) && \
             ([llength $lst] != [llength $prevLst]) }  {
         ok_err_msg "Line length mismatch in $descr: {$prevLst} vs {$lst}" 
         return  0
@@ -177,9 +178,10 @@ proc ::ok_utils::ok_read_csv_file_into_array_of_lists {arrName fullPath sepChar 
 
 
 # Reads lists from file 'fullPath' into a list and returns it
+# If 'requireEqualLength'==1, aborts if not all lines have equal num of fields
 # Returns 0 on error.
-proc ::ok_utils::ok_read_csv_file_into_list_of_lists {fullPath sepChar commentStart \
-                                                              {LineCheckCB 0}} {
+proc ::ok_utils::ok_read_csv_file_into_list_of_lists {fullPath sepChar \
+                              commentStart requireEqualLength {LineCheckCB 0}} {
   set descr "data-file '$fullPath'"
   set goodCnt 0
   set fullList [list ]
@@ -189,7 +191,7 @@ proc ::ok_utils::ok_read_csv_file_into_list_of_lists {fullPath sepChar commentSt
   	while { [gets $inF line] >= 0 } {
       if { $commentStart == [string index $line 0] }   { continue }
       set oneLineList [ok_discard_empty_list_elements [ok_csv2list $line $sepChar]]
-      if { ($prevLst != {}) && ($goodCnt > 1) && \
+      if { ($requireEqualLength != 0) && ($prevLst != {}) && ($goodCnt > 1) && \
            ([llength $oneLineList] != [llength $prevLst]) }  {
         ok_err_msg "Line length mismatch in $descr: {$prevLst} vs {$oneLineList}" 
         return  0
@@ -238,9 +240,10 @@ proc ::ok_utils::ok_read_csv_file_keys {fullPath sepChar {commentStart "#"}} {
   return  [ok_read_csv_file_column $fullPath 0 $sepChar $commentStart]
 }
 
-proc ::ok_utils::ok_read_csv_file_column {fullPath iColumn sepChar {commentStart "#"}} {
+proc ::ok_utils::ok_read_csv_file_column {fullPath iColumn sepChar \
+                                          {commentStart "#"}} {
   set listOfLists [ok_read_csv_file_into_list_of_lists $fullPath \
-                                                        $sepChar $commentStart]
+                                                    $sepChar $commentStart 1 0]
   set res [list]
   # comments dropped; do skip header
   for {set i 1} {$i < [llength $listOfLists]} {incr i} {
@@ -259,7 +262,7 @@ proc ::ok_utils::ok_read_csv_file_column {fullPath iColumn sepChar {commentStart
 # A generic function to read global-variable values from 'csvPath'
 proc ::ok_utils::ok_read_variable_values_from_csv {csvPath descr}  {
   # TODO: supply line-check CB
-  set listOfPairs [ok_read_csv_file_into_list_of_lists $csvPath "," "#" 0]
+  set listOfPairs [ok_read_csv_file_into_list_of_lists $csvPath "," "#" 1 0]
   if { $listOfPairs == 0 }  {
     ok_err_msg "[info script] failed reading $descr from '$csvPath'"
     return  0
@@ -298,7 +301,7 @@ proc sort_csv_file_by_numeric_column {csvPath columnIndex descr} {
     ok_err_msg "Inexistent $descr file '$csvPath'"
     return  0
   }
-  set fullList [ok_read_csv_file_into_list_of_lists $csvPath " " "#" 0]
+  set fullList [ok_read_csv_file_into_list_of_lists $csvPath " " "#" 1 0]
   if { $fullList == 0 } {
     ok_err_msg "Failed reading $descr file '$csvPath'";    return  0
   }

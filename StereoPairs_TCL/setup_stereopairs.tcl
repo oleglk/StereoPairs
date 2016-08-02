@@ -54,6 +54,25 @@ source [file join $SCRIPT_DIR   "main_settings_copier.tcl"]
 source [file join $SCRIPT_DIR   "main_color_analyzer.tcl"]
 source [file join $SCRIPT_DIR   "main_workarea_cleaner.tcl"]
 source [file join $SCRIPT_DIR   "dir_file_mgr.tcl"]
+source [file join $SCRIPT_DIR   "preferences_mgr.tcl"]
 
 ## In oder to enable loading several main-s, avoid duplicating settings-init
 array unset STS ;   # array for global settings ;  unset once per a project
+
+
+# load default settings if possible
+if { 0 == [preferences_read_and_apply] }  {
+  ok_warn_msg "Preferences were not loaded; will use hardcoded values"
+} else {
+  # perform initializations dependent on the saved preferences
+  # 'dualcam_cd_to_workdir_or_complain' inits diagnostics log too
+  if { 0 == [preferences_get_val -INITIAL_WORK_DIR workAreaDir]} {
+    ok_err_msg "Fatal: missing preference for INITIAL_WORK_DIR";  return
+  }
+  set msg [dualcam_cd_to_workdir_or_complain $workAreaDir 0]
+  if { $msg != "" }  {
+    ok_warn_msg "$msg";   # initial work-dir not required to be valid
+  } else {
+    ok_info_msg "Preferences loaded" ;    # into the correct log
+  }
+}

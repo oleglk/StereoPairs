@@ -306,7 +306,7 @@ proc preferences_read_from_file {}  {
     ok_warn_msg "Inexistent preferences file <$pPath>; will use built-in values"
     return  0
   }
-  set prefListWithHeader [ok_read_csv_file_into_list_of_lists $pPath "," "#" 0]
+  set prefListWithHeader [ok_read_csv_file_into_list_of_lists $pPath "," "#" 0 0]
   if { $prefListWithHeader == 0 } {
     ok_err_msg "Failed reading preferences from file '$pPath'"
     return  0
@@ -325,8 +325,10 @@ proc preferences_apply {prefListNoHeader}  {
     ok_err_msg "Got empty list of preferences"
     return 0
   }
+  # TODO: treat key-only options; otherwise ok_list_of_lists_to_array fails
+  # -- collect PREFS(*__keyOnlyArgsList), detect such and ...
   if { 0 == [ok_list_of_lists_to_array $prefListNoHeader PREFS] }  {
-    ok_err_msg "Invalid/corrupted list of preferences: ($prefListNoHeaderS)"
+    ok_err_msg "Invalid/corrupted list of preferences: ($prefListNoHeader)"
     return 0
   }
   set errCnt 0

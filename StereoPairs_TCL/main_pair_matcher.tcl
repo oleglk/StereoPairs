@@ -771,7 +771,7 @@ proc _dump_rename_dict {renameDict}  {
 # according to rename spec in '$::STS(outDirPath)/$::FILENAME_RENAME_SPEC'
 proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
   set specPath [file join $::STS(outDirPath) $::FILENAME_RENAME_SPEC]
-  set listOfLists [ok_read_csv_file_into_list_of_lists $specPath "," "#" 0]
+  set listOfLists [ok_read_csv_file_into_list_of_lists $specPath "," "#" 1 0]
   if { $listOfLists == 0 } {
     ok_err_msg "Failed reading rename spec from '$specPath'"
     return  0
