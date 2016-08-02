@@ -36,7 +36,7 @@ proc _CleanLogText {}  {
   } execResult]
   if { $tclResult != 0 } {
     set msg "Failed changing log text: $execResult!"
-    puts $msg;  tk_messageBox -message "-E- $msg" -title $APP_TITLE
+    puts $msg;  tk_messageBox -type ok -icon error -message "-E- $msg" -title $APP_TITLE
   }
   .top.logBox configure -state disabled
 }
@@ -51,7 +51,7 @@ proc _AppendLogText {str {tags ""}}  {
   } execResult]
   if { $tclResult != 0 } {
     set msg "Failed changing log text: $execResult!"
-    puts $msg;  tk_messageBox -message "-E- $msg" -title $APP_TITLE
+    puts $msg;  tk_messageBox -type ok -icon error -message "-E- $msg" -title $APP_TITLE
   }
   .top.logBox configure -state disabled
 }
@@ -186,7 +186,7 @@ proc GUI_ChooseDir {}  {
     #tk_messageBox -message "After cd to work-dir '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
     if { $msg != "" }  {
       _AppendLogText $msg
-      tk_messageBox -message "-E- $msg" -title $APP_TITLE
+      tk_messageBox -type ok -icon error -message "-E- $msg" -title $APP_TITLE
       return  0
     }
   }
@@ -200,7 +200,7 @@ proc _GUI_SetDir {newWorkDir}  {
   set GUI_VARS(WORK_DIR) $newWorkDir
   .top.workDir configure -state disabled
   set msg [dualcam_cd_to_workdir_or_complain $GUI_VARS(WORK_DIR) 1]
-  tk_messageBox -message "After cd to work-dir '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
+  tk_messageBox -message "Changed working directory to '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
   return  $msg
 }
 
@@ -353,7 +353,7 @@ proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
                                           $PREFS($key_keyOnlyArgsList) nErrors]
   if { $nErrors > 0 } {
     set msg "$nErrors error(s) in the command parameters"
-    tk_messageBox -message "-E- $msg"  -title "$APP_TITLE / $toolDescrStr"
+    tk_messageBox -type ok -icon error -message "-E- $msg"  -title "$APP_TITLE / $toolDescrStr"
     ok_err_msg $msg;      return  ""
   }
   append paramStr " " $PREFS($key_hardcodedArgsStr)
@@ -384,7 +384,12 @@ proc _GUI_EditPreferences {}  {
     return  0;  # error already printed
   }
   ok_copy_array keyToValUltAsArray PREFS ;  # merges 'keyToValUlt' into 'PREFS'
-  # TODO: save the new preferences from 'PREFS'
+  # save the new preferences from 'PREFS'
+  if { 0 == [preferences_collect_and_write] }  {
+    set msg "Failed to save preferences; please see the log"
+    tk_messageBox -type ok -icon error -message "-E- $msg"  -title "$APP_TITLE / Edit Preferences"
+    return  0
+  }
   return  1
 }
 
