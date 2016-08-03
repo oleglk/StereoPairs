@@ -60,6 +60,7 @@ source [file join $SCRIPT_DIR   "preferences_mgr.tcl"]
 array unset STS ;   # array for global settings ;  unset once per a project
 
 
+preferences_set_initial_values  ; # initializing the settings is mandatory
 # load default settings if possible
 if { 0 == [preferences_read_and_apply] }  {
   ok_warn_msg "Preferences were not loaded; will use hardcoded values"
@@ -73,6 +74,6 @@ if { 0 == [preferences_read_and_apply] }  {
   if { $msg != "" }  {
     ok_warn_msg "$msg";   # initial work-dir not required to be valid
   } else {
-    ok_info_msg "Preferences loaded" ;    # into the correct log
+    ok_info_msg "Preferences successfully loaded" ;    # into the correct log
   }
 }

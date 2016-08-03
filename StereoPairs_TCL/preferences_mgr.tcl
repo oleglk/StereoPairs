@@ -10,9 +10,9 @@ namespace import -force ::ok_utils::*
 
 
 ################################################################################
-proc _set_initial_values {}  {
+proc preferences_set_initial_values {}  {
   global PREFS  ; # array of key::val
-  ok_trace_msg "Setting hardcoded functional preferences"
+  ok_info_msg "Setting hardcoded functional preferences"
 
   array unset PREFS
 
@@ -175,7 +175,7 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   #~ set SHOW_TRACE 1
 }
 ################################################################################
-_set_initial_values
+## DO NOT: preferences_set_initial_values
 ################################################################################
 
 
@@ -325,11 +325,21 @@ proc preferences_apply {prefListNoHeader}  {
     ok_err_msg "Got empty list of preferences"
     return 0
   }
-  # TODO: treat key-only options; otherwise ok_list_of_lists_to_array fails
-  # -- collect PREFS(*__keyOnlyArgsList), detect such and ...
-  if { 0 == [ok_list_of_lists_to_array $prefListNoHeader PREFS] }  {
-    ok_err_msg "Invalid/corrupted list of preferences: ($prefListNoHeader)"
-    return 0
+  # go one-by-one, since ok_list_of_lists_to_array fails on
+  # key-only and empty-val options 
+  foreach oneOptionList $prefListNoHeader {
+    set listLng [llength $oneOptionList]
+    if { ($listLng != 1) && ($listLng != 2) } {
+      ok_err_msg "Invalid option '$oneOptionList' in the list of preferences {$prefListNoHeader}"
+      return 0
+    }
+    set key [lindex $oneOptionList 0]
+    if { $listLng == 1 } {
+      set PREFS($key) ""; # make key-only argument map to empty string
+    } else { ;  # $listLng == 2
+      set PREFS($key) [lindex $oneOptionList 1]
+    }
+    ok_info_msg "Option '$key' set to '$PREFS($key)' by '$oneOptionList'"  
   }
   set errCnt 0
   # TODO: implement
