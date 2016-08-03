@@ -29,6 +29,7 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 - compute WB diff for color comparator as R/G, G/B ratios
 
++ do not abort color comparison on presense of unmatched file(s)
 
 
 

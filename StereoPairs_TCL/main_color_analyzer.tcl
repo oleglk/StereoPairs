@@ -60,8 +60,8 @@ proc color_analyzer_main {cmdLineAsStr}  {
 
   if { 0 == [_color_analyzer_arrange_workarea] }  { return  0  };  # error already printed
 
-  if { 0 == [set pairNameToLRPathsDict \
-      [_map_pairname_to_lrpaths $imgPathsLeft $imgPathsRight]] } {
+  if { 0 == [dict size [set pairNameToLRPathsDict \
+      [_map_pairname_to_lrpaths $imgPathsLeft $imgPathsRight]]] } {
     return  0;  # error already printed
   }
   ###puts $pairNameToLRPathsDict
@@ -274,8 +274,8 @@ proc _map_pairname_to_lrpaths {imgPathsLeft imgPathsRight}  {
                                 [dict get $pairNameToRightPath $pairPurename]]
   }
   set msg "Correlated paths of left/right images for [dict size $pairNameToLRPathsDict] stereopair(s); $errCnt error(s) occured"
-  if { $errCnt == 0 }  {  ok_info_msg $msg;   return  $pairNameToLRPathsDict
-  } else {                ok_err_msg  $msg;   return  0 }
+  if { $errCnt == 0 }  {  ok_info_msg $msg } else { ok_err_msg  $msg  }
+  return  $pairNameToLRPathsDict  ;  # whatever was correlated
 }
 
 
