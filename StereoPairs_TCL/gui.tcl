@@ -370,8 +370,10 @@ proc _GUI_EditPreferences {}  {
   set nErrors 0
   set key_keysInOrder         "ALL_PREFERENCES__keysInOrder"
   set key_keyToDescrAndFormat "ALL_PREFERENCES__keyToDescrAndFormat"
+  set keysNoHeaders [preferences_strip_special_keywords_from_list \
+                                                      $PREFS($key_keysInOrder)]
   if { 0 == [set keyToValIni [preferences_fetch_values \
-                                            $PREFS($key_keysInOrder) 0 0]] }  {
+                                            $keysNoHeaders 0 0]] }  {
     return  0;  # error already printed
   }
   set keyToValUlt [GUI_options_form_show \

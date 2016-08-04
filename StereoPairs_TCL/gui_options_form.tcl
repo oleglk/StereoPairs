@@ -138,11 +138,14 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal \
   set allKeys [dict keys $keyToDescrAndFormat]
   if { $keyOrder == {} }   {
     set keyOrder $allKeys
-  } elseif { 0 == [ok_unordered_lists_are_equal $keyOrder $allKeys] } {
-    set msg "Invalid key order {$keyOrder} for {$allKeys}"
-    tk_messageBox -message "-E- $msg" -title $::WND_TITLE
-    ok_err_msg $msg
-    return  0
+  } else {
+    set keyOrderNoHeaders [preferences_strip_special_keywords_from_list $keyOrder]
+    if { 0 == [ok_unordered_lists_are_equal $keyOrderNoHeaders $allKeys] } {
+      set msg "Invalid key order {$keyOrder} for {$allKeys}"
+      tk_messageBox -message "-E- $msg" -title $::WND_TITLE
+      ok_err_msg $msg
+      return  0
+    }
   }
   if { $title != "" }   {
     set WND_TITLE $title
@@ -216,13 +219,20 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal keyOrder}  {
   $tBx configure -state normal
   $tBx delete 1.0 end;   # clean all
   set allKeys [lsort [dict keys $keyToDescrAndFormat]]; # TODO: better sort
-  if { 0 == [ok_unordered_lists_are_equal $keyOrder $allKeys] } {
+  set keyOrderNoHeaders [preferences_strip_special_keywords_from_list $keyOrder]
+  if { 0 == [ok_unordered_lists_are_equal $keyOrderNoHeaders $allKeys] } {
     set msg "Invalid key order {$keyOrder} for {$allKeys}"
     tk_messageBox -message "-E- $msg" -title $::WND_TITLE
     return  0
   }
   set cnt 0;  set errCnt 0
   foreach key $keyOrder {
+    if { 1 == [preferences_key_is_separator $key] }  {
+      $tBx insert end "\n";   continue
+    }
+    if { 0 != [set headerText [preferences_extract_header_key_text $key]] }  {
+      $tBx insert end "\t\t$headerText\n";   continue
+    }
     set descrAndFormat [dict get $keyToDescrAndFormat $key]; # existence checked
     set descr [lindex $descrAndFormat 0];   set fmt [lindex $descrAndFormat 1]
     if { 0 == [dict exists $keyToInitVal $key] }  { set val "" } else {

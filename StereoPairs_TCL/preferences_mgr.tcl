@@ -7,6 +7,14 @@ source [file join $SCRIPT_DIR   "dir_file_mgr.tcl"]
 package require ok_utils
 namespace import -force ::ok_utils::*
 
+################################################################################
+## Special keys for formatting options' lists
+################################################################################
+set SEPARATOR_KEY "SEPARATOR*"
+set HEADER_KEY    "HEADER: *"
+set HEADER_REGEXP "HEADER: (.+)"
+################################################################################
+
 
 
 ################################################################################
@@ -154,16 +162,25 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set descrFormatDicts [dict values $descrFormatDictArrayEntries]
   set PREFS(ALL_PREFERENCES__keyToDescrAndFormat) \
                                               [dict merge {*}$descrFormatDicts]
-  # TODO: prepend COMMON section when available
-  set keysInOrderWithRepetitions [concat             \
+  set keysInOrderWithRepetitions [concat              \
+              [list "HEADER: ==== Pair-matcher ===="]        \
               $PREFS(PAIR_MATCHER__keysInOrder)       \
+              [list "HEADER: ==== Name-restorer ===="]       \
               $PREFS(LR_NAME_RESTORER__keysInOrder)   \
+              [list "HEADER: ==== Settings-copier ===="]     \
               $PREFS(SETTINGS_COPIER__keysInOrder)    \
+              [list "HEADER: ==== Color-analyzer ===="]      \
               $PREFS(COLOR_ANALYZER__keysInOrder)     \
+              [list "HEADER: ==== Workarea-cleaner ===="]    \
               $PREFS(WORKAREA_CLEANER__keysInOrder)   \
+              [list "HEADER: ==== Workarea-restorer ===="]   \
               $PREFS(WORKAREA_RESTORER__keysInOrder)  ]
+  # prepend COMMON section with its header
   set PREFS(ALL_PREFERENCES__keysInOrder) [ok_group_repeated_elements_in_list \
                                                   $keysInOrderWithRepetitions 0]
+  set PREFS(ALL_PREFERENCES__keysInOrder) [ \
+              linsert $PREFS(ALL_PREFERENCES__keysInOrder) 0 \
+              "HEADER: ==== Common/shared options ===="]
   
 ################################################################################
   
@@ -347,4 +364,36 @@ proc preferences_apply {prefListNoHeader}  {
   #~ # apply proxy variables - read from file
   #~ set LOUD_MODE $SHOW_TRACE
   return  [expr $errCnt == 0]
+}
+
+
+proc preferences_key_is_separator {keyStr} {
+  return  [expr {1 == [string match $::SEPARATOR_KEY $keyStr]}]
+}
+
+
+proc preferences_key_is_header {keyStr} {
+  return  [expr {1 == [string match $::HEADER_KEY $keyStr]}]
+}
+
+
+proc preferences_extract_header_key_text {keyStr} {
+  if { 1 == [string match $::HEADER_KEY $keyStr] }  {
+    if { 0 == [regexp -- $::HEADER_REGEXP $keyStr fullMatch headerText] }   {
+      set headerText $keyStr;  # bad header key; insert it as a whole
+    }
+    return  $headerText
+  }
+  return  0 ;   # not a header key
+}
+
+
+proc preferences_strip_special_keywords_from_list {keyOrderList} {
+  set resList [list]
+  foreach el $keyOrderList {
+    if { (1 == [preferences_key_is_separator $el]) || \
+         (1 == [preferences_key_is_header $el]) } { continue }
+    lappend resList $el
+  }
+  return  $resList
 }
