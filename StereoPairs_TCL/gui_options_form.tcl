@@ -77,6 +77,7 @@ grid [ttk::scrollbar .optsWnd.f.optTableScrollHorz -orient horizontal -command "
   # corresponding to the button clicked.  It will also serve as our signal
   # to our GUI_PreferencesShow procedure that the user has finished interacting with the dialog
 
+grid [ttk::button .optsWnd.f.reset -text "Reset" -state disabled -command {}] -column 0 -row 3
 grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 1 -row 3
 grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 2 -row 3
 
@@ -174,10 +175,12 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal getIniCBorZero \
                           $keyToDescrAndFormat $keyToInitVal $keyOrder] }  {
     # ok to present the options
     
-    if { $getIniCBorZero != 0 }  { ;   # place and bind 'reset' button
-      grid [ttk::button .optsWnd.f.reset -text "Reset" \
-            -command "_GUI_reset_options $getIniCBorZero"] \
-            -column 0 -row 3
+    if { $getIniCBorZero != 0 } { ;   # enable and bind 'reset' button
+      .optsWnd.f.reset configure -command "_GUI_reset_options $getIniCBorZero"
+      .optsWnd.f.reset state !disabled
+    } else                      { ;   # disable and unbind 'reset' button
+      .optsWnd.f.reset configure -command {}
+      .optsWnd.f.reset state  disabled
     }
   
     catch {grab set .optsWnd}
