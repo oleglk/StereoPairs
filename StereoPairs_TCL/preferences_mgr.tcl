@@ -17,6 +17,7 @@ set HEADER_REGEXP "HEADER: (.+)"
 
 
 
+
 ################################################################################
 # Initializes all options.
 ################################################################################
@@ -25,63 +26,71 @@ proc preferences_set_initial_values {}  {
   ok_info_msg "Setting hardcoded functional preferences"
 
   array unset PREFS
+  preferences_get_initial_values PREFS
+}
 
+
+################################################################################
+# Puts all initial options into array 'arrayName' - array of key::val.
+################################################################################
+proc preferences_get_initial_values {arrayName}  {
+  upvar $arrayName _prefs
   # directory paths that might become absolute
-  set PREFS(DIR_KEYS) [lsort [list -orig_img_dir -std_img_dir -out_dir]]
+  set _prefs(DIR_KEYS) [lsort [list -orig_img_dir -std_img_dir -out_dir]]
   
   # name-keywords for backup/thrash directories
-  set PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED)      "HideUnusedFiles"
-  set PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)  "BackupSettingsFiles"
-  set PREFS(BACKUP_DIRNAME_KEYS) [list $PREFS(BACKUP_DIRNAME_KEY__HIDE_UNUSED)]
+  set _prefs(BACKUP_DIRNAME_KEY__HIDE_UNUSED)      "HideUnusedFiles"
+  set _prefs(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)  "BackupSettingsFiles"
+  set _prefs(BACKUP_DIRNAME_KEYS) [list $_prefs(BACKUP_DIRNAME_KEY__HIDE_UNUSED)]
 
-  set PREFS(-INITIAL_WORK_DIR)  [pwd]
+  set _prefs(-INITIAL_WORK_DIR)  [pwd]
   
   # common - all shared options come here
-  set PREFS(-orig_img_dir)        "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
-  set PREFS(-std_img_dir)         "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
-  set PREFS(-out_dir)             "Data"
-  set PREFS(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
-  set PREFS(-backup_dir)  "Backup"
-  set PREFS(-simulate_only)       YES
+  set _prefs(-orig_img_dir)        "." ; # results in $_prefs(-INITIAL_WORK_DIR)
+  set _prefs(-std_img_dir)         "." ; # results in $_prefs(-INITIAL_WORK_DIR)
+  set _prefs(-out_dir)             "Data"
+  set _prefs(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
+  set _prefs(-backup_dir)  "Backup"
+  set _prefs(-simulate_only)       YES
   
   # pair matcher:
-  set PREFS(-time_diff)           0
-  set PREFS(-min_success_rate)    50
-  set PREFS(-orig_img_subdir_name_left)   "L"
-  set PREFS(-orig_img_subdir_name_right)  "R"
-  set PREFS(-out_pairlist_filename)  "lr_pairs.csv"
-  set PREFS(-use_pairlist)        ""
-  set PREFS(-dir_for_unmatched)   "Unmatched"
-  set PREFS(-create_sbs)          NO
-  set PREFS(-rename_lr)           YES
-  set PREFS(-time_from)           "exif"
-  set PREFS(-max_burst_gap)       1.0
+  set _prefs(-time_diff)           0
+  set _prefs(-min_success_rate)    50
+  set _prefs(-orig_img_subdir_name_left)   "L"
+  set _prefs(-orig_img_subdir_name_right)  "R"
+  set _prefs(-out_pairlist_filename)  "lr_pairs.csv"
+  set _prefs(-use_pairlist)        ""
+  set _prefs(-dir_for_unmatched)   "Unmatched"
+  set _prefs(-create_sbs)          NO
+  set _prefs(-rename_lr)           YES
+  set _prefs(-time_from)           "exif"
+  set _prefs(-max_burst_gap)       1.0
   
   # settings copier
-  set PREFS(-copy_from)  "left"
+  set _prefs(-copy_from)  "left"
 
   # color analyzer/comparator
-  set PREFS(-img_dir)  "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
-  set PREFS(-left_img_subdir)         "L/TIFF"
-  set PREFS(-right_img_subdir)        "R/TIFF"
-  set PREFS(-ext_left)                "tif"
-  set PREFS(-ext_right)               "tif"
-  set PREFS(-warn_color_diff_above)   30
+  set _prefs(-img_dir)  "."   ; # results in $_prefs(-INITIAL_WORK_DIR)
+  set _prefs(-left_img_subdir)         "L/TIFF"
+  set _prefs(-right_img_subdir)        "R/TIFF"
+  set _prefs(-ext_left)                "tif"
+  set _prefs(-ext_right)               "tif"
+  set _prefs(-warn_color_diff_above)   30
   
   # workarea cleaner
-  set PREFS(-final_img_dir)       "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set _prefs(-final_img_dir)       "." ; # results in $_prefs(-INITIAL_WORK_DIR)
 
   # workarea restorer
-  set PREFS(-workarea_root_dir)  "."   ; # results in $PREFS(-INITIAL_WORK_DIR)
+  set _prefs(-workarea_root_dir)  "." ; # results in $_prefs(-INITIAL_WORK_DIR)
   # TODO
 
-#  set PREFS(-)  ""
+#  set _prefs(-)  ""
 
   
 ################################################################################
 ## Per-application option lists to be used in GUI frontend                    ##
 ################################################################################
-  set PREFS(PAIR_MATCHER__keyToDescrAndFormat) [dict create \
+  set _prefs(PAIR_MATCHER__keyToDescrAndFormat) [dict create \
     -max_burst_gap {"max time difference between consequent frames to be considered a burst, sec" "%g"} \
     -time_diff {"time difference in seconds between the 2nd and 1st cameras" "%d"} \
     -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
@@ -89,19 +98,19 @@ proc preferences_set_initial_values {}  {
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  set PREFS(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir -std_img_dir -out_dir \
+  set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir -std_img_dir -out_dir \
                         -max_burst_gap -simulate_only]
-  set PREFS(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
-  set PREFS(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
+  set _prefs(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
+  set _prefs(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
 ################################################################################
-  set PREFS(LR_NAME_RESTORER__keyToDescrAndFormat)  [dict remove \
-    $PREFS(PAIR_MATCHER__keyToDescrAndFormat) -max_burst_gap -time_diff]
-  set PREFS(LR_NAME_RESTORER__keysInOrder)          [ok_lremove \
-    $PREFS(PAIR_MATCHER__keysInOrder)   [list -max_burst_gap -time_diff]]
-  set PREFS(LR_NAME_RESTORER__keyOnlyArgsList) $PREFS(PAIR_MATCHER__keyOnlyArgsList)
-  set PREFS(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
+  set _prefs(LR_NAME_RESTORER__keyToDescrAndFormat)  [dict remove \
+    $_prefs(PAIR_MATCHER__keyToDescrAndFormat) -max_burst_gap -time_diff]
+  set _prefs(LR_NAME_RESTORER__keysInOrder)          [ok_lremove \
+    $_prefs(PAIR_MATCHER__keysInOrder)   [list -max_burst_gap -time_diff]]
+  set _prefs(LR_NAME_RESTORER__keyOnlyArgsList) $_prefs(PAIR_MATCHER__keyOnlyArgsList)
+  set _prefs(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
 ################################################################################
-  set PREFS(SETTINGS_COPIER__keyToDescrAndFormat) [dict create \
+  set _prefs(SETTINGS_COPIER__keyToDescrAndFormat) [dict create \
     -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
     -orig_img_dir {"directory with image files whose settings are dealt with; left (right) images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -out_dir {"output directory" "%s"} \
@@ -109,12 +118,12 @@ proc preferences_set_initial_values {}  {
     -copy_from {"'left' == copy settings from left to right, 'right' == from right to left" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  set PREFS(SETTINGS_COPIER__keysInOrder) [list -global_img_settings_dir \
+  set _prefs(SETTINGS_COPIER__keysInOrder) [list -global_img_settings_dir \
                   -orig_img_dir -out_dir -backup_dir -copy_from -simulate_only]
-  set PREFS(SETTINGS_COPIER__keyOnlyArgsList) [list -simulate_only]
-  set PREFS(SETTINGS_COPIER__hardcodedArgsStr) ""
+  set _prefs(SETTINGS_COPIER__keyOnlyArgsList) [list -simulate_only]
+  set _prefs(SETTINGS_COPIER__hardcodedArgsStr) ""
 ################################################################################
-set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
+set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   -img_dir {"root input directory" "%s"} \
   -left_img_subdir {"subdirectory for left images; left images expected in 'img_dir'/'left_img_subdir'" "%s"} \
   -right_img_subdir {"subdirectory for right images; right images expected in 'img_dir'/'right_img_subdir'" "%s"} \
@@ -122,13 +131,13 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   -ext_right {"file extension of right images; standard type only (tif/jpg/etc.)" "%s"} \
   -out_dir {"output directory" "%s"} \
   -warn_color_diff_above {"minimal left-right color difference (%) to warn on" "%d"} ]
-  set PREFS(COLOR_ANALYZER__keysInOrder) [list -img_dir \
+  set _prefs(COLOR_ANALYZER__keysInOrder) [list -img_dir \
                   -left_img_subdir -right_img_subdir -ext_left -ext_right \
                   -out_dir -warn_color_diff_above]
-  set PREFS(COLOR_ANALYZER__keyOnlyArgsList) [list]
-  set PREFS(COLOR_ANALYZER__hardcodedArgsStr) ""
+  set _prefs(COLOR_ANALYZER__keyOnlyArgsList) [list]
+  set _prefs(COLOR_ANALYZER__hardcodedArgsStr) ""
 ################################################################################
-  set PREFS(WORKAREA_CLEANER__keyToDescrAndFormat) [dict create \
+  set _prefs(WORKAREA_CLEANER__keyToDescrAndFormat) [dict create \
     -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
     -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW and/or intermediate images); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
@@ -137,51 +146,52 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
     -backup_dir {"directory to move overriden settings files to" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  set PREFS(WORKAREA_CLEANER__keysInOrder) [list -global_img_settings_dir \
+  set _prefs(WORKAREA_CLEANER__keysInOrder) [list -global_img_settings_dir \
                 -orig_img_dir -std_img_dir -final_img_dir -out_dir -backup_dir \
                 -simulate_only]
-  set PREFS(WORKAREA_CLEANER__keyOnlyArgsList) [list -simulate_only]
-  set PREFS(WORKAREA_CLEANER__hardcodedArgsStr) ""
+  set _prefs(WORKAREA_CLEANER__keyOnlyArgsList) [list -simulate_only]
+  set _prefs(WORKAREA_CLEANER__hardcodedArgsStr) ""
 ################################################################################
 ################################################################################
   # -restore_from_dir to be requested by file dialog
   # -workarea_root_dir is the main-gui root directory
   # -global_img_settings_dir is implied - full paths encoded in the backup
-  set PREFS(WORKAREA_RESTORER__keyToDescrAndFormat) [dict create \
+  set _prefs(WORKAREA_RESTORER__keyToDescrAndFormat) [dict create \
     -workarea_root_dir {"full path of the directory where to unhide/restore files to" "%s"} \
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  set PREFS(WORKAREA_RESTORER__keysInOrder) [list -workarea_root_dir \
+  set _prefs(WORKAREA_RESTORER__keysInOrder) [list -workarea_root_dir \
                 -out_dir -simulate_only]
-  set PREFS(WORKAREA_RESTORER__keyOnlyArgsList) [list -simulate_only]
-  set PREFS(WORKAREA_RESTORER__hardcodedArgsStr) ""
+  set _prefs(WORKAREA_RESTORER__keyOnlyArgsList) [list -simulate_only]
+  set _prefs(WORKAREA_RESTORER__hardcodedArgsStr) ""
 ################################################################################
 
 ################################################################################
 ## ALL_PREFERENCES__keyToDescrAndFormat should automatically assemble ALL RECORDS
-  set descrFormatDictArrayEntries [array get PREFS "*__keyToDescrAndFormat"]
+  set descrFormatDictArrayEntries [array get _prefs "*__keyToDescrAndFormat"]
   set descrFormatDicts [dict values $descrFormatDictArrayEntries]
-  set PREFS(ALL_PREFERENCES__keyToDescrAndFormat) \
+  set _prefs(ALL_PREFERENCES__keyToDescrAndFormat) \
                                               [dict merge {*}$descrFormatDicts]
+  # TODO: prepend COMMON section with its header
   set keysInOrderWithRepetitions [concat              \
               [list "HEADER: ==== Pair-matcher ===="]        \
-              $PREFS(PAIR_MATCHER__keysInOrder)       \
+              $_prefs(PAIR_MATCHER__keysInOrder)       \
               [list "HEADER: ==== Name-restorer ===="]       \
-              $PREFS(LR_NAME_RESTORER__keysInOrder)   \
+              $_prefs(LR_NAME_RESTORER__keysInOrder)   \
               [list "HEADER: ==== Settings-copier ===="]     \
-              $PREFS(SETTINGS_COPIER__keysInOrder)    \
+              $_prefs(SETTINGS_COPIER__keysInOrder)    \
               [list "HEADER: ==== Color-analyzer ===="]      \
-              $PREFS(COLOR_ANALYZER__keysInOrder)     \
+              $_prefs(COLOR_ANALYZER__keysInOrder)     \
               [list "HEADER: ==== Workarea-cleaner ===="]    \
-              $PREFS(WORKAREA_CLEANER__keysInOrder)   \
+              $_prefs(WORKAREA_CLEANER__keysInOrder)   \
               [list "HEADER: ==== Workarea-restorer ===="]   \
-              $PREFS(WORKAREA_RESTORER__keysInOrder)  ]
-  # prepend COMMON section with its header
-  set PREFS(ALL_PREFERENCES__keysInOrder) [ok_group_repeated_elements_in_list \
+              $_prefs(WORKAREA_RESTORER__keysInOrder)  ]
+  # prepend SHARED section with its header
+  set _prefs(ALL_PREFERENCES__keysInOrder) [ok_group_repeated_elements_in_list \
                                                   $keysInOrderWithRepetitions 0]
-  set PREFS(ALL_PREFERENCES__keysInOrder) [ \
-              linsert $PREFS(ALL_PREFERENCES__keysInOrder) 0 \
+  set _prefs(ALL_PREFERENCES__keysInOrder) [ \
+              linsert $_prefs(ALL_PREFERENCES__keysInOrder) 0 \
               "HEADER: ==== Common/shared options ===="]
   
 ################################################################################
@@ -201,13 +211,22 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
 ################################################################################
 # Resets user-changeable options to their defaults.
 ################################################################################
-proc preferences_reset {}  {
+proc UNUSED__preferences_reset {}  {
   global PREFS  ; # array of key::val
   ok_copy_array PREFS buPREFS
   preferences_set_initial_values ;  # reset everything in PREFS
   set hiddenOptions [array get buPREFS {[a-z_A-Z.]*}] ; # not starting from "-"
   array set PREFS $hiddenOptions; # restore non-user-changeable options
   ok_info_msg "Non user-changeable options are unreset"
+}
+
+
+proc preferences_get_initial_user_changeable_values {arrayName} {
+  upvar $arrayName prefsArray
+  array unset allIniPrefs
+  preferences_get_initial_values allIniPrefs
+  set userIniOptions [array get allIniPrefs {[-]*}] ; # starting from "-"
+  array set prefsArray $userIniOptions
 }
 
 

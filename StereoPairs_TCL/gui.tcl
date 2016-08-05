@@ -377,7 +377,8 @@ proc _GUI_EditPreferences {}  {
     return  0;  # error already printed
   }
   set keyToValUlt [GUI_options_form_show \
-              $PREFS($key_keyToDescrAndFormat) $keyToValIni preferences_reset \
+              $PREFS($key_keyToDescrAndFormat) $keyToValIni \
+              preferences_get_initial_user_changeable_values \
               "Edit Preferences" $PREFS($key_keysInOrder)]
   if { $keyToValUlt == 0 }  {
     return  0;   # error, if any, already reported; or it's a cancellation

@@ -128,10 +128,10 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 # 'keyToInitVal' is a dictionary of <key>::<initial-value>].
 # example: {-left_img_subdir "L" -time_diff -3450}
 # Returns the dictionary of <key>::<value> on success, 0 on error or cancellation
-# 'resetCBorZero' is the callback proc to reset the options or 0 if not needed
+# 'getIniCBorZero' is the callback proc to read initial options or 0 if not needed
 ### Example of invocation:
 ##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
-proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal resetCBorZero \
+proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal getIniCBorZero \
                             {title ""} {keyOrder {}}}  {
   global _CONFIRM_STATUS  
   global KEY_TO_VAL
@@ -174,9 +174,9 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal resetCBorZero \
                           $keyToDescrAndFormat $keyToInitVal $keyOrder] }  {
     # ok to present the options
     
-    if { $resetCBorZero != 0 }  { ;   # place and bind 'reset' button
+    if { $getIniCBorZero != 0 }  { ;   # place and bind 'reset' button
       grid [ttk::button .optsWnd.f.reset -text "Reset" \
-            -command "$resetCBorZero;  set ::_CONFIRM_STATUS 1"] \
+            -command "_GUI_reset_options $getIniCBorZero"] \
             -column 0 -row 3
     }
   
@@ -305,6 +305,20 @@ proc _GUI_append_one_option_record {key val descr formatSpec} {
     ok_err_msg $msg;  set retVal 0
   }
   return  $retVal
+}
+
+
+proc _GUI_reset_options {getIniCBorZero} {
+  global KEY_TO_VAL
+  $getIniCBorZero allUserIniOptions
+  foreach key [array names KEY_TO_VAL] {
+    if { 1 == [ok_name_in_array $key allUserIniOptions] } {
+      set KEY_TO_VAL($key) $allUserIniOptions($key)
+    } else {
+      ok_warn_msg "No initial value obtained for '$key'"
+    }
+  }
+  update idletasks
 }
 
 
