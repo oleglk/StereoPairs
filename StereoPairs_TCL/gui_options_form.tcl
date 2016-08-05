@@ -22,12 +22,13 @@ package require ok_utils;   namespace import -force ::ok_utils::*
 # +--------------------------------------------------------------------------+-+
 # |<<<====================================================================>>>| |
 # +--------------------------------------------------------------------------+-+
-# |                    |BTN  okSave              |BTN close                  | |
+# |[BTN reset]         |BTN  okSave              |BTN close                  | |
 # +--------------------------------------------------------------------------+-+
 
 set WND_TITLE "DualCam Companion - options"
 
 set SHOW_TRACE [ok_loud_mode]; # a proxy to prevent changing LOUD_MODE without "OK"
+
 
 ################################################################################
 ### Here (on top-level) the preferences-GUI is created but not yet shown.
@@ -127,9 +128,10 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 # 'keyToInitVal' is a dictionary of <key>::<initial-value>].
 # example: {-left_img_subdir "L" -time_diff -3450}
 # Returns the dictionary of <key>::<value> on success, 0 on error or cancellation
+# 'resetCBorZero' is the callback proc to reset the options or 0 if not needed
 ### Example of invocation:
 ##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
-proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal \
+proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal resetCBorZero \
                             {title ""} {keyOrder {}}}  {
   global _CONFIRM_STATUS  
   global KEY_TO_VAL
@@ -171,6 +173,12 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal \
   if { 1 == [_GUI_fill_options_table \
                           $keyToDescrAndFormat $keyToInitVal $keyOrder] }  {
     # ok to present the options
+    
+    if { $resetCBorZero != 0 }  { ;   # place and bind 'reset' button
+      grid [ttk::button .optsWnd.f.reset -text "Reset" \
+            -command "$resetCBorZero;  set ::_CONFIRM_STATUS 1"] \
+            -column 0 -row 3
+    }
   
     catch {grab set .optsWnd}
     

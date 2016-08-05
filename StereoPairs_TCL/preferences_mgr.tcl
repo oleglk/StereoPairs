@@ -18,6 +18,8 @@ set HEADER_REGEXP "HEADER: (.+)"
 
 
 ################################################################################
+# Initializes all options.
+################################################################################
 proc preferences_set_initial_values {}  {
   global PREFS  ; # array of key::val
   ok_info_msg "Setting hardcoded functional preferences"
@@ -194,6 +196,19 @@ set PREFS(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
 ################################################################################
 ## DO NOT: preferences_set_initial_values
 ################################################################################
+
+
+################################################################################
+# Resets user-changeable options to their defaults.
+################################################################################
+proc preferences_reset {}  {
+  global PREFS  ; # array of key::val
+  ok_copy_array PREFS buPREFS
+  preferences_set_initial_values ;  # reset everything in PREFS
+  set hiddenOptions [array get buPREFS {[a-z_A-Z.]*}] ; # not starting from "-"
+  array set PREFS $hiddenOptions; # restore non-user-changeable options
+  ok_info_msg "Non user-changeable options are unreset"
+}
 
 
 proc preferences_get_val {key valRef} {

@@ -343,7 +343,7 @@ proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
   #~ set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
                                           #~ $keyToValIni $GUI_VARS(WORK_DIR) "."]
   set keyToValUlt [GUI_options_form_show \
-                $PREFS($key_keyToDescrAndFormat) $keyToValIni \
+                $PREFS($key_keyToDescrAndFormat) $keyToValIni 0 \
                 "$toolDescrStr Parameters" $PREFS($key_keysInOrder)]
   if { $keyToValUlt == 0 }  {
     set nErrors 1;  # to force cancellation for any reason
@@ -377,8 +377,8 @@ proc _GUI_EditPreferences {}  {
     return  0;  # error already printed
   }
   set keyToValUlt [GUI_options_form_show \
-                $PREFS($key_keyToDescrAndFormat) $keyToValIni \
-                "Edit Preferences" $PREFS($key_keysInOrder)]
+              $PREFS($key_keyToDescrAndFormat) $keyToValIni preferences_reset \
+              "Edit Preferences" $PREFS($key_keysInOrder)]
   if { $keyToValUlt == 0 }  {
     return  0;   # error, if any, already reported; or it's a cancellation
   }
