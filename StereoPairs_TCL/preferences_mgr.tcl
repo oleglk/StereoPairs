@@ -43,7 +43,7 @@ proc preferences_get_initial_values {arrayName}  {
   set _prefs(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)  "BackupSettingsFiles"
   set _prefs(BACKUP_DIRNAME_KEYS) [list $_prefs(BACKUP_DIRNAME_KEY__HIDE_UNUSED)]
 
-  set _prefs(-INITIAL_WORK_DIR)  [pwd]
+  set _prefs(-INITIAL_WORK_DIR)  "." ;  # [pwd] causes Reset to whatever CWD is
   
   # common - all shared options come here
   set _prefs(-orig_img_dir)        "." ; # results in $_prefs(-INITIAL_WORK_DIR)
@@ -86,6 +86,16 @@ proc preferences_get_initial_values {arrayName}  {
 
 #  set _prefs(-)  ""
 
+  
+################################################################################
+## Common option list to be used ONLY in GUI frontend                         ##
+################################################################################
+  set _prefs(COMMON__keyToDescrAndFormat) [dict create \
+    -INITIAL_WORK_DIR {"workarea root directory assumed at startup" "%s"}]
+  set _prefs(COMMON__keysInOrder) [list -INITIAL_WORK_DIR]
+  set _prefs(COMMON__keyOnlyArgsList) [list]
+  set _prefs(COMMON__hardcodedArgsStr) ""
+################################################################################
   
 ################################################################################
 ## Per-application option lists to be used in GUI frontend                    ##
@@ -173,7 +183,7 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set descrFormatDicts [dict values $descrFormatDictArrayEntries]
   set _prefs(ALL_PREFERENCES__keyToDescrAndFormat) \
                                               [dict merge {*}$descrFormatDicts]
-  # TODO: prepend COMMON section with its header
+  # note, COMMON section with its header will be prepended afterwards
   set keysInOrderWithRepetitions [concat              \
               [list "HEADER: ==== Pair-matcher ===="]        \
               $_prefs(PAIR_MATCHER__keysInOrder)       \
@@ -188,11 +198,12 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
               [list "HEADER: ==== Workarea-restorer ===="]   \
               $_prefs(WORKAREA_RESTORER__keysInOrder)  ]
   # prepend SHARED section with its header
-  set _prefs(ALL_PREFERENCES__keysInOrder) [ok_group_repeated_elements_in_list \
+  set keysUsedByUtils [ok_group_repeated_elements_in_list     \
                                                   $keysInOrderWithRepetitions 0]
-  set _prefs(ALL_PREFERENCES__keysInOrder) [ \
-              linsert $_prefs(ALL_PREFERENCES__keysInOrder) 0 \
-              "HEADER: ==== Common/shared options ===="]
+  set _prefs(ALL_PREFERENCES__keysInOrder) [                  \
+              linsert $keysUsedByUtils 0                      \
+              "HEADER: ==== Common/shared options ===="       \
+              "-INITIAL_WORK_DIR"]
   
 ################################################################################
   
@@ -306,7 +317,7 @@ proc preferences_is_backup_dir_path {dirPath} {
 
 # Retrieves preferences from ::PREFS array.
 # Returns list of {key val} pair lists that includes keys starting from "-".
-# TODO: what about -INITIAL_WORK_DIR?
+# ('-INITIAL_WORK_DIR' will be included too)
 proc preferences_collect {}  {
   global PREFS  ; # array of key::val
   set prefAsPlainList [array get PREFS "-*"] ;  # has keys/vals alternaring

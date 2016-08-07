@@ -31,7 +31,7 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 + do not abort color comparison on presense of unmatched file(s)
 
-- add "common" section in preferences; should include "-INITIAL_WORK_DIR"
++ add "common" section in preferences; should include "-INITIAL_WORK_DIR"
 
 - allow opening preferences window multiple times - "reset" button should not be created each time
 
