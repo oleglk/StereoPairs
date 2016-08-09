@@ -185,21 +185,24 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
                                               [dict merge {*}$descrFormatDicts]
   # note, COMMON section with its header will be prepended afterwards
   set keysInOrderWithRepetitions [concat              \
-              [list "HEADER: ==== Pair-matcher ===="]        \
+              [list "HEADER: ==== Options specific to Pair-Matcher      ===="] \
               $_prefs(PAIR_MATCHER__keysInOrder)       \
-              [list "HEADER: ==== Name-restorer ===="]       \
+              [list "HEADER: ==== Options specific to Name-Restorer     ===="] \
               $_prefs(LR_NAME_RESTORER__keysInOrder)   \
-              [list "HEADER: ==== Settings-copier ===="]     \
+              [list "HEADER: ==== Options specific to Settings-Copier   ===="] \
               $_prefs(SETTINGS_COPIER__keysInOrder)    \
-              [list "HEADER: ==== Color-analyzer ===="]      \
+              [list "HEADER: ==== Options specific to Color-Analyzer    ===="] \
               $_prefs(COLOR_ANALYZER__keysInOrder)     \
-              [list "HEADER: ==== Workarea-cleaner ===="]    \
+              [list "HEADER: ==== Options specific to Workarea-Cleaner  ===="] \
               $_prefs(WORKAREA_CLEANER__keysInOrder)   \
-              [list "HEADER: ==== Workarea-restorer ===="]   \
+              [list "HEADER: ==== Options specific to Workarea-Restorer ===="] \
               $_prefs(WORKAREA_RESTORER__keysInOrder)  ]
   # prepend SHARED section with its header
   set keysUsedByUtils [ok_group_repeated_elements_in_list     \
                                                   $keysInOrderWithRepetitions 0]
+  # grouping shared options may have created empty sections; eliminate such ones
+  set keysUsedByUtils [preferences_strip_empty_sections_from_list \
+                                                              $keysUsedByUtils]
   set _prefs(ALL_PREFERENCES__keysInOrder) [                  \
               linsert $keysUsedByUtils 0                      \
               "HEADER: ==== Common/shared options ===="       \
@@ -439,6 +442,27 @@ proc preferences_strip_special_keywords_from_list {keyOrderList} {
     if { (1 == [preferences_key_is_separator $el]) || \
          (1 == [preferences_key_is_header $el]) } { continue }
     lappend resList $el
+  }
+  return  $resList
+}
+
+
+# Removes header keys when there are no non-special keys up to next header 
+proc preferences_strip_empty_sections_from_list {keyOrderList} {
+  set resList [list]
+  set nonSpecialElemAppeared 0
+  foreach el [lreverse $keyOrderList] {
+    if { 0 == [preferences_key_is_header $el] } {
+      set resList [linsert $resList 0 $el]
+      if { 0 == [preferences_key_is_separator $el] } {
+        set nonSpecialElemAppeared 1
+      }
+    } else {  ;   # $el is header
+      if { $nonSpecialElemAppeared == 1 } {
+        set resList [linsert $resList 0 $el]
+      }
+      set nonSpecialElemAppeared 0
+    }
   }
   return  $resList
 }

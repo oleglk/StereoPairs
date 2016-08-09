@@ -242,7 +242,7 @@ proc _GUI_fill_options_table {keyToDescrAndFormat keyToInitVal keyOrder}  {
       $tBx insert end "\n";   continue
     }
     if { 0 != [set headerText [preferences_extract_header_key_text $key]] }  {
-      $tBx insert end "\t\t$headerText\n";   continue
+      $tBx insert end "\n\t\t$headerText\n";   continue
     }
     set descrAndFormat [dict get $keyToDescrAndFormat $key]; # existence checked
     set descr [lindex $descrAndFormat 0];   set fmt [lindex $descrAndFormat 1]

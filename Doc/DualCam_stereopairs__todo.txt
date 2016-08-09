@@ -33,6 +33,8 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 + add "common" section in preferences; should include "-INITIAL_WORK_DIR"
 
-- allow opening preferences window multiple times - "reset" button should not be created each time
++ allow opening preferences window multiple times - "reset" button should not be created each time
 
+- text viewer for colol-comparator output
 
+- text viewer for help file
