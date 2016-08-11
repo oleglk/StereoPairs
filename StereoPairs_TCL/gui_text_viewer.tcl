@@ -1,9 +1,6 @@
-# PROGRAM-NAME: VW.TCL              VERSION NO.: 1.01
-# AUTHOR: Tony Dycks                REVISED-BY: Tony Dycks
-# DATE-WRITTEN: August 7, 2001      DATE-REVISED: September 10, 2001
-# LANGUAGE: Active State Tcl/Tk     VERSION. NO.: 8.3
-# PLATFORMS TESTED: MS Windows 98/NT 4.0
-#                   Red Hat Linux 7.1 / SuSE Linux 7.0
+# gui_text_viewer.tcl - readonly text viewer window.
+
+# Based on: VW.TCL by Tony Dycks
 #
 # DESCRIPTION:
 #   Tcl/Tk Wish Script For Viewing A Text File Using A TK Window.
@@ -14,31 +11,44 @@
 #   The TK Window And Ends The Program. Bind To <F3> Function Key
 #   To Exit The Program.
 #
-# USAGE:
-#   WISH VW.TCL <Enter>
-#     {Where WISH is a shell or bat file invoking the WISH executable}
-#
-# USAGE EXAMPLE:
-#   WISH VW.TCL <Enter>  
-#
 # REFERENCES: 
 #   Personal Derivation Of TCL/TK Code Using The Grid Layout Manager. 
 #
 # LICENSING: 
 #   Released Under The GPL As Open Source. 
 #
+
+
+
+package require Tk
+
+set SCRIPT_DIR [file dirname [info script]]
+
+package require ok_utils;   namespace import -force ::ok_utils::*
+
+
 # +---------------------------------------------------+
 # + Set Initial Directory To Current Logged Directory +
 # +---------------------------------------------------+
-set initialdir [pwd]
-global initialdir
-global flname
+set INITIALDIR [pwd]
+global INITIALDIR
+global FLNAME
+
+
+# Open the window and load 'filePath' into it
+proc textview_open {filePath} {
+ wm deiconify .txvWnd
+ return  [_loadfl $filePath]
+}
+################################################################################
+
+
 # +------------------------------------------------------+
 # + Select Open Input Text File & Populate Entry Widgets +
 # +------------------------------------------------------+
-proc openfl {} {
-  global initialdir
-  global flname
+proc _openfl {} {
+  global INITIALDIR
+  global FLNAME
   set file_types {
     {"Tcl Files" { .tcl .TCL } }
     {"Text Files" { .txt .TXT } }
@@ -47,75 +57,100 @@ proc openfl {} {
 # +-------------------------------------------------+
 # + Cleanup Filename And Text File Contents Widgets +
 # +-------------------------------------------------+
-  .txtarea delete 1.0 end
-  set flname [tk_getOpenFile -initialdir $initialdir     -filetypes $file_types -title "Open Input Text File" -parent .]
-  if {$flname != ""} {
-    set initialdir [file dirname $flname]
-    set retcd [ catch { set infile [open $flname "r"] } ]
+  .txvWnd.txtarea delete 1.0 end
+  set FLNAME [tk_getOpenFile -initialdir $INITIALDIR     -filetypes $file_types -title "Open Input Text File" -parent .txvWnd]
+  if {$FLNAME != ""} {
+    return  [_loadfl $FLNAME]
+  }
+  return  ""
+}
+  
+  
+  
+
+
+# +------------------------------------------------------+
+# + Populate Entry Widgets from Text File 'filePath' +
+# +------------------------------------------------------+
+proc _loadfl {filePath} {
+  set retcd [ catch { set infile [open $filePath "r"] } ]
 # +------------------------------------------------+
 # + Display Error Message Box If File Open Failure +
 # +------------------------------------------------+
-    if {$retcd == 1} {
-      wm title . "VW.TCL -- File Open Error Message"
-      set result [tk_messageBox -parent .         -title "VW.TCL -- File Open Error Message" -type ok -icon error         -message         "Error Opening File: $flname.\n"]
-      }
+  if {$retcd == 1} {
+    wm title .txvWnd "Text File Open Error"
+    set result [tk_messageBox -parent .txvWnd         -title "Text File Open Error" -type ok -icon error         -message         "Error Opening File: $filePath.\n"]
+    }
 # +----------------------------------------------+
 # + Open File Successful Load Text File Contents +
 # + Line By Line Until End Of File               +
 # +----------------------------------------------+
-    if {$retcd == 0} {
-      set inEOF -1
-      set txln ""
-      .txtarea delete 1.0 end
-      while {[gets $infile inln] != $inEOF} {
-        set txln "$inln\n"
-        .txtarea insert end $txln
-        }
-      close $infile
-      }
+  if {$retcd == 0} {
+    set inEOF -1
+    set txln ""
+    .txvWnd.txtarea delete 1.0 end
+    while {[gets $infile inln] != $inEOF} {
+      set txln "$inln\n"
+      .txvWnd.txtarea insert end $txln
     }
-  return $flname
+    close $infile
   }
+  .txvWnd.lblFlname configure -text $filePath
+  return $filePath
+}
+
+
 # +------------------+
-# + Exit The Program +
+# + Close the window +
 # +------------------+
-proc exitpgm {} {
-  exit 0
-  }
+proc textview_close {} {
+  wm withdraw .txvWnd
+}
 
 # +-------------------------------------------------+
 # + Initial TK Widget Definitions For Viewer Window +
 # +-------------------------------------------------+
-wm title . "VW.TCL Version 1.01 -- Text File Viewer Tcl/Tk Progam"
+toplevel .txvWnd
+
+wm title .txvWnd "VW.TCL Version 1.01 -- Text File Viewer Tcl/Tk Progam"
 # +--------------+
 # + Menu Widgets +
 # +--------------+
-menubutton .fl -text "File" -menu .fl.menu -anchor nw
-menu .fl.menu
-.fl.menu add command -label "Open" -command openfl
-.fl.menu add separator
-.fl.menu add command -label "Exit" -command exitpgm
+menubutton .txvWnd.fl -text "File" -menu .txvWnd.fl.menu -anchor nw
+menu .txvWnd.fl.menu
+.txvWnd.fl.menu add command -label "Open" -command _openfl
+.txvWnd.fl.menu add separator
+.txvWnd.fl.menu add command -label "Exit" -command textview_close
 set font {Verdana 14}
 # +------------------------+
 # + Filename Label Widgets +
 # +------------------------+
-label .fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
-label .flname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -textvariable flname -anchor nw
-pack .fl .fllabel .flname -side top -padx 1m -pady 1m -anchor nw
+label .txvWnd.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
+label .txvWnd.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
+pack .txvWnd.fl .txvWnd.fllabel .txvWnd.lblFlname -side top -padx 1m -pady 1m -anchor nw
 # +----------------------------------------+
 # + Text File Contents & Scrollbar Widgets +
 # +----------------------------------------+
-label .fltext -width 80 -relief sunken -bg White -textvariable fltext
-text .txtarea -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand ".vscroller set"
-scrollbar .vscroller -command ".txtarea yview"
-pack .txtarea .vscroller -side left -fill y
+label .txvWnd.fltext -width 80 -relief sunken -bg White -textvariable fltext
+text .txvWnd.txtarea -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand ".txvWnd.vscroller set"
+scrollbar .txvWnd.vscroller -command ".txvWnd.txtarea yview"
+pack .txvWnd.txtarea .txvWnd.vscroller -side left -fill y
 # +-----------------------------------------------------+
 # + Command Button Widgets For Open File & Program Exit +
 # +-----------------------------------------------------+
-button .openfl -text "<< Open File >>" -fg Navy -bg NavajoWhite2   -font bold -command openfl
-button .exitpgm -text "< Exit Program >" -fg Navy -bg NavajoWhite2   -font bold -command exitpgm
-pack .exitpgm .openfl -side bottom -padx 1m -pady 1m 
+button .txvWnd.openfl -text "<< Open File >>" -fg Navy -bg NavajoWhite2   -font bold -command _openfl
+button .txvWnd.close -text "< Close >" -fg Navy -bg NavajoWhite2   -font bold -command textview_close
+pack .txvWnd.close .txvWnd.openfl -side bottom -padx 1m -pady 1m 
 
-bind .txtarea <Key-F3> {exitpgm}
-bind .fllabel <Key-F3> {exitpgm}
-bind .flname <Key-F3> {exitpgm}
+bind .txvWnd.txtarea <Key-F3> {textview_close}
+bind .txvWnd.fllabel <Key-F3> {textview_close}
+bind .txvWnd.lblFlname <Key-F3> {textview_close}
+
+wm withdraw .txvWnd
+
+# Handle the "non-standard window termination" by
+# invoking the Close button when we receives a
+# WM_DELETE_WINDOW message from the window manager.
+wm protocol .txvWnd WM_DELETE_WINDOW {
+    .txvWnd.close invoke
+}
