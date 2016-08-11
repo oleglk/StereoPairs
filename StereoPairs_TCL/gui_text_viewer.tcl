@@ -36,9 +36,9 @@ global FLNAME
 
 
 # Open the window and load 'filePath' into it
-proc textview_open {filePath} {
- wm deiconify .txvWnd
- return  [_loadfl $filePath]
+proc textview_open {wndPath filePath} {
+ wm deiconify $wndPath
+ return  [_loadfl $wndPath $filePath]
 }
 ################################################################################
 
@@ -46,7 +46,7 @@ proc textview_open {filePath} {
 # +------------------------------------------------------+
 # + Select Open Input Text File & Populate Entry Widgets +
 # +------------------------------------------------------+
-proc _openfl {} {
+proc _openfl {wndPath} {
   global INITIALDIR
   global FLNAME
   set file_types {
@@ -57,10 +57,10 @@ proc _openfl {} {
 # +-------------------------------------------------+
 # + Cleanup Filename And Text File Contents Widgets +
 # +-------------------------------------------------+
-  .txvWnd.txtarea delete 1.0 end
-  set FLNAME [tk_getOpenFile -initialdir $INITIALDIR     -filetypes $file_types -title "Open Input Text File" -parent .txvWnd]
+  $wndPath.txtarea delete 1.0 end
+  set FLNAME [tk_getOpenFile -initialdir $INITIALDIR     -filetypes $file_types -title "Open Input Text File" -parent $wndPath]
   if {$FLNAME != ""} {
-    return  [_loadfl $FLNAME]
+    return  [_loadfl $wndPath $FLNAME]
   }
   return  ""
 }
@@ -72,14 +72,14 @@ proc _openfl {} {
 # +------------------------------------------------------+
 # + Populate Entry Widgets from Text File 'filePath' +
 # +------------------------------------------------------+
-proc _loadfl {filePath} {
+proc _loadfl {wndPath filePath} {
   set retcd [ catch { set infile [open $filePath "r"] } ]
 # +------------------------------------------------+
 # + Display Error Message Box If File Open Failure +
 # +------------------------------------------------+
   if {$retcd == 1} {
-    wm title .txvWnd "Text File Open Error"
-    set result [tk_messageBox -parent .txvWnd         -title "Text File Open Error" -type ok -icon error         -message         "Error Opening File: $filePath.\n"]
+    wm title $wndPath "Text File Open Error"
+    set result [tk_messageBox -parent $wndPath         -title "Text File Open Error" -type ok -icon error         -message         "Error Opening File: $filePath.\n"]
     }
 # +----------------------------------------------+
 # + Open File Successful Load Text File Contents +
@@ -88,14 +88,14 @@ proc _loadfl {filePath} {
   if {$retcd == 0} {
     set inEOF -1
     set txln ""
-    .txvWnd.txtarea delete 1.0 end
+    $wndPath.txtarea delete 1.0 end
     while {[gets $infile inln] != $inEOF} {
       set txln "$inln\n"
-      .txvWnd.txtarea insert end $txln
+      $wndPath.txtarea insert end $txln
     }
     close $infile
   }
-  .txvWnd.lblFlname configure -text $filePath
+  $wndPath.lblFlname configure -text $filePath
   return $filePath
 }
 
@@ -103,54 +103,53 @@ proc _loadfl {filePath} {
 # +------------------+
 # + Close the window +
 # +------------------+
-proc textview_close {} {
-  wm withdraw .txvWnd
+proc textview_close {wndPath} {
+  wm withdraw $wndPath
 }
+
+
 
 # +-------------------------------------------------+
 # + Initial TK Widget Definitions For Viewer Window +
 # +-------------------------------------------------+
-toplevel .txvWnd
+proc textview_prebuild {wndPath} {
+  toplevel $wndPath
 
-wm title .txvWnd "VW.TCL Version 1.01 -- Text File Viewer Tcl/Tk Progam"
-# +--------------+
-# + Menu Widgets +
-# +--------------+
-menubutton .txvWnd.fl -text "File" -menu .txvWnd.fl.menu -anchor nw
-menu .txvWnd.fl.menu
-.txvWnd.fl.menu add command -label "Open" -command _openfl
-.txvWnd.fl.menu add separator
-.txvWnd.fl.menu add command -label "Exit" -command textview_close
-set font {Verdana 14}
-# +------------------------+
-# + Filename Label Widgets +
-# +------------------------+
-label .txvWnd.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
-label .txvWnd.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
-pack .txvWnd.fl .txvWnd.fllabel .txvWnd.lblFlname -side top -padx 1m -pady 1m -anchor nw
-# +----------------------------------------+
-# + Text File Contents & Scrollbar Widgets +
-# +----------------------------------------+
-label .txvWnd.fltext -width 80 -relief sunken -bg White -textvariable fltext
-text .txvWnd.txtarea -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand ".txvWnd.vscroller set"
-scrollbar .txvWnd.vscroller -command ".txvWnd.txtarea yview"
-pack .txvWnd.txtarea .txvWnd.vscroller -side left -fill y
-# +-----------------------------------------------------+
-# + Command Button Widgets For Open File & Program Exit +
-# +-----------------------------------------------------+
-button .txvWnd.openfl -text "<< Open File >>" -fg Navy -bg NavajoWhite2   -font bold -command _openfl
-button .txvWnd.close -text "< Close >" -fg Navy -bg NavajoWhite2   -font bold -command textview_close
-pack .txvWnd.close .txvWnd.openfl -side bottom -padx 1m -pady 1m 
+  wm title $wndPath "Text File Viewer"
 
-bind .txvWnd.txtarea <Key-F3> {textview_close}
-bind .txvWnd.fllabel <Key-F3> {textview_close}
-bind .txvWnd.lblFlname <Key-F3> {textview_close}
+  set font {Verdana 14}
+  # +------------------------+
+  # + Filename Label Widgets +
+  # +------------------------+
+  label $wndPath.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
+  label $wndPath.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
 
-wm withdraw .txvWnd
+  # +----------------------------------------+
+  # + Text File Contents & Scrollbar Widgets +
+  # +----------------------------------------+
+  label $wndPath.fltext -width 80 -relief sunken -bg White -textvariable fltext
+  text $wndPath.txtarea -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.vscroller set"
+  scrollbar $wndPath.vscroller -command "$wndPath.txtarea yview"
+  pack $wndPath.txtarea $wndPath.vscroller -side left -fill y
+  
+  # +-----------------------------------------------------+
+  # + Command Button Widget For Program Exit +
+  # +-----------------------------------------------------+
+  button $wndPath.close -text "< Close >" -fg Navy -bg NavajoWhite2   -font bold -command [list textview_close $wndPath]
+  pack $wndPath.close -side bottom -padx 1m -pady 1m 
 
-# Handle the "non-standard window termination" by
-# invoking the Close button when we receives a
-# WM_DELETE_WINDOW message from the window manager.
-wm protocol .txvWnd WM_DELETE_WINDOW {
-    .txvWnd.close invoke
+  bind $wndPath.txtarea <Key-F3> {textview_close}
+  bind $wndPath.fllabel <Key-F3> {textview_close}
+  bind $wndPath.lblFlname <Key-F3> {textview_close}
+
+  wm withdraw $wndPath
+
+  # Handle the "non-standard window termination" by
+  # invoking the Close button when we receives a
+  # WM_DELETE_WINDOW message from the window manager.
+  wm protocol $wndPath WM_DELETE_WINDOW {
+    set wndPath [focus]
+    $wndPath.close invoke
+  }
 }
+
