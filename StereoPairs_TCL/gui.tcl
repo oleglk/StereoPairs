@@ -9,23 +9,28 @@ source [file join $SCRIPT_DIR   "preferences_mgr.tcl"]
 
 # GUI-related dependencies
 source [file join $SCRIPT_DIR   "gui_options_form.tcl"]
+source [file join $SCRIPT_DIR   "gui_text_viewer.tcl"]
 
 ### Sketch of the GUI #####
-# |                 |                 |                   |                    | |
-# +----------------------------------------------------------------------------+-+
-# |                 |                 |BTN preferences    |BTN help            | |
-# +----------------------------------------------------------------------------+-+
-# |BTN chooseDir    |                 ENT workDir                              | |
-# +----------------------------------------------------------------------------+-+
-# |BTN renamePairs  |BTN cloneSettings|BTN compareColors  |BTN hideUnused      | |
-# +----------------------------------------------------------------------------+-+
-# |BTN restoreNames |LBL progressLbl  |BTN quit           |BTN unhideUnused    | |
-# +----------------------------------------------------------------------------+-+
-# |               TXT logBox                                                   |^|
-# |                                                                            |v|
-# +----------------------------------------------------------------------------+-+
+# |                 |                 |                   |                   | |
+# +---------------------------------------------------------------------------+-+
+# |                 |                 |BTN preferences    |BTN help           | |
+# +---------------------------------------------------------------------------+-+
+# |BTN chooseDir    |                 ENT workDir                             | |
+# +---------------------------------------------------------------------------+-+
+# |BTN renamePairs  |BTN cloneSettings|BTN compareColors  |BTN hideUnused     | |
+# +---------------------------------------------------------------------------+-+
+# |BTN restoreNames |LBL progressLbl  |BTN quit           |BTN unhideUnused   | |
+# +---------------------------------------------------------------------------+-+
+# |               TXT logBox                                                  |^|
+# |                                                                           |v|
+# +---------------------------------------------------------------------------+-+
 
 set APP_TITLE "DualCam Companion"
+
+set TEXTVIEW_DIFF .txtViewLRDiff; # Tk path for the L/R color differences window
+set TEXTVIEW_HELP .txtViewHelp  ; # Tk path for the help window
+
 
 
 ################################################################################
@@ -156,6 +161,9 @@ wm protocol . WM_DELETE_WINDOW {
 }
 ################################################################################
 
+textview_prebuild $TEXTVIEW_DIFF  ; # prepare window for L/R color differences
+textview_prebuild $TEXTVIEW_HELP  ; # prepare window for the help
+################################################################################
 
 
 proc GUI_ChangePreferences {}  {
@@ -249,7 +257,7 @@ proc GUI_CloneSettings {}  {
 
 # Builds depth-to-color mapping. Returns 1 on success, 0 on error.
 proc GUI_CompareColors {}  {
-  global APP_TITLE GUI_VARS PREFS
+  global APP_TITLE GUI_VARS PREFS TEXTVIEW_DIFF
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
   set paramStr [_GUI_RequestOptions "Color-Analyzer" \
                                     "COLOR_ANALYZER" errCnt]
@@ -257,6 +265,19 @@ proc GUI_CompareColors {}  {
     _UpdateGuiEndAction;  return  0;  # error already reported
   }
   set ret [color_analyzer_main $paramStr] ;   # THE EXECUTION
+
+  if { $ret != 0 }  {
+    # find the output file and show it in textview
+    set colorDiffSortedCSVPath \
+                  [file join $::STS(outDirPath) $::COLORDIFF_SORTED_CSV_NAME]
+    textview_close $TEXTVIEW_DIFF
+    if { "" == [textview_open $TEXTVIEW_DIFF $colorDiffSortedCSVPath \
+                  "Left-Right color comparison ($colorDiffSortedCSVPath)"] }   {
+      _UpdateGuiEndAction;  return  0;  # error already reported
+    }
+    ok_info_msg "Left-right color comparison output from '$colorDiffSortedCSVPath' shown in the GUI viewer"
+  }
+
   _UpdateGuiEndAction
   if { $ret == 0 }  {
     #tk_messageBox -message "-E- Failed GUI_CompareColors in '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE

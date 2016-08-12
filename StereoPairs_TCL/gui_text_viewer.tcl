@@ -36,67 +36,9 @@ global FLNAME
 
 
 # Open the window and load 'filePath' into it
-proc textview_open {wndPath filePath} {
+proc textview_open {wndPath filePath {wndTitle ""}} {
  wm deiconify $wndPath
- return  [_loadfl $wndPath $filePath]
-}
-################################################################################
-
-
-# +------------------------------------------------------+
-# + Select Open Input Text File & Populate Entry Widgets +
-# +------------------------------------------------------+
-proc _openfl {wndPath} {
-  global INITIALDIR
-  global FLNAME
-  set file_types {
-    {"Tcl Files" { .tcl .TCL } }
-    {"Text Files" { .txt .TXT } }
-    {"All Files"  * }
-    }
-# +-------------------------------------------------+
-# + Cleanup Filename And Text File Contents Widgets +
-# +-------------------------------------------------+
-  $wndPath.txtarea delete 1.0 end
-  set FLNAME [tk_getOpenFile -initialdir $INITIALDIR     -filetypes $file_types -title "Open Input Text File" -parent $wndPath]
-  if {$FLNAME != ""} {
-    return  [_loadfl $wndPath $FLNAME]
-  }
-  return  ""
-}
-  
-  
-  
-
-
-# +------------------------------------------------------+
-# + Populate Entry Widgets from Text File 'filePath' +
-# +------------------------------------------------------+
-proc _loadfl {wndPath filePath} {
-  set retcd [ catch { set infile [open $filePath "r"] } ]
-# +------------------------------------------------+
-# + Display Error Message Box If File Open Failure +
-# +------------------------------------------------+
-  if {$retcd == 1} {
-    wm title $wndPath "Text File Open Error"
-    set result [tk_messageBox -parent $wndPath         -title "Text File Open Error" -type ok -icon error         -message         "Error Opening File: $filePath.\n"]
-    }
-# +----------------------------------------------+
-# + Open File Successful Load Text File Contents +
-# + Line By Line Until End Of File               +
-# +----------------------------------------------+
-  if {$retcd == 0} {
-    set inEOF -1
-    set txln ""
-    $wndPath.txtarea delete 1.0 end
-    while {[gets $infile inln] != $inEOF} {
-      set txln "$inln\n"
-      $wndPath.txtarea insert end $txln
-    }
-    close $infile
-  }
-  $wndPath.lblFlname configure -text $filePath
-  return $filePath
+ return  [_loadfl $wndPath $filePath $wndTitle]
 }
 
 
@@ -106,7 +48,6 @@ proc _loadfl {wndPath filePath} {
 proc textview_close {wndPath} {
   wm withdraw $wndPath
 }
-
 
 
 # +-------------------------------------------------+
@@ -151,5 +92,67 @@ proc textview_prebuild {wndPath} {
     set wndPath [focus]
     $wndPath.close invoke
   }
+}
+################################################################################
+
+
+# +------------------------------------------------------+
+# + Select Open Input Text File & Populate Entry Widgets +
+# +------------------------------------------------------+
+proc _openfl {wndPath} {
+  global INITIALDIR
+  global FLNAME
+  set file_types {
+    {"Tcl Files" { .tcl .TCL } }
+    {"Text Files" { .txt .TXT } }
+    {"All Files"  * }
+    }
+# +-------------------------------------------------+
+# + Cleanup Filename And Text File Contents Widgets +
+# +-------------------------------------------------+
+  $wndPath.txtarea delete 1.0 end
+  set FLNAME [tk_getOpenFile -initialdir $INITIALDIR     -filetypes $file_types -title "Open Input Text File" -parent $wndPath]
+  if {$FLNAME != ""} {
+    return  [_loadfl $wndPath $FLNAME ""]
+  }
+  return  ""
+}
+  
+  
+  
+
+
+# +------------------------------------------------------+
+# + Populate Entry Widgets from Text File 'filePath' +
+# +------------------------------------------------------+
+proc _loadfl {wndPath filePath {wndTitle ""}} {
+  set retcd [ catch { set infile [open $filePath "r"] } ]
+# +------------------------------------------------+
+# + Display Error Message Box If File Open Failure +
+# +------------------------------------------------+
+  if {$retcd == 1} {
+    wm title $wndPath $"Text File Open Error"
+    set result [tk_messageBox -parent $wndPath         -title "Text File Open Error" -type ok -icon error         -message         "Error Opening File: $filePath.\n"]
+    }
+# +----------------------------------------------+
+# + Open File Successful Load Text File Contents +
+# + Line By Line Until End Of File               +
+# +----------------------------------------------+
+  if {$retcd == 0} {
+    set inEOF -1
+    set txln ""
+    $wndPath.txtarea delete 1.0 end
+    while {[gets $infile inln] != $inEOF} {
+      set txln "$inln\n"
+      $wndPath.txtarea insert end $txln
+    }
+    close $infile
+  }
+  $wndPath.lblFlname configure -text $filePath
+  if { $wndTitle != "" }  {
+    wm title $wndPath $wndTitle ; # override the window title
+  }
+
+  return $filePath
 }
 
