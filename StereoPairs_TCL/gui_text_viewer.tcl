@@ -64,6 +64,7 @@ proc textview_prebuild {wndPath} {
   # +------------------------+
   label $wndPath.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
   label $wndPath.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
+  pack $wndPath.fllabel $wndPath.lblFlname -side top -padx 1m -pady 1m -anchor nw
 
   # +----------------------------------------+
   # + Text File Contents & Scrollbar Widgets +
