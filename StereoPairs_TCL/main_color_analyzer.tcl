@@ -303,27 +303,45 @@ proc _map_pairname_to_color_stat_diff {pairNameToLRPathsDict}  {
     set avgB [expr ($meanBLeft + $meanBRight)/2]
     set diffB [expr {($avgB==0.0)? 0 \
                 : [expr {round(100 * abs($meanBLeft - $meanBRight) / $avgB)}]}]
-    set rec [pack_pairname_to_rgb_record $pairname $diffR $diffG $diffB]
+
+    set ratioRGLeft [expr {($meanGLeft==0.0)? 9999 \
+                                    : [expr {round($meanRLeft/ $meanGLeft)}]}]
+    set ratioGBLeft [expr {($meanBLeft==0.0)? 9999 \
+                                    : [expr {round($meanGLeft/ $meanBLeft)}]}]
+    set ratioRGRight [expr {($meanGRight==0.0)? 9999 \
+                                    : [expr {round($meanRRight/ $meanGRight)}]}]
+    set ratioGBRight [expr {($meanBRight==0.0)? 9999 \
+                                    : [expr {round($meanGRight/ $meanBRight)}]}]
+    set avgRG [expr ($ratioRGLeft + $ratioRGRight)/2]
+    set diffRG [expr {($avgRG==0.0)? 0 \
+            : [expr {round(100 * abs($ratioRGLeft - $ratioRGRight) / $avgRG)}]}]
+    set avgGB [expr ($ratioGBLeft + $ratioGBRight)/2]
+    set diffGB [expr {($avgGB==0.0)? 0 \
+            : [expr {round(100 * abs($ratioGBLeft - $ratioGBRight) / $avgGB)}]}]
+
+    set rec [pack_pairname_to_rgb_diff_record $pairname $diffR $diffG $diffB \
+                                                        $diffRG $diffGB]
     lappend pairNameAndColorChannelDiffList $rec
   }
   return  $pairNameAndColorChannelDiffList
 }
 
 
-# Compares supplied {pair-name diffR(%) diffG(%) diffB(%)} records by total diff
+# Compares supplied {pair-name diffR(%) diffG(%) diffB(%) diffRG(%) diffGB(%)}
+# records by total diff
 proc _less_then__pairname_to_color_diff_rec {rec1 rec2}  {
-  if { 0 == [parse_pairname_to_rgb_record $rec1 \
-                                    pairname1 diffR1 diffG1 diffB1] } {
-    ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%)} record {$rec1}"
+  if { 0 == [parse_pairname_to_rgb_diff_record $rec1 \
+                            pairname1 diffR1 diffG1 diffB1 diffRG1 diffGB1] } {
+    ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%) diffRG(%) diffGB(%)} record {$rec1}"
     return  0
   }
-  if { 0 == [parse_pairname_to_rgb_record $rec2 \
-                                    pairname2 diffR2 diffG2 diffB2] } {
-    ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%)} record {$rec2}"
+  if { 0 == [parse_pairname_to_rgb_diff_record $rec2 \
+                            pairname2 diffR2 diffG2 diffB2 diffRG2 diffGB2] } {
+    ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%) diffRG(%) diffGB(%)} record {$rec2}"
     return  0
   }
-  set totalDiff1 [expr $diffR1 + $diffG1 + $diffB1]
-  set totalDiff2 [expr $diffR2 + $diffG2 + $diffB2]
+  set totalDiff1 [expr $diffR1 + $diffG1 + $diffB1 + $diffRG1 + $diffGB1]
+  set totalDiff2 [expr $diffR2 + $diffG2 + $diffB2 + $diffRG2 + $diffGB2]
   if { $totalDiff1 < $totalDiff2 }  { return -1 }
   if { $totalDiff1 > $totalDiff2 }  { return  1 }
   return  0
@@ -337,7 +355,8 @@ proc _report_pairname_to_color_diff {pairNameAndColorChannelDiffList}  {
   set colorDiffCSVPath [file join $::STS(outDirPath) $::COLORDIFF_CSV_NAME]
   set colorDiffSortedCSVPath \
                 [file join $::STS(outDirPath) $::COLORDIFF_SORTED_CSV_NAME]
-  set header [pack_pairname_to_rgb_record "pair-name" "diffR(%)" "diffG(%)" "diffB(%)"]
+  set header [pack_pairname_to_rgb_diff_record "pair-name" \
+                      "diffR(%)" "diffG(%)" "diffB(%)" "diffRG(%)" "diffGB(%)"]
   set descrFormat " printing %s color-channel relative differences into '%s'"
   set descr1 [format $descrFormat "unsorted" $colorDiffCSVPath]
   set descr2 [format $descrFormat "sorted"   $colorDiffSortedCSVPath]
@@ -356,13 +375,14 @@ proc _report_pairname_to_color_diff {pairNameAndColorChannelDiffList}  {
   # report stereopairs with differences above the threshold
   set errCnt 0;  set aboveThreshCnt 0
   foreach rec $pairNameAndColorChannelDiffList {
-    if { 0 == [parse_pairname_to_rgb_record $rec \
-                                      pairname diffR diffG diffB] } {
-      ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%)} record {$rec}"
+    if { 0 == [parse_pairname_to_rgb_diff_record $rec \
+                                  pairname diffR diffG diffB diffRG diffGB] } {
+      ok_err_msg "Invalid  {pair-name diffR(%) diffG(%) diffB(%) diffRG(%) diffGB(%)} record {$rec}"
       incr errCnt 1;  continue
     }
     set diffDescr ""
-    foreach ch [list [list $diffR red] [list $diffG green] [list $diffB blue]] {
+    foreach ch [list [list $diffR red] [list $diffG green] [list $diffB blue] \
+              [list $diffRG redToGreenRatio] [list $diffGB greenToBlueRatio]] {
       set d [lindex $ch 0]; set c [lindex $ch 1]
       if { $d >= $::STS(colorDiffThresh) }  {
         append diffDescr [format " %s(%d%%)" $c $d]
@@ -382,21 +402,26 @@ proc _report_pairname_to_color_diff {pairNameAndColorChannelDiffList}  {
 }
 
 
-proc pack_pairname_to_rgb_record {pairname valForR valForG valForB} {
-  return  [list $pairname $valForR $valForG $valForB]
+proc pack_pairname_to_rgb_diff_record {pairname valForR valForG valForB \
+                                                valForRG valForGB} {
+  return  [list $pairname $valForR $valForG $valForB $valForRG $valForGB]
 }
 
 
-proc parse_pairname_to_rgb_record {recAsList pairname valForR valForG valForB} {
+proc parse_pairname_to_rgb_diff_record {recAsList pairname \
+                                    valForR valForG valForB valForRG valForGB} {
   upvar $pairname nm
-  upvar $valForR  vR;  upvar $valForG  vG;  upvar $valForB  vB
-  if { 4 > [llength $recAsList] }  {
+  upvar $valForR  vR;   upvar $valForG  vG;   upvar $valForB  vB
+  upvar $valForRG vRG;  upvar $valForGB vGB
+  if { 6 > [llength $recAsList] }  {
     return  0
   }
   set nm    [lindex $recAsList 0]
   set vR    [lindex $recAsList 1]
   set vG    [lindex $recAsList 2]
   set vB    [lindex $recAsList 3]
+  set vRG   [lindex $recAsList 4]
+  set vGB   [lindex $recAsList 5]
   return  1
 }
 
