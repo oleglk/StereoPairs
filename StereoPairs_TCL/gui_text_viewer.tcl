@@ -70,9 +70,10 @@ proc textview_prebuild {wndPath} {
   # + Text File Contents & Scrollbar Widgets +
   # +----------------------------------------+
   label $wndPath.fltext -width 80 -relief sunken -bg White -textvariable fltext
-  text $wndPath.txtarea -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.vscroller set"
+  text $wndPath.txtarea -width 80 -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.vscroller set"
   scrollbar $wndPath.vscroller -command "$wndPath.txtarea yview"
-  pack $wndPath.txtarea $wndPath.vscroller -side left -fill y
+  pack $wndPath.txtarea -side left -fill both -expand 1
+  pack $wndPath.vscroller -side left -fill y  -expand 0
   
   # +-----------------------------------------------------+
   # + Command Button Widget For Program Exit +

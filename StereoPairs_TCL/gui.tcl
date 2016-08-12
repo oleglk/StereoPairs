@@ -259,6 +259,7 @@ proc GUI_CloneSettings {}  {
 proc GUI_CompareColors {}  {
   global APP_TITLE GUI_VARS PREFS TEXTVIEW_DIFF
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
+  textview_close $TEXTVIEW_DIFF;  # close old viewer if any prior to computing
   set paramStr [_GUI_RequestOptions "Color-Analyzer" \
                                     "COLOR_ANALYZER" errCnt]
   if { $errCnt > 0 } {
@@ -270,7 +271,6 @@ proc GUI_CompareColors {}  {
     # find the output file and show it in textview
     set colorDiffSortedCSVPath \
                   [file join $::STS(outDirPath) $::COLORDIFF_SORTED_CSV_NAME]
-    textview_close $TEXTVIEW_DIFF
     if { "" == [textview_open $TEXTVIEW_DIFF $colorDiffSortedCSVPath \
                   "Left-Right color comparison ($colorDiffSortedCSVPath)"] }   {
       _UpdateGuiEndAction;  return  0;  # error already reported

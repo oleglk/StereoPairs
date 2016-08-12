@@ -305,13 +305,14 @@ proc _map_pairname_to_color_stat_diff {pairNameToLRPathsDict}  {
                 : [expr {round(100 * abs($meanBLeft - $meanBRight) / $avgB)}]}]
 
     set ratioRGLeft [expr {($meanGLeft==0.0)? 9999 \
-                                    : [expr {round($meanRLeft/ $meanGLeft)}]}]
+                                    : [expr {$meanRLeft  / $meanGLeft }]}]
     set ratioGBLeft [expr {($meanBLeft==0.0)? 9999 \
-                                    : [expr {round($meanGLeft/ $meanBLeft)}]}]
+                                    : [expr {$meanGLeft  / $meanBLeft }]}]
     set ratioRGRight [expr {($meanGRight==0.0)? 9999 \
-                                    : [expr {round($meanRRight/ $meanGRight)}]}]
+                                    : [expr {$meanRRight / $meanGRight}]}]
     set ratioGBRight [expr {($meanBRight==0.0)? 9999 \
-                                    : [expr {round($meanGRight/ $meanBRight)}]}]
+                                    : [expr {$meanGRight / $meanBRight}]}]
+    ok_trace_msg "Channel ratios for '$pairname': Red/Green(Left)=$ratioRGLeft, Red/Green(Right)=$ratioRGRight, Green/Blue(Left)=$ratioGBLeft, Green/Blue(Right)=$ratioGBRight"
     set avgRG [expr ($ratioRGLeft + $ratioRGRight)/2]
     set diffRG [expr {($avgRG==0.0)? 0 \
             : [expr {round(100 * abs($ratioRGLeft - $ratioRGRight) / $avgRG)}]}]
@@ -369,8 +370,9 @@ proc _report_pairname_to_color_diff {pairNameAndColorChannelDiffList}  {
   set sortedDataList [lsort -command _less_then__pairname_to_color_diff_rec \
                             -decreasing $pairNameAndColorChannelDiffList]
   set extendedListWithHeader [concat [list $header] $sortedDataList]
+  # print sorted report with dual-TAB delimeter for human readability
   set ret2 [ok_write_list_of_lists_into_csv_file $extendedListWithHeader \
-                                                $colorDiffSortedCSVPath " "]
+                                                $colorDiffSortedCSVPath "\t\t"]
   if { $ret2 } {ok_info_msg "Success $descr2"} else {ok_err_msg  "Failed $descr2"}
   # report stereopairs with differences above the threshold
   set errCnt 0;  set aboveThreshCnt 0
