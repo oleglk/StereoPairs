@@ -35,6 +35,15 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 + allow opening preferences window multiple times - "reset" button should not be created each time
 
-- text viewer for colol-comparator output
++ text viewer for colol-comparator output
 
 - text viewer for help file
+
+- ? what happens when a pair has equal l/r names, and find_1or2_image_ids_in_imagename returns a single ID?
+
+- hide renamed (only), e.g. dual-ID images with < 2 used IDs
+
+- options for pair-name flexibility
+
+- make textviewer expand correctly
+
