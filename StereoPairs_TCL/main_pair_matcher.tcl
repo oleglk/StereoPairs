@@ -32,7 +32,7 @@ proc _pair_matcher_set_defaults {}  {
   set ::STS(doCreateSBS)      0
   set ::STS(doRenameLR)       0
   set ::STS(doUseExifTime)    1
-  set ::STS(maxBurstGap)      0
+  set ::STS(maxFrameGap)      0
   set ::STS(doSimulateOnly)   0
 }
 ################################################################################
@@ -133,7 +133,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   set descrList \
 [list \
   -help {"" "print help"} \
-  -time_diff {val "time difference in seconds between the 2nd and 1st cameras"} \
+  -time_diff {val "time difference in seconds between the right- and left cameras"} \
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
   -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
   -create_sbs	{"" "join matched pairs into SBS images; requires the directory with standard images"} \
@@ -145,7 +145,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   -out_dir {val	"output directory"} \
   -dir_for_unmatched {val "name of subdirectory to move unmatched inputs to"} \
   -time_from {val "<exif|create>	: source of shots' timestamps; using exif requires external tool (dcraw and identify)"} \
-  -max_burst_gap {val "max time difference between consequent frames to be considered a burst, sec"} \
+  -max_frame_gap {val "max time difference between left/right frames to be considered a stereopair, sec"} \
   -simulate_only {""	"if specified, no file changes performed, only decide and report what should be done"} ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -156,7 +156,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   ok_set_cmd_line_params defCml cmlD { \
    {-time_diff 0} {-min_success_rate 50} \
    {-out_pairlist_filename "lr_pairs.csv"} {-dir_for_unmatched "Unmatched"} \
-   {-time_from "exif"} {-max_burst_gap 0.9} }
+   {-time_from "exif"} {-max_frame_gap 0.9} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -170,8 +170,8 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Examples (note TCL-style directory separators): ======="
-    ok_info_msg " pair_matcher_main \"-max_burst_gap 1.0 -time_diff -84 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./OUT\""
-    ok_info_msg " pair_matcher_main \"-max_burst_gap 1.0 -time_diff -84 -restore_lr -orig_img_dir . -std_img_dir . -out_dir ./OUT\""
+    ok_info_msg " pair_matcher_main \"-max_frame_gap 1.0 -time_diff -84 -rename_lr -orig_img_dir . -std_img_dir . -out_dir ./OUT\""
+    ok_info_msg " pair_matcher_main \"-max_frame_gap 1.0 -time_diff -84 -restore_lr -orig_img_dir . -std_img_dir . -out_dir ./OUT\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -283,11 +283,11 @@ proc _pair_matcher_parse_cmdline {cmlArrName}  {
       }
     }    
   }
-  if { $cml(-max_burst_gap) <= 0 }  {
+  if { $cml(-max_frame_gap) <= 0 }  {
     ok_err_msg "Maximal burst interframe gap should be positive"
     incr errCnt 1
   } else {
-     set ::STS(maxBurstGap) $cml(-max_burst_gap)
+     set ::STS(maxFrameGap) $cml(-max_frame_gap)
   }
   if { 1 == [info exists cml(-simulate_only)] }  {
     set ::STS(doSimulateOnly) 1
@@ -402,8 +402,8 @@ proc _find_candidate_peers {forImgRecords fromImgRecords timeBias}  {
     ok_trace_msg "'FOR' record: {$forRec}"
     ParseNameTimeRecord $forRec name1 timeStr1 globalTime1 idxInBurst1
     set timeFrom    [expr $globalTime1 + $timeBias]
-    set timeFromMin [expr $globalTime1 + $timeBias - $::STS(maxBurstGap)]
-    set timeFromMax [expr $globalTime1 + $timeBias + $::STS(maxBurstGap)]
+    set timeFromMin [expr $globalTime1 + $timeBias - $::STS(maxFrameGap)]
+    set timeFromMax [expr $globalTime1 + $timeBias + $::STS(maxFrameGap)]
     ok_trace_msg "Peers global-time range for '$name1' ($globalTime1==>$timeFrom) is \[$timeFromMin .. $timeFromMax\]"
     ok_trace_msg "Going to search for peers of '$name1' ($globalTime1==>$timeFrom) in {$fromTimesList}"
     ok_bisect_find_range $fromTimesList $timeFromMin posBeforeMin posAfterMin
@@ -464,7 +464,7 @@ proc _sort_name_to_time_dict_and_detect_bursts {namesToTimesDict descr} {
     set currRec [lindex $listOfLists $i]
     ParseNameTimeRecord $prevRec nameP timeStrP globalTimeP idxInBurstOrZeroP
     ParseNameTimeRecord $currRec nameC timeStrC globalTimeC idxInBurstOrZeroC
-    if { $::STS(maxBurstGap) >= [global_time_diff $globalTimeC $globalTimeP] } {
+    if { $::STS(maxFrameGap) >= [global_time_diff $globalTimeC $globalTimeP] } {
       # the 2 records are in burst
       if { $idxInBurst == -1 } {
         incr burstCnt 1

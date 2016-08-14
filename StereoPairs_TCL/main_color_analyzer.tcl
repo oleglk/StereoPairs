@@ -329,7 +329,7 @@ proc _map_pairname_to_color_stat_diff {pairNameToLRPathsDict}  {
 
 
 # Compares supplied {pair-name diffR(%) diffG(%) diffB(%) diffRG(%) diffGB(%)}
-# records by total diff
+# records by total diff, then by name
 proc _less_then__pairname_to_color_diff_rec {rec1 rec2}  {
   if { 0 == [parse_pairname_to_rgb_diff_record $rec1 \
                             pairname1 diffR1 diffG1 diffB1 diffRG1 diffGB1] } {
@@ -345,7 +345,8 @@ proc _less_then__pairname_to_color_diff_rec {rec1 rec2}  {
   set totalDiff2 [expr $diffR2 + $diffG2 + $diffB2 + $diffRG2 + $diffGB2]
   if { $totalDiff1 < $totalDiff2 }  { return -1 }
   if { $totalDiff1 > $totalDiff2 }  { return  1 }
-  return  0
+  # force ordering equal-diff records by name
+  return  [string compare -nocase $pairname1 $pairname2]
 }
 
 

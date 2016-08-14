@@ -271,7 +271,7 @@ proc GUI_CompareColors {}  {
     # find the output file and show it in textview
     set colorDiffSortedCSVPath \
                   [file join $::STS(outDirPath) $::COLORDIFF_SORTED_CSV_NAME]
-    if { "" == [textview_open $TEXTVIEW_DIFF $colorDiffSortedCSVPath \
+    if { "" == [textview_open $TEXTVIEW_DIFF $colorDiffSortedCSVPath 100 \
                   "Left-Right color comparison ($colorDiffSortedCSVPath)"] }   {
       _UpdateGuiEndAction;  return  0;  # error already reported
     }

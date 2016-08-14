@@ -64,7 +64,7 @@ proc preferences_get_initial_values {arrayName}  {
   set _prefs(-create_sbs)          NO
   set _prefs(-rename_lr)           YES
   set _prefs(-time_from)           "exif"
-  set _prefs(-max_burst_gap)       1.0
+  set _prefs(-max_frame_gap)       1.0
   
   # settings copier
   set _prefs(-copy_from)  "left"
@@ -101,22 +101,22 @@ proc preferences_get_initial_values {arrayName}  {
 ## Per-application option lists to be used in GUI frontend                    ##
 ################################################################################
   set _prefs(PAIR_MATCHER__keyToDescrAndFormat) [dict create \
-    -max_burst_gap {"max time difference between consequent frames to be considered a burst, sec" "%g"} \
-    -time_diff {"time difference in seconds between the 2nd and 1st cameras" "%d"} \
+    -max_frame_gap {"max time difference between left/right frames to be considered a stereopair, sec" "%g"} \
+    -time_diff {"time difference in seconds between the right- and left cameras" "%d"} \
     -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
   set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir -std_img_dir -out_dir \
-                        -max_burst_gap -simulate_only]
+                        -max_frame_gap -simulate_only]
   set _prefs(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
   set _prefs(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
 ################################################################################
   set _prefs(LR_NAME_RESTORER__keyToDescrAndFormat)  [dict remove \
-    $_prefs(PAIR_MATCHER__keyToDescrAndFormat) -max_burst_gap -time_diff]
+    $_prefs(PAIR_MATCHER__keyToDescrAndFormat) -max_frame_gap -time_diff]
   set _prefs(LR_NAME_RESTORER__keysInOrder)          [ok_lremove \
-    $_prefs(PAIR_MATCHER__keysInOrder)   [list -max_burst_gap -time_diff]]
+    $_prefs(PAIR_MATCHER__keysInOrder)   [list -max_frame_gap -time_diff]]
   set _prefs(LR_NAME_RESTORER__keyOnlyArgsList) $_prefs(PAIR_MATCHER__keyOnlyArgsList)
   set _prefs(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
 ################################################################################

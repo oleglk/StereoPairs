@@ -34,11 +34,13 @@ set INITIALDIR [pwd]
 global INITIALDIR
 global FLNAME
 
+set DEFAULT_LINEWIDTH 80
+
 
 # Open the window and load 'filePath' into it
-proc textview_open {wndPath filePath {wndTitle ""}} {
+proc textview_open {wndPath filePath lineWidth {wndTitle ""}} {
  wm deiconify $wndPath
- return  [_loadfl $wndPath $filePath $wndTitle]
+ return  [_loadfl $wndPath $filePath $lineWidth $wndTitle]
 }
 
 
@@ -54,6 +56,7 @@ proc textview_close {wndPath} {
 # + Initial TK Widget Definitions For Viewer Window +
 # +-------------------------------------------------+
 proc textview_prebuild {wndPath} {
+  global DEFAULT_LINEWIDTH
   toplevel $wndPath
 
   wm title $wndPath "Text File Viewer"
@@ -64,13 +67,14 @@ proc textview_prebuild {wndPath} {
   # +------------------------+
   label $wndPath.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
   label $wndPath.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
-  pack $wndPath.fllabel $wndPath.lblFlname -side top -padx 1m -pady 1m -anchor nw
+  pack $wndPath.fllabel   -side top -padx 1m -pady 1m -anchor nw -expand 0
+  pack $wndPath.lblFlname -side top -padx 1m -pady 1m -anchor nw -fill x -expand 1
 
   # +----------------------------------------+
   # + Text File Contents & Scrollbar Widgets +
   # +----------------------------------------+
-  label $wndPath.fltext -width 80 -relief sunken -bg White -textvariable fltext
-  text $wndPath.txtarea -width 80 -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.vscroller set"
+  label $wndPath.fltext -width $DEFAULT_LINEWIDTH -relief sunken -bg White -textvariable fltext
+  text $wndPath.txtarea -width $DEFAULT_LINEWIDTH -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.vscroller set"
   scrollbar $wndPath.vscroller -command "$wndPath.txtarea yview"
   pack $wndPath.txtarea -side left -fill both -expand 1
   pack $wndPath.vscroller -side left -fill y  -expand 0
@@ -102,7 +106,7 @@ proc textview_prebuild {wndPath} {
 # + Select Open Input Text File & Populate Entry Widgets +
 # +------------------------------------------------------+
 proc _openfl {wndPath} {
-  global INITIALDIR
+  global INITIALDIR DEFAULT_LINEWIDTH
   global FLNAME
   set file_types {
     {"Tcl Files" { .tcl .TCL } }
@@ -115,7 +119,7 @@ proc _openfl {wndPath} {
   $wndPath.txtarea delete 1.0 end
   set FLNAME [tk_getOpenFile -initialdir $INITIALDIR     -filetypes $file_types -title "Open Input Text File" -parent $wndPath]
   if {$FLNAME != ""} {
-    return  [_loadfl $wndPath $FLNAME ""]
+    return  [_loadfl $wndPath $FLNAME $DEFAULT_LINEWIDTH ""]
   }
   return  ""
 }
@@ -127,7 +131,7 @@ proc _openfl {wndPath} {
 # +------------------------------------------------------+
 # + Populate Entry Widgets from Text File 'filePath' +
 # +------------------------------------------------------+
-proc _loadfl {wndPath filePath {wndTitle ""}} {
+proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
   set retcd [ catch { set infile [open $filePath "r"] } ]
 # +------------------------------------------------+
 # + Display Error Message Box If File Open Failure +
@@ -143,6 +147,7 @@ proc _loadfl {wndPath filePath {wndTitle ""}} {
   if {$retcd == 0} {
     set inEOF -1
     set txln ""
+    $wndPath.txtarea configure -width $lineWidth
     $wndPath.txtarea delete 1.0 end
     while {[gets $infile inln] != $inEOF} {
       set txln "$inln\n"
