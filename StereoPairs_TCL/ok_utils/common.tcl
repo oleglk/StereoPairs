@@ -133,7 +133,11 @@ proc ::ok_utils::ok_group_repeated_elements_in_list {inpList headOrTail} {
   foreach element $inpList {  dict incr countDict $element 1  }
   set repKeys [list];   set uniKeys [list]
   dict for {key count} $countDict {
-    if { $count == 1 }  { lappend uniKeys $key } else { lappend repKeys $key }
+    ok_trace_msg "Checking occurences of key '$key'"
+    if { $count == 1 }  { lappend uniKeys $key } else {
+      lappend repKeys $key
+      ok_trace_msg "Key '$key' appeared $count times"
+    }
   }
   if { $headOrTail == 0 } { return  [concat $repKeys $uniKeys]
   } else                  { return  [concat $uniKeys $repKeys] }

@@ -105,18 +105,20 @@ proc preferences_get_initial_values {arrayName}  {
     -time_diff {"time difference in seconds between the right- and left cameras" "%d"} \
     -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
+    -min_success_rate {"min percentage of successfull matches to permit image-file operations" "%d"} \
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
-  set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir -std_img_dir -out_dir \
-                        -max_frame_gap -simulate_only]
+  set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir \
+        -std_img_dir -min_success_rate -out_dir -max_frame_gap -simulate_only]
   set _prefs(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
   set _prefs(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
 ################################################################################
   set _prefs(LR_NAME_RESTORER__keyToDescrAndFormat)  [dict remove \
     $_prefs(PAIR_MATCHER__keyToDescrAndFormat) -max_frame_gap -time_diff]
-  set _prefs(LR_NAME_RESTORER__keysInOrder)          [ok_lremove \
-    $_prefs(PAIR_MATCHER__keysInOrder)   [list -max_frame_gap -time_diff]]
+  set _prefs(LR_NAME_RESTORER__keysInOrder)  \
+            [ok_lremove $_prefs(PAIR_MATCHER__keysInOrder) \
+                            [list -max_frame_gap -time_diff -min_success_rate]]
   set _prefs(LR_NAME_RESTORER__keyOnlyArgsList) $_prefs(PAIR_MATCHER__keyOnlyArgsList)
   set _prefs(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
 ################################################################################

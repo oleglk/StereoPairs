@@ -134,7 +134,7 @@ proc find_1or2_image_ids_in_imagename {imgNameOrPath id1 id2 {priErr 0}}  {
 
 # Returns list of image-file IDs found in 'imgNamesOrPaths'.
 # "dsc003-007.tif" => {003 007}
-proc find_image_ids_in_image_namelist {imgNamesOrPaths {priErr 0}}  {
+proc UNUSED__find_image_ids_in_image_namelist {imgNamesOrPaths {priErr 0}}  {
   set lrNames [list]
   foreach imgPath $imgNamesOrPaths {
     if { 1 == [find_1or2_image_ids_in_imagename $imgPath name1 name2 $priErr] }  {

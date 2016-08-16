@@ -39,7 +39,7 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 - text viewer for help file
 
-- ? what happens when a pair has equal l/r names, and find_1or2_image_ids_in_imagename returns a single ID?
+-  distinguish between left-side and right-side IDs in workarea cleaner
 
 - hide renamed (only), e.g. dual-ID images with < 2 used IDs
 

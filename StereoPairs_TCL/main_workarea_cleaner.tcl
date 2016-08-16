@@ -109,7 +109,8 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   }
   ok_info_msg "Found [dict size $usedIDsDict] used image ID(s)"
   
-  set filesToHide [_workarea_cleaner_find_images_without_used_ids \
+  # TODO: distinguish between left-side and right-side IDs
+  set filesToHide [_workarea_cleaner_find_images_with_unused_ids \
                                                   $hideCandidates $usedIDsDict]
   if { 0 == [llength $filesToHide] }  {
     ok_info_msg "No unused-id files were found; there's nothing to do."
@@ -388,7 +389,32 @@ proc _workarea_cleaner_find_intermediate_images {} {
 }
 
 
-proc _workarea_cleaner_find_images_without_used_ids {candidates usedIDsDict}  {
+# Returns list of file-paths (out of 'candidates') that have
+# - either single ID that's unused
+# - or two IDs of which at least one is unused
+# TODO: distinguish between left-side and right-side IDs
+proc _workarea_cleaner_find_images_with_unused_ids {candidates usedIDsDict}  {
+  set unusedFilesList [list]
+  set skipCnt 0
+  foreach fPath $candidates {
+    if { 0 == [find_1or2_image_ids_in_imagename $fPath id1 id2 0] }  {
+      ok_info_msg "File '$fPath' considered irrelevant - skipped"
+      incr skipCnt 1
+    }
+    if { (0 == [dict exists $usedIDsDict $id1]) || \
+          (($id2 != "") && (0 == [dict exists $usedIDsDict $id2])) } {
+      ok_info_msg "File '$fPath' has unused ID(s)"
+      lappend unusedFilesList $fPath
+    } else {
+      ok_info_msg "File '$fPath' has all ID(s) in use"
+    }
+  }
+  ok_info_msg "Found [llength $unusedFilesList] file(s) with unused image IDs out of  [llength $candidates] candidate(s); $skipCnt file(s) skipped as irrelevant"
+  return  $unusedFilesList
+}
+
+
+proc _UNUSED__workarea_cleaner_find_images_without_used_ids {candidates usedIDsDict}  {
   set unusedFilesList [list]
   set skipCnt 0
   foreach fPath $candidates {
