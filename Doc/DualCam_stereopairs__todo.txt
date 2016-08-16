@@ -40,6 +40,7 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 - text viewer for help file
 
 -  distinguish between left-side and right-side IDs in workarea cleaner
+-- pay attention to find_lr_image_ids_in_pair_namelist performing "lsort -unique"
 
 - hide renamed (only), e.g. dual-ID images with < 2 used IDs
 

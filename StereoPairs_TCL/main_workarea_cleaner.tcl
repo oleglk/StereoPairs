@@ -26,6 +26,8 @@ proc _workarea_cleaner_set_defaults {}  {
   set ::STS(stdImgRootPath)   ""
   set ::STS(origImgDirLeft)   ""
   set ::STS(origImgDirRight)  ""
+  set ::STS(stdImgPathLeft)   "" ;  # full path or relative path under CWD
+  set ::STS(stdImgPathRight)  "" ;  # full path or relative path under CWD
   set ::STS(globalImgSettingsDir)  "" ;  # global settings dir; relevant for some converters
   set ::STS(finalImgDirPath)       "" ;  # directory with ultimate images
   set ::STS(outDirPath)       ""
@@ -246,7 +248,17 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
       ok_err_msg "Non-directory '$cml(-std_img_dir)' specified as standard-images directory"
       incr errCnt 1
     } else {
-      set ::STS(stdImgRootPath) $cml(-std_img_dir); # recurse under stdImgRootPath
+      set ::STS(stdImgRootPath) $cml(-std_img_dir); # recurse under L/R subdir-s 
+      set ::STS(stdImgPathLeft)  [file join $::STS(stdImgRootPath) "L"]
+      set ::STS(stdImgPathRight) [file join $::STS(stdImgRootPath) "R"]
+      if { 0 == [file isdirectory $::STS(stdImgPathLeft)] }  {
+        ok_err_msg "Non-directory '$::STS(stdImgPathLeft)' specified as left standard-images directory"
+        incr errCnt 1
+      }
+      if { 0 == [file isdirectory $::STS(stdImgPathRight)] }  {
+        ok_err_msg "Non-directory '$::STS(stdImgPathRight)' specified as right standard-images directory"
+        incr errCnt 1
+      }
     }
   }
   if { 0 == [info exists cml(-final_img_dir)] }  {
@@ -378,12 +390,15 @@ proc _workarea_cleaner_find_intermediate_images {} {
     return  [list]
   }
   ok_info_msg "Start searching for intermediate images"
-  set intermediateImages [ok_find_files_by_entensions $::STS(stdImgRootPath) \
-                                [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 1]
+  set intermediateImagesLeft  [ok_find_files_by_entensions \
+      $::STS(stdImgPathLeft) [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 1]
+  set intermediateImagesRight [ok_find_files_by_entensions \
+      $::STS(stdImgPathRight) [dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT] 1]
+  set intermediateImages [concat $intermediateImagesLeft $intermediateImagesRight]
   if { 0 < [llength $intermediateImages] }  {
-    ok_info_msg "Found [llength $intermediateImages] intermediate image(s) under '$::STS(stdImgRootPath)'"
+    ok_info_msg "Found [llength $intermediateImagesLeft] intermediate image(s) under '$::STS(stdImgPathLeft)' and [llength $intermediateImagesRight] intermediate image(s) under '$::STS(stdImgPathRight)'"
   } else {
-    ok_info_msg "No intermediate image(s) found under '$::STS(stdImgRootPath)'"
+    ok_info_msg "No intermediate image(s) found under '$::STS(stdImgPathLeft)' and '$::STS(stdImgPathRight)'"
   }
   return  $intermediateImages
 }
