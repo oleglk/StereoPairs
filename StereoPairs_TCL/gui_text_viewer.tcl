@@ -62,30 +62,31 @@ proc textview_prebuild {wndPath} {
   wm title $wndPath "Text File Viewer"
 
   set font {Verdana 14}
-  # +------------------------+
-  # + Filename Label Widgets +
-  # +------------------------+
-  label $wndPath.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
-  label $wndPath.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
-  pack $wndPath.fllabel   -side top -padx 1m -pady 1m -anchor nw -expand 0
-  pack $wndPath.lblFlname -side top -padx 1m -pady 1m -anchor nw -fill x -expand true
-
-  # +----------------------------------------+
-  # + Text File Contents & Scrollbar Widgets +
-  # +----------------------------------------+
-  frame $wndPath.scrolledText -bg NavyBlue
-  pack $wndPath.scrolledText -side top -padx 1m -pady 1m -anchor center -fill both -expand true
-  set mainTextArea [_MainTextArea $wndPath]
-  text $mainTextArea -width $DEFAULT_LINEWIDTH -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.scrolledText.vscroller set"
-  scrollbar $wndPath.scrolledText.vscroller -command "$mainTextArea yview"
-  pack $mainTextArea -side left -fill both -expand true
-  pack $wndPath.scrolledText.vscroller -side left -fill y  -expand true
   
   # +-----------------------------------------------------+
   # + Command Button Widget For Program Exit +
   # +-----------------------------------------------------+
   button $wndPath.close -text "< Close >" -fg Navy -bg NavajoWhite2   -font bold -command [list textview_close $wndPath]
   pack $wndPath.close -side bottom -padx 1m -pady 1m 
+
+  # +----------------------------------------+
+  # + Text File Contents & Scrollbar Widgets +
+  # +----------------------------------------+
+  frame $wndPath.scrolledText -bg NavyBlue
+  pack $wndPath.scrolledText -side bottom -padx 1m -pady 1m -anchor center -fill both -expand true
+  set mainTextArea [_MainTextArea $wndPath]
+  text $mainTextArea -width $DEFAULT_LINEWIDTH -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.scrolledText.vscroller set"
+  scrollbar $wndPath.scrolledText.vscroller -command "$mainTextArea yview"
+  pack $wndPath.scrolledText.vscroller -side right -anchor w -fill y  -expand false
+  pack $mainTextArea -side right -fill both -expand true
+
+  # +------------------------+
+  # + Filename Label Widgets +
+  # +------------------------+
+  label $wndPath.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
+  label $wndPath.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
+  pack $wndPath.lblFlname -side bottom -padx 1m -pady 1m -anchor nw -fill x -expand false
+  pack $wndPath.fllabel   -side bottom -padx 1m -pady 1m -anchor nw -expand false
 
   bind $mainTextArea <Key-F3> {textview_close}
   bind $wndPath.fllabel <Key-F3> {textview_close}
