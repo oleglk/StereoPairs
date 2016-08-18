@@ -103,8 +103,7 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   }
   ok_info_msg "Found [llength $hideCandidates] potential candidate-to-hide file(s)"
   
-  set usedIDsDict [ok_list_to_dict_set \
-                        [find_lr_image_ids_in_pair_namelist $ultimateImages 1]]
+  set usedIDsDict [find_lr_image_ids_in_pair_namelist $ultimateImages 1]
   if { 0 == [dict size $usedIDsDict] }  {
     ok_warn_msg "No used image IDs were found; this is suspicious."
     return  0
@@ -407,6 +406,7 @@ proc _workarea_cleaner_find_intermediate_images {} {
 # Returns list of file-paths (out of 'candidates') that have
 # - either single ID that's unused
 # - or two IDs of which at least one is unused
+# 'usedIDsDict' maps image-file IDs to the side(s) where they appear (l/r/lr)
 # TODO: distinguish between left-side and right-side IDs
 proc _workarea_cleaner_find_images_with_unused_ids {candidates usedIDsDict}  {
   set unusedFilesList [list]
@@ -416,8 +416,19 @@ proc _workarea_cleaner_find_images_with_unused_ids {candidates usedIDsDict}  {
       ok_info_msg "File '$fPath' considered irrelevant - skipped"
       incr skipCnt 1
     }
-    if { (0 == [dict exists $usedIDsDict $id1]) || \
-          (($id2 != "") && (0 == [dict exists $usedIDsDict $id2])) } {
+    set id1IsOnLeft 0;  set id1IsOnRight 0
+    if { 1 == [dict exists $usedIDsDict $id1] } {
+      set where [dict get $usedIDsDict $id1]
+      if { ($where == "l") || ($where == "lr") }  { set id1IsOnLeft  1 }
+      if { ($where == "r") || ($where == "lr") }  { set id1IsOnRight 1 }
+    }
+    set id2IsOnLeft 0;  set id2IsOnRight 0; # id2 can only be on right
+    if { ($id2 != "") && (1 == [dict exists $usedIDsDict $id2]) } {
+      set where [dict get $usedIDsDict $id2]
+      if { ($where == "r") || ($where == "lr") }  { set id2IsOnRight 1 }
+    }
+    if { (!$id1IsOnLeft && !$id1IsOnRight) || \
+         (($id2 != "") && !$id2IsOnRight) } {
       ok_info_msg "File '$fPath' has unused ID(s)"
       lappend unusedFilesList $fPath
     } else {

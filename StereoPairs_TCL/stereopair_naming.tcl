@@ -96,25 +96,30 @@ proc find_lr_image_ids_in_pairname {pairNameOrPath idLeft idRight {priErr 0}}  {
 }
 
 
-# Returns dict of image-file IDs found in 'pairNamesOrPaths
+# Returns dict of image-file IDs found in 'pairNamesOrPaths'
 # mapped to the side(s) where they appear.
 # "dsc003-007.tif" => {003 l 007 r};    "dsc033-033.tif" => {033 lr}
 proc find_lr_image_ids_in_pair_namelist {pairNamesOrPaths {priErr 0}}  {
-  set lrNames [list]
+  set lNames [dict create]; set rNames [dict create]
   foreach pairPath $pairNamesOrPaths {
     if { 1 == [find_lr_image_ids_in_pairname $pairPath name1 name2 $priErr] }  {
-      if { 0 == [dict exists $lrNames $name1] } {}; #TODO
-      if { 0 == [dict exists $lrNames $name1] } {}; #TODO
-      if { 0 == [string equal -nocase $name1 $name1 $name2] } {
-        lappend lrNames $name1;   lappend lrNames "l"
-        lappend lrNames $name2;   lappend lrNames "r"
-      } else {
-        lappend lrNames $name1;   lappend lrNames "lr"
+      set lrIdsAreEqual [expr {1 == [string equal -nocase $name1 $name2]}]
+      if { 0 == [dict exists $lNames $name1] } {
+        dict set lNames $name1 "l"
       }
+      if { 0 == [dict exists $rNames $name2] } {
+        dict set rNames $name2 "r"
       }
     }
   }
-  return  [lsort -unique $lrNames]
+  set allNames [concat [dict keys $lNames] [dict keys $rNames]]
+  set lrNames [dict create]
+  foreach name $allNames {
+    set val [expr {([dict exists $lNames $name])? "l" : ""}]
+    if { 1 == [dict exists $rNames $name] } { append val "r" }
+    dict set lrNames $name $val
+  }
+  return  $lrNames
 }
 
 
