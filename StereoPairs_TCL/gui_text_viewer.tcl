@@ -68,16 +68,18 @@ proc textview_prebuild {wndPath} {
   label $wndPath.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
   label $wndPath.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
   pack $wndPath.fllabel   -side top -padx 1m -pady 1m -anchor nw -expand 0
-  pack $wndPath.lblFlname -side top -padx 1m -pady 1m -anchor nw -fill x -expand 1
+  pack $wndPath.lblFlname -side top -padx 1m -pady 1m -anchor nw -fill x -expand true
 
   # +----------------------------------------+
   # + Text File Contents & Scrollbar Widgets +
   # +----------------------------------------+
-  label $wndPath.fltext -width $DEFAULT_LINEWIDTH -relief sunken -bg White -textvariable fltext
-  text $wndPath.txtarea -width $DEFAULT_LINEWIDTH -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.vscroller set"
-  scrollbar $wndPath.vscroller -command "$wndPath.txtarea yview"
-  pack $wndPath.txtarea -side left -fill both -expand 1
-  pack $wndPath.vscroller -side left -fill y  -expand 0
+  frame $wndPath.scrolledText -bg NavyBlue
+  pack $wndPath.scrolledText -side top -padx 1m -pady 1m -anchor center -fill both -expand true
+  set mainTextArea [_MainTextArea $wndPath]
+  text $mainTextArea -width $DEFAULT_LINEWIDTH -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.scrolledText.vscroller set"
+  scrollbar $wndPath.scrolledText.vscroller -command "$mainTextArea yview"
+  pack $mainTextArea -side left -fill both -expand true
+  pack $wndPath.scrolledText.vscroller -side left -fill y  -expand true
   
   # +-----------------------------------------------------+
   # + Command Button Widget For Program Exit +
@@ -85,7 +87,7 @@ proc textview_prebuild {wndPath} {
   button $wndPath.close -text "< Close >" -fg Navy -bg NavajoWhite2   -font bold -command [list textview_close $wndPath]
   pack $wndPath.close -side bottom -padx 1m -pady 1m 
 
-  bind $wndPath.txtarea <Key-F3> {textview_close}
+  bind $mainTextArea <Key-F3> {textview_close}
   bind $wndPath.fllabel <Key-F3> {textview_close}
   bind $wndPath.lblFlname <Key-F3> {textview_close}
 
@@ -102,6 +104,9 @@ proc textview_prebuild {wndPath} {
 ################################################################################
 
 
+# Access shortcut for the main text area inside a given window
+proc _MainTextArea {wndPath} {  return $wndPath.scrolledText.txtarea }
+
 # +------------------------------------------------------+
 # + Select Open Input Text File & Populate Entry Widgets +
 # +------------------------------------------------------+
@@ -116,7 +121,7 @@ proc _openfl {wndPath} {
 # +-------------------------------------------------+
 # + Cleanup Filename And Text File Contents Widgets +
 # +-------------------------------------------------+
-  $wndPath.txtarea delete 1.0 end
+  [_MainTextArea $wndPath] delete 1.0 end
   set FLNAME [tk_getOpenFile -initialdir $INITIALDIR     -filetypes $file_types -title "Open Input Text File" -parent $wndPath]
   if {$FLNAME != ""} {
     return  [_loadfl $wndPath $FLNAME $DEFAULT_LINEWIDTH ""]
@@ -147,11 +152,12 @@ proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
   if {$retcd == 0} {
     set inEOF -1
     set txln ""
-    $wndPath.txtarea configure -width $lineWidth
-    $wndPath.txtarea delete 1.0 end
+    set mainTextArea [_MainTextArea $wndPath]
+    $mainTextArea configure -width $lineWidth
+    $mainTextArea delete 1.0 end
     while {[gets $infile inln] != $inEOF} {
       set txln "$inln\n"
-      $wndPath.txtarea insert end $txln   }
+      $mainTextArea insert end $txln   }
     close $infile
   }
   $wndPath.lblFlname configure -text $filePath
