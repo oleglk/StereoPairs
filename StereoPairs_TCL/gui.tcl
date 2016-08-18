@@ -3,6 +3,8 @@
 package require Tk
 
 set SCRIPT_DIR [file dirname [info script]]
+set DOC_DIR [file join $SCRIPT_DIR  ".." "Doc"]
+
 source [file join $SCRIPT_DIR   "setup_stereopairs.tcl"]
 
 source [file join $SCRIPT_DIR   "preferences_mgr.tcl"]
@@ -181,8 +183,12 @@ proc GUI_ChangePreferences {}  {
 
 
 proc GUI_ShowHelp {}  {
-  global APP_TITLE SCRIPT_DIR
-  tk_messageBox -message "Please read [file join $SCRIPT_DIR {..} {Doc} {UG__Stereopairs.txt}]" -title $APP_TITLE
+  global APP_TITLE DOC_DIR TEXTVIEW_HELP
+  set helpPath [file join $DOC_DIR "DualCam_UserGuide.txt"]
+    if { "" == [textview_open $TEXTVIEW_HELP $helpPath 80 \
+                  "$APP_TITLE  User Guide"] }   {
+      _UpdateGuiEndAction;  return  0;  # error already reported
+    }
 }
 
 

@@ -137,7 +137,7 @@ proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
 # + Display Error Message Box If File Open Failure +
 # +------------------------------------------------+
   if {$retcd == 1} {
-    wm title $wndPath $"Text File Open Error"
+    wm title $wndPath "Text File Open Error"
     set result [tk_messageBox -parent $wndPath         -title "Text File Open Error" -type ok -icon error         -message         "Error Opening File: $filePath.\n"]
     }
 # +----------------------------------------------+
@@ -151,8 +151,7 @@ proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
     $wndPath.txtarea delete 1.0 end
     while {[gets $infile inln] != $inEOF} {
       set txln "$inln\n"
-      $wndPath.txtarea insert end $txln
-    }
+      $wndPath.txtarea insert end $txln   }
     close $infile
   }
   $wndPath.lblFlname configure -text $filePath
