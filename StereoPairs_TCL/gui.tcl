@@ -185,7 +185,8 @@ proc GUI_ChangePreferences {}  {
 proc GUI_ShowHelp {}  {
   global APP_TITLE DOC_DIR TEXTVIEW_HELP
   set helpPath [file join $DOC_DIR "DualCam_UserGuide.txt"]
-    if { "" == [textview_open $TEXTVIEW_HELP $helpPath 80 \
+  #set helpPath [file join $DOC_DIR "try.txt"]
+  if { "" == [textview_open $TEXTVIEW_HELP $helpPath 80 \
                   "$APP_TITLE  User Guide"] }   {
       _UpdateGuiEndAction;  return  0;  # error already reported
     }
