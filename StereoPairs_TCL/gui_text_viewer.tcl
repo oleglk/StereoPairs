@@ -83,7 +83,7 @@ proc textview_prebuild {wndPath} {
   # +------------------------+
   # + Filename Label Widgets +
   # +------------------------+
-  label $wndPath.fllabel -text "Input Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
+  label $wndPath.fllabel -text "Filename:" -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
   label $wndPath.lblFlname -width 80 -relief sunken -bg NavajoWhite2   -fg Navy -anchor nw
   pack $wndPath.lblFlname -side bottom -padx 1m -pady 1m -anchor nw -fill x -expand false
   pack $wndPath.fllabel   -side bottom -padx 1m -pady 1m -anchor nw -expand false

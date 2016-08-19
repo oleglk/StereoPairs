@@ -215,7 +215,7 @@ proc _GUI_SetDir {newWorkDir}  {
   set GUI_VARS(WORK_DIR) $newWorkDir
   .top.workDir configure -state disabled
   set msg [dualcam_cd_to_workdir_or_complain $GUI_VARS(WORK_DIR) 1]
-  tk_messageBox -message "Changed working directory to '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
+  #tk_messageBox -message "Changed working directory to '$GUI_VARS(WORK_DIR)'" -title $APP_TITLE
   return  $msg
 }
 
