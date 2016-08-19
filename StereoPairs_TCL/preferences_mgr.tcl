@@ -115,7 +115,8 @@ proc preferences_get_initial_values {arrayName}  {
   set _prefs(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
 ################################################################################
   set _prefs(LR_NAME_RESTORER__keyToDescrAndFormat)  [dict remove \
-    $_prefs(PAIR_MATCHER__keyToDescrAndFormat) -max_frame_gap -time_diff]
+    $_prefs(PAIR_MATCHER__keyToDescrAndFormat) \
+                            -max_frame_gap -time_diff -min_success_rate]
   set _prefs(LR_NAME_RESTORER__keysInOrder)  \
             [ok_lremove $_prefs(PAIR_MATCHER__keysInOrder) \
                             [list -max_frame_gap -time_diff -min_success_rate]]

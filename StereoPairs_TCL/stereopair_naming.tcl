@@ -4,28 +4,38 @@ set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR  "ok_utils" "debug_utils.tcl"]
 ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 #source [file join $SCRIPT_DIR   "dir_file_utils.tcl"]
+source [file join $SCRIPT_DIR   "preferences_mgr.tcl"]
 
 package require ok_utils
 namespace import -force ::ok_utils::*
 
 
-set imgNameEndingLeft   "_l"
-set imgNameEndingRight  "_r"
+
 set imgFileIdPattern    {[0-9]+} ;  # example: "dsc(01234).jpg"
 
+proc set_naming_parameters {imgEndingLeftOrNone imgEndingRightOrNone} {
+  global NAMING
+  if { $imgEndingLeftOrNone != "" } {
+    set NAMING(imgEndingLeft)   $imgEndingLeftOrNone
+  }
+  if { $imgEndingRightOrNone != "" } {
+    set NAMING(imgEndingRight)  $imgEndingRightOrNone
+  }
+}
+set_naming_parameters "_l" "_r"
 
 proc build_spm_left_purename  {basePurename} {
-  return  [format "%s%s" $basePurename $::imgNameEndingLeft] }
+  return  [format "%s%s" $basePurename $::NAMING(imgEndingLeft)] }
   
   
 proc build_spm_right_purename  {basePurename} {
-  return  [format "%s%s" $basePurename $::imgNameEndingRight] }
+  return  [format "%s%s" $basePurename $::NAMING(imgEndingRight)] }
 
 
 proc is_spm_purename {purename} {
   # OK_TODO: generalize
-  set iLeft   [string last $::imgNameEndingLeft $purename]
-  set iRight  [string last $::imgNameEndingRight $purename]
+  set iLeft   [string last $::NAMING(imgEndingLeft) $purename]
+  set iRight  [string last $::NAMING(imgEndingRight) $purename]
   if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
     return  1
   } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
@@ -37,12 +47,12 @@ proc is_spm_purename {purename} {
 
 proc spm_purename_to_peer_purename {purename} {
   # OK_TODO: generalize
-  set iLeft   [string last $::imgNameEndingLeft $purename]
-  set iRight  [string last $::imgNameEndingRight $purename]
+  set iLeft   [string last $::NAMING(imgEndingLeft) $purename]
+  set iRight  [string last $::NAMING(imgEndingRight) $purename]
   if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
-    return  [string replace $purename $iLeft  end $::imgNameEndingRight]
+    return  [string replace $purename $iLeft  end $::NAMING(imgEndingRight)]
   } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
-    return  [string replace $purename $iRight end $::imgNameEndingLeft]
+    return  [string replace $purename $iRight end $::NAMING(imgEndingLeft)]
   }
   return  ""  ; # error
 }
@@ -50,8 +60,8 @@ proc spm_purename_to_peer_purename {purename} {
 
 proc spm_purename_to_pair_purename {purename} {
   # OK_TODO: generalize
-  set iLeft   [string last $::imgNameEndingLeft $purename]
-  set iRight  [string last $::imgNameEndingRight $purename]
+  set iLeft   [string last $::NAMING(imgEndingLeft) $purename]
+  set iRight  [string last $::NAMING(imgEndingRight) $purename]
   if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
     return  [string replace $purename $iLeft  end ""]
   } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
