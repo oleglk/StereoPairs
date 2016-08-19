@@ -13,7 +13,8 @@ namespace import -force ::ok_utils::*
 
 set imgFileIdPattern    {[0-9]+} ;  # example: "dsc(01234).jpg"
 
-proc set_naming_parameters {imgEndingLeftOrNone imgEndingRightOrNone} {
+proc set_naming_parameters {imgEndingLeftOrNone imgEndingRightOrNone \
+                            imgDelimeterOrNone} {
   global NAMING
   if { $imgEndingLeftOrNone != "" } {
     set NAMING(imgEndingLeft)   $imgEndingLeftOrNone
@@ -21,8 +22,11 @@ proc set_naming_parameters {imgEndingLeftOrNone imgEndingRightOrNone} {
   if { $imgEndingRightOrNone != "" } {
     set NAMING(imgEndingRight)  $imgEndingRightOrNone
   }
+  if { $imgDelimeterOrNone != "" } {
+    set NAMING(imgDelimeter)  $imgDelimeterOrNone
+  }
 }
-set_naming_parameters "_l" "_r"
+set_naming_parameters "_ll" "_rr" "--"
 
 proc build_spm_left_purename  {basePurename} {
   return  [format "%s%s" $basePurename $::NAMING(imgEndingLeft)] }
@@ -82,7 +86,7 @@ proc build_suffix_from_peer_purename {peerPureName}  {
     ok_err_msg "Invalid peer image name '$peerPureName'"
     set peerNameNum "INVALID"
   }
-  set suffix [format "-%s" $peerNameNum]
+  set suffix [format "%s%s" $::NAMING(imgDelimeter) $peerNameNum]
   return  $suffix
 }
 
@@ -94,7 +98,8 @@ proc find_lr_image_ids_in_pairname {pairNameOrPath idLeft idRight {priErr 0}}  {
   upvar $idLeft  name1
   upvar $idRight name2
   set pureNameNoExt [file rootname [file tail $pairNameOrPath]]
-  set spPattern "($::imgFileIdPattern)-($::imgFileIdPattern)"
+  set spPattern [format "(%s)%s(%s) \
+              $::imgFileIdPattern $::NAMING(imgDelimeter) $::imgFileIdPattern"]
   ok_trace_msg "Match '$pureNameNoExt' by '$spPattern'"
   if { 1 == [regexp -nocase -- $spPattern $pureNameNoExt full name1 name2] }  {
     return  1
@@ -156,8 +161,7 @@ proc find_1or2_image_ids_in_imagename {imgNameOrPath id1 id2 {priErr 0}}  {
     return  1;  # OK, it was a pair filename
   }
   set pureNameNoExt [file rootname [file tail $imgNameOrPath]]
-  set spPattern "($::imgFileIdPattern)-($::imgFileIdPattern)"
-  ok_trace_msg "Match '$pureNameNoExt' by '$::imgFileIdPattern'"
+  ok_trace_msg "Find occurences of  '$::imgFileIdPattern' in '$pureNameNoExt'"
   if { 1 == [regexp -nocase -- $::imgFileIdPattern $pureNameNoExt name1] }  {
     set name2 ""
     return  1
