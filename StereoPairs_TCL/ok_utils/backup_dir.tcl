@@ -31,6 +31,7 @@ proc ::ok_utils::ok_provide_backup_dir {dirNameKey {trashDirPath ""}}  {
   variable WORK_AREA_ROOT_DIR
   variable BACKUP_ROOT_NAME
   variable _LAST_BACKUP_DIR_PATH
+  ok_trace_msg "Requested bu dir for dirNameKey='$dirNameKey', trashDirPath='$trashDirPath'"
   if { ($trashDirPath != "") && (1 == [file exists $trashDirPath]) }  {
     return  $trashDirPath
   }

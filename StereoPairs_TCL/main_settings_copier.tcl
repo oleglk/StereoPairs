@@ -281,6 +281,13 @@ proc _clone_settings_files {srcSettingsFiles destDir doSimulateOnly}  {
 
 
 proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
+  # even if nothing overriden, provide backup dir - its inexistence considered an error
+  # guarantee that all old settings files moved to one backup/thrash dir
+  if { $::_LAST_BU_DIR_FOR_SETTINGS == "" }  {
+    set ::_LAST_BU_DIR_FOR_SETTINGS [ok_provide_backup_dir \
+                                $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)]
+    if { $::_LAST_BU_DIR_FOR_SETTINGS == "" } { return  0 };  # error printed
+  }
   if { "" == [set stStr [ReadSettingsFile $srcPath]] }   {
     return  0;  # error already printed
   }
@@ -294,12 +301,6 @@ proc _clone_one_cnv_settings_file {srcPath dstPurename dstDir doSimulateOnly}  {
     ok_trace_msg "Cloning of settings file '$srcPath' will create first version of '$dstPath'"
   }
   if { [file exists $dstPath] }  {
-    # guarantee that all old settings files moved to one backup/thrash dir
-    if { $::_LAST_BU_DIR_FOR_SETTINGS == "" }  {
-      set ::_LAST_BU_DIR_FOR_SETTINGS [ok_provide_backup_dir \
-                                  $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)]
-      if { $::_LAST_BU_DIR_FOR_SETTINGS == "" } { return  0 };  # error printed
-    }
     if { 0 == [ok_move_files_to_backup_dir \
                 $::PREFS(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS) [list $dstPath] \
                 $::STS(workAreaRootPath) $doSimulateOnly  \

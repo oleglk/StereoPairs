@@ -249,6 +249,10 @@ proc ReadSettingsFile {settingsPath}  {
     return  ""
   }
   close $fileId
+  if { "" == [string trim $data] }  {
+    ok_err_msg "Settings file '$settingsPath' is empty"
+    return  ""
+  }
   return $data
 }
 
