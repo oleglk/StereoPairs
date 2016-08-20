@@ -35,9 +35,9 @@ proc set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
     set NAMING(imgSuffixRight)  $imgSuffixRightOrNone
   }
 }
-#set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
+set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
 #set_naming_parameters "l_"  "r_"  "--"  "_ll"  "_rr"
-set_naming_parameters "l_"  "r_"  "--"  ""  ""
+#set_naming_parameters "l_"  "r_"  "--"  ""  ""
 
 
 
