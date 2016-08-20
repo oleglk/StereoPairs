@@ -13,75 +13,148 @@ namespace import -force ::ok_utils::*
 
 set imgFileIdPattern    {[0-9]+} ;  # example: "dsc(01234).jpg"
 
-proc set_naming_parameters {imgEndingLeftOrNone imgEndingRightOrNone \
-                            imgDelimeterOrNone} {
+proc set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
+                            imgDelimeterOrNone                        \
+                            imgSuffixLeftOrNone imgSuffixRightOrNone  } {
   global NAMING
-  if { $imgEndingLeftOrNone != "" } {
-    set NAMING(imgEndingLeft)   $imgEndingLeftOrNone
+  if { $imgPrefixLeftOrNone != "" } {
+    set NAMING(imgPrefixLeft)   $imgPrefixLeftOrNone
   }
-  if { $imgEndingRightOrNone != "" } {
-    set NAMING(imgEndingRight)  $imgEndingRightOrNone
+  if { $imgPrefixRightOrNone != "" } {
+    set NAMING(imgPrefixRight)  $imgPrefixRightOrNone
   }
   if { $imgDelimeterOrNone != "" } {
     set NAMING(imgDelimeter)  $imgDelimeterOrNone
   }
+  if { $imgSuffixLeftOrNone != "" } {
+    set NAMING(imgSuffixLeft)   $imgSuffixLeftOrNone
+  }
+  if { $imgSuffixRightOrNone != "" } {
+    set NAMING(imgSuffixRight)  $imgSuffixRightOrNone
+  }
 }
-set_naming_parameters "_ll" "_rr" "--"
+set_naming_parameters "l_"  "r_"  "--"  "_ll"  "_rr"
 
 proc build_spm_left_purename  {basePurename} {
-  return  [format "%s%s" $basePurename $::NAMING(imgEndingLeft)] }
+  return  [format "%s%s%s" \
+              $::NAMING(imgPrefixLeft) $basePurename $::NAMING(imgSuffixLeft)] }
   
   
 proc build_spm_right_purename  {basePurename} {
-  return  [format "%s%s" $basePurename $::NAMING(imgEndingRight)] }
+  return  [format "%s%s%s" \
+            $::NAMING(imgPrefixRight) $basePurename $::NAMING(imgSuffixRight)] }
 
 
 proc is_spm_purename {purename} {
-  # OK_TODO: generalize
-  set iLeft   [string last $::NAMING(imgEndingLeft) $purename]
-  set iRight  [string last $::NAMING(imgEndingRight) $purename]
-  if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
-    return  1
-  } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
-    return  1
+  global NAMING
+  set iPrefLeft   [expr {($NAMING(imgPrefixLeft)  != "")?
+                      [string first $NAMING(imgPrefixLeft)  $purename] : -1}]
+  set iPrefRight  [expr {($NAMING(imgPrefixRight) != "")?
+                      [string first $NAMING(imgPrefixRight) $purename] : -1}]
+  set iSuffLeft   [expr {($NAMING(imgSuffixLeft)  != "")?
+                      [string last $NAMING(imgSuffixLeft)  $purename] : -1}]
+  set iSuffRight  [expr {($NAMING(imgSuffixRight) != "")?
+                      [string last $NAMING(imgSuffixRight) $purename] : -1}]
+                      
+  set isLeftByPrefix  [expr {($NAMING(imgPrefixLeft)  != "") && \
+                             ($iPrefLeft >= 0)  && ($iPrefRight < 0)}]
+  set isLeftBySuffix  [expr {($NAMING(imgSuffixLeft)  != "") && \
+                             ($iSuffLeft >= 0)  && ($iSuffRight < 0)}]
+  set isRightByPrefix [expr {($NAMING(imgPrefixRight) != "") && \
+                             ($iPrefLeft < 0) && ($iPrefRight >= 0)}]
+  set isRightBySuffix [expr {($NAMING(imgSuffixRight) != "") && \
+                             ($iSuffLeft < 0) && ($iSuffRight >= 0)}]
+  if {  ($isLeftByPrefix || $isLeftBySuffix) && \
+       !($isRightByPrefix || $isRightBySuffix) }  {
+    return  1;      # it's a left  image
+  } elseif { !($isLeftByPrefix || $isLeftBySuffix) && \
+              ($isRightByPrefix || $isRightBySuffix) } {
+    return  1;      # it's a right image
   }
   return  0  ; # not a stereopair name
 }
 
 
+# Swaps prefix and/or suffix
 proc spm_purename_to_peer_purename {purename} {
-  # OK_TODO: generalize
-  set iLeft   [string last $::NAMING(imgEndingLeft) $purename]
-  set iRight  [string last $::NAMING(imgEndingRight) $purename]
-  if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
-    return  [string replace $purename $iLeft  end $::NAMING(imgEndingRight)]
-  } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
-    return  [string replace $purename $iRight end $::NAMING(imgEndingLeft)]
+  global NAMING
+  set prefEndLeft  [expr {[string length $NAMING(imgPrefixLeft)]  - 1}]; # index
+  set prefEndRight [expr {[string length $NAMING(imgPrefixRight)] - 1}]; # index
+  set iPrefLeft   [string first $NAMING(imgPrefixLeft) $purename]
+  set iPrefRight  [string first $NAMING(imgPrefixRight) $purename]
+  if { ($iPrefLeft == 0) && ($iPrefRight < 0) }  {      ; # it's a left  image
+    set tmpName [string replace $purename \
+                              $iPrefLeft  $prefEndLeft $NAMING(imgPrefixRight)]
+  } elseif { ($iPrefLeft < 0) && ($iPrefRight == 0) } { ; # it's a right image
+    set tmpName [string replace $purename \
+                              $iPrefRight $prefEndRight $NAMING(imgPrefixLeft)]
+  } elseif { ($iPrefLeft == 0) && ($iPrefRight == 0) }   {
+    ok_err_msg "Invalid prefix in L/R image pure-name '$purename'";  return  ""
   }
+  set iSuffLeft   [string last $NAMING(imgSuffixLeft)  $tmpName]
+  set iSuffRight  [string last $NAMING(imgSuffixRight) $tmpName]
+  if { ($iSuffLeft > 0) && ($iSuffRight < 0) }  {      ; # it's a left  image
+    return      [string replace $tmpName \
+                                $iSuffLeft  end $NAMING(imgSuffixRight)]
+  } elseif { ($iSuffLeft < 0) && ($iSuffRight > 0) } { ; # it's a right image
+    return      [string replace $tmpName \
+                                $iSuffRight end $NAMING(imgSuffixLeft)]
+  } elseif { ($iSuffLeft >= 0) && ($iSuffRight >= 0) }   {
+    ok_err_msg "Invalid suffix in L/R image pure-name '$purename'";  return  ""
+  }
+  ok_err_msg "Invalid L/R image pure-name '$purename'"
   return  ""  ; # error
 }
 
 
+# Removes prefix and/or suffix
 proc spm_purename_to_pair_purename {purename} {
-  # OK_TODO: generalize
-  set iLeft   [string last $::NAMING(imgEndingLeft) $purename]
-  set iRight  [string last $::NAMING(imgEndingRight) $purename]
-  if { ($iLeft >= 0) && ($iRight < 0) }  {      ; # it's a left  image
-    return  [string replace $purename $iLeft  end ""]
-  } elseif { ($iLeft < 0) && ($iRight >= 0) } { ; # it's a right image
-    return  [string replace $purename $iRight end ""]
+  global NAMING
+  set prefEndLeft  [expr {[string length $NAMING(imgPrefixLeft)]  - 1}]; # index
+  set prefEndRight [expr {[string length $NAMING(imgPrefixRight)] - 1}]; # index
+  set iPrefLeft   [string first $NAMING(imgPrefixLeft) $purename]
+  set iPrefRight  [string first $NAMING(imgPrefixRight) $purename]
+  if { ($iPrefLeft == 0) && ($iPrefRight < 0) }  {      ; # it's a left  image
+    set tmpName [string replace $purename $iPrefLeft  $prefEndLeft ""]
+  } elseif { ($iPrefLeft < 0) && ($iPrefRight == 0) } { ; # it's a right image
+    set tmpName [string replace $purename $iPrefRight $prefEndRight ""]
+  } elseif { ($iPrefLeft == 0) && ($iPrefRight == 0) }   {
+    ok_err_msg "Invalid prefix in L/R image pure-name '$purename'";  return  ""
   }
+  set iSuffLeft   [string last $NAMING(imgSuffixLeft)  $tmpName]
+  set iSuffRight  [string last $NAMING(imgSuffixRight) $tmpName]
+  if { ($iSuffLeft > 0) && ($iSuffRight < 0) }  {      ; # it's a left  image
+    return      [string replace $tmpName $iSuffLeft  end ""]
+  } elseif { ($iSuffLeft < 0) && ($iSuffRight > 0) } { ; # it's a right image
+    return      [string replace $tmpName $iSuffRight end ""]
+  } elseif { ($iSuffLeft >= 0) && ($iSuffRight >= 0) }   {
+    ok_err_msg "Invalid suffix in L/R image pure-name '$purename'";  return  ""
+  }
+  ok_err_msg "Invalid L/R image pure-name '$purename'"
   return  ""  ; # error
 }
 
 
 proc build_stereopair_purename {purenameLeft purenameRight}  {
-  set suffix [build_suffix_from_peer_purename $purenameRight]
-  return  "$purenameLeft$suffix"
+  set idRight [get_image_id_from_orig_purename $purenameRight]
+  return [format "%s%s%s" $purenameLeft $::NAMING(imgDelimeter) $idRight]
 }
 
 
-proc build_suffix_from_peer_purename {peerPureName}  {
+# dsc0045 => 0045
+proc get_image_id_from_orig_purename {purename}  {
+  if { 1 == [find_1or2_image_ids_in_imagename $purename id1 id2 1] }  {
+    if { $id2 != "" }  {
+      ok_err_msg "Got dual-id name '$purename' instead of original left/right name"
+      return  ""
+    }
+    return  $id1  ;   # found exactly one ID
+  }
+  return  "";   # error already printed
+}
+
+
+proc UNUSED__build_suffix_from_peer_purename {peerPureName}  {
   if { 0 == [regexp {[0-9].*$} $peerPureName peerNameNum] }  {
     ok_err_msg "Invalid peer image name '$peerPureName'"
     set peerNameNum "INVALID"
@@ -98,8 +171,8 @@ proc find_lr_image_ids_in_pairname {pairNameOrPath idLeft idRight {priErr 0}}  {
   upvar $idLeft  name1
   upvar $idRight name2
   set pureNameNoExt [file rootname [file tail $pairNameOrPath]]
-  set spPattern [format "(%s)%s(%s) \
-              $::imgFileIdPattern $::NAMING(imgDelimeter) $::imgFileIdPattern"]
+  set spPattern [format "(%s)%s(%s)" \
+              $::imgFileIdPattern $::NAMING(imgDelimeter) $::imgFileIdPattern]
   ok_trace_msg "Match '$pureNameNoExt' by '$spPattern'"
   if { 1 == [regexp -nocase -- $spPattern $pureNameNoExt full name1 name2] }  {
     return  1
