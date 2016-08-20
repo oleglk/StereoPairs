@@ -98,9 +98,15 @@ proc textview_prebuild {wndPath} {
   # invoking the Close button when we receives a
   # WM_DELETE_WINDOW message from the window manager.
   wm protocol $wndPath WM_DELETE_WINDOW {
-    set wndPath [focus]
+    set wndPath [winfo toplevel [focus]]
     $wndPath.close invoke
   }
+}
+
+
+# winfo toplevel tells the toplevel of the given widget, but menus are toplevels too
+proc _UNUSED__is_toplevel {w} {
+  return  [expr {[winfo toplevel $w] eq $w && ![catch {$w cget -menu}]}]
 }
 ################################################################################
 
