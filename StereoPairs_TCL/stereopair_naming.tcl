@@ -26,8 +26,20 @@ proc set_naming_parameters_from_left_right_specs { \
     set lrErrSpec [format "%s%s" \
                 [expr {($leftOK)? "":" left"}] [expr {($rightOK)? "":" right"}]]
     ok_err_msg "Invalid naming format(s) specified for side(s):$lrErrSpec"
+    return  0
   }
-  return  [expr {$leftOK && $rightOK}];   # OK_TMP
+  if { $delimeterLeft != $delimeterRight }  {
+    ok_err_msg "Different delimeters ('$delimeterLeft' and '$delimeterRight') specified for left- and right image names"
+    return  0
+  }
+  if { [string equal -nocase $prefixLeft $prefixRight] && \
+       [string equal -nocase $suffixLeft $suffixRight] }  {
+    ok_err_msg "Left- and right image names should differ by either prefix or suffix, or both"
+    return  0
+  }
+  _set_naming_parameters $prefixLeft $prefixRight $delimeterLeft \
+                         $suffixLeft $suffixRight
+  return  1
 }
 
 
@@ -36,23 +48,30 @@ proc _set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
                             imgDelimeterOrNone                        \
                             imgSuffixLeftOrNone imgSuffixRightOrNone  } {
   global NAMING
+  set descr ""
   if { 0 == [string equal -nocase $imgPrefixLeftOrNone "none"] } {
     set NAMING(imgPrefixLeft)   $imgPrefixLeftOrNone
+    append descr [expr {($descr=="")?"":" "}] "prefLeft='$imgPrefixLeftOrNone'"
   }
   if { 0 == [string equal -nocase $imgPrefixRightOrNone "none"] } {
     set NAMING(imgPrefixRight)  $imgPrefixRightOrNone
+    append descr [expr {($descr=="")?"":" "}] "prefRight='$imgPrefixRightOrNone'"
   }
   if { 0 == [string equal -nocase $imgDelimeterOrNone "none"] } {
     set NAMING(imgDelimeter)  $imgDelimeterOrNone
+    append descr [expr {($descr=="")?"":" "}] "deliimeter='$imgDelimeterOrNone'"
   }
   if { 0 == [string equal -nocase $imgSuffixLeftOrNone "none"] } {
     set NAMING(imgSuffixLeft)   $imgSuffixLeftOrNone
+    append descr [expr {($descr=="")?"":" "}] "suffLeft='$imgSuffixLeftOrNone'"
   }
   if { 0 == [string equal -nocase $imgSuffixRightOrNone "none"] } {
     set NAMING(imgSuffixRight)  $imgSuffixRightOrNone
+    append descr [expr {($descr=="")?"":" "}] "suffRight='$imgSuffixRightOrNone'"
   }
+  ok_info_msg "Stereopair naming parameters: $descr"
 }
-_set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
+#_set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
 #_set_naming_parameters "l_"  "r_"  "--"  "_ll"  "_rr"
 #_set_naming_parameters "l_"  "r_"  "--"  ""  ""
 
@@ -69,6 +88,15 @@ proc _parse_naming_parameters {formatSpec prefix delimeter suffix}  {
   return  [regexp -- $pattern $formatSpec fullMatch pref delim suff]
 }
 
+
+### OK_TMP
+## set_naming_parameters_from_left_right_specs \
+ #                               {L-[LeftName]@[RightId]} {R-[LeftName]@[RightId]}
+ ##
+set_naming_parameters_from_left_right_specs \
+                              {[LeftName]-[RightId]_l} {[LeftName]-[RightId]_r}
+
+###
 
 proc build_spm_left_purename  {basePurename} {
   return  [format "%s%s%s" \
