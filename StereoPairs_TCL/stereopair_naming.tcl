@@ -14,8 +14,25 @@ namespace import -force ::ok_utils::*
 set imgFileIdPattern    {[0-9]+} ;  # example: "dsc(01234).jpg"
 
 
+# Changes stereopair naming parameters according to the two specs
+# Returns 1 on success, 0 on error.
+proc set_naming_parameters_from_left_right_specs { \
+                                            formatSpecLeft formatSpecRight}  {
+  set leftOK [_parse_naming_parameters $formatSpecLeft    \
+                                       prefixLeft delimeterLeft suffixLeft]
+  set rightOK [_parse_naming_parameters $formatSpecRight  \
+                                       prefixRight delimeterRight suffixRight]
+  if { !$leftOK || !$rightOK }  {
+    set lrErrSpec [format "%s%s" \
+                [expr {($leftOK)? "":" left"}] [expr {($rightOK)? "":" right"}]]
+    ok_err_msg "Invalid naming format(s) specified for side(s):$lrErrSpec"
+  }
+  return  [expr {$leftOK && $rightOK}];   # OK_TMP
+}
+
+
 # Changes stereopair naming parameters when value given isn't string "none"
-proc set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
+proc _set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
                             imgDelimeterOrNone                        \
                             imgSuffixLeftOrNone imgSuffixRightOrNone  } {
   global NAMING
@@ -35,10 +52,22 @@ proc set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
     set NAMING(imgSuffixRight)  $imgSuffixRightOrNone
   }
 }
-set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
-#set_naming_parameters "l_"  "r_"  "--"  "_ll"  "_rr"
-#set_naming_parameters "l_"  "r_"  "--"  ""  ""
+_set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
+#_set_naming_parameters "l_"  "r_"  "--"  "_ll"  "_rr"
+#_set_naming_parameters "l_"  "r_"  "--"  ""  ""
 
+
+# Reads naming parameters for one side (left or right) from 'formatSpec' string.
+# 'formatSpec' == <prefix>[LeftName]<delimeter>[RightId]<suffix>
+# Example 1: 'formatSpec'=="[LeftName]-[RightId]_l" <=> name ~ "dsc0003-1234_l"
+# Example 1: 'formatSpec'=="R-[LeftName]@[RightId]" <=> name ~ "R-dsc0003@1234"
+# Returns 1 on success, 0 on error.
+# None of prefix, delimeter, suffix can contain whitespace.
+proc _parse_naming_parameters {formatSpec prefix delimeter suffix}  {
+  upvar $prefix pref;  upvar $delimeter delim;  upvar $suffix suff
+  set pattern {^(\S*)\[LeftName\](\S*)\[RightId\](\S*)$}
+  return  [regexp -- $pattern $formatSpec fullMatch pref delim suff]
+}
 
 
 proc build_spm_left_purename  {basePurename} {
