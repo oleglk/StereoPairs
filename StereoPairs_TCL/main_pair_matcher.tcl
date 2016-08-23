@@ -28,6 +28,11 @@ proc _pair_matcher_set_defaults {}  {
   set ::STS(outPairlistPath)  ""
   set ::STS(inPairlistPath)   ""
   set ::STS(dirForUnmatched)  ""
+  set ::STS(namePrefixLeft)   ""
+  set ::STS(nameSuffixLeft)   ""
+  set ::STS(nameDelimeter)    ""
+  set ::STS(namePrefixRight)  ""
+  set ::STS(nameSuffixRight)  ""
   set ::STS(doRestoreLR)      0
   set ::STS(doCreateSBS)      0
   set ::STS(doRenameLR)       0
@@ -136,6 +141,8 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   -time_diff {val "time difference in seconds between the right- and left cameras"} \
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
   -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
+  -name_format_left {val "name spec for left images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; you define <prefix>, <delimeter> and <suffix>"} \
+  -name_format_right {val "name spec for right images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; you define <prefix>, <delimeter> and <suffix>"} \
   -create_sbs	{"" "join matched pairs into SBS images; requires the directory with standard images"} \
   -rename_lr	{"" "rename left-right images to be recognizable by StereoPhotoMaker batch loading"} \
   -restore_lr	{"" "restore original left-right images' names"} \
@@ -155,6 +162,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   #TODO: take defaults from preferences
   ok_set_cmd_line_params defCml cmlD { \
    {-time_diff 0} {-min_success_rate 50} \
+   {-name_format_left "[LeftName]-[RightId]_l"} {-name_format_right "[LeftName]-[RightId]_r"} \
    {-out_pairlist_filename "lr_pairs.csv"} {-dir_for_unmatched "Unmatched"} \
    {-time_from "exif"} {-max_frame_gap 0.9} }
   ok_copy_array defCml cml;    # to preset default parameters
@@ -229,6 +237,10 @@ proc _pair_matcher_parse_cmdline {cmlArrName}  {
     incr errCnt 1
   } else {
      set ::STS(stdImgRootPath) $cml(-std_img_dir)
+  }
+  if { 0 == [set_naming_parameters_from_format_spec_array cml \
+                                    "-name_format_left" "-name_format_right"]} {
+    incr errCnt 1;  # error already printed
   }
   if { 1 == [info exists cml(-restore_lr)] }  {
     if { (1 == [info exists cml(-create_sbs)]) || \

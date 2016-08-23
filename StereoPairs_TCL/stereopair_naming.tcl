@@ -14,6 +14,20 @@ namespace import -force ::ok_utils::*
 set imgFileIdPattern    {[0-9]+} ;  # example: "dsc(01234).jpg"
 
 
+# Changes stereopair naming parameters according to the two specs in 'arrayName'.
+# Returns 1 on success, 0 on error.
+proc set_naming_parameters_from_format_spec_array {arrayName keyLeft keyRight} {
+  upvar $arrayName theArray
+  if { [info exists theArray($keyLeft)] && [info exists theArray($keyRight)] } {
+    return  [set_naming_parameters_from_left_right_specs \
+                                      $theArray($keyLeft) $theArray($keyRight)]
+  } else { ;  # should not get here
+    ok_err_msg  "Both '$keyLeft' and '$keyRight' should be present, explicitly or as defaults"
+    return  0
+  }
+}
+
+
 # Changes stereopair naming parameters according to the two specs
 # Returns 1 on success, 0 on error.
 proc set_naming_parameters_from_left_right_specs { \
@@ -79,7 +93,7 @@ proc _set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
 # Reads naming parameters for one side (left or right) from 'formatSpec' string.
 # 'formatSpec' == <prefix>[LeftName]<delimeter>[RightId]<suffix>
 # Example 1: 'formatSpec'=="[LeftName]-[RightId]_l" <=> name ~ "dsc0003-1234_l"
-# Example 1: 'formatSpec'=="R-[LeftName]@[RightId]" <=> name ~ "R-dsc0003@1234"
+# Example 2: 'formatSpec'=="R-[LeftName]@[RightId]" <=> name ~ "R-dsc0003@1234"
 # Returns 1 on success, 0 on error.
 # None of prefix, delimeter, suffix can contain whitespace.
 proc _parse_naming_parameters {formatSpec prefix delimeter suffix}  {
@@ -93,8 +107,10 @@ proc _parse_naming_parameters {formatSpec prefix delimeter suffix}  {
 ## set_naming_parameters_from_left_right_specs \
  #                               {L-[LeftName]@[RightId]} {R-[LeftName]@[RightId]}
  ##
-set_naming_parameters_from_left_right_specs \
-                              {[LeftName]-[RightId]_l} {[LeftName]-[RightId]_r}
+
+## set_naming_parameters_from_left_right_specs \
+ #                               {[LeftName]-[RightId]_l} {[LeftName]-[RightId]_r}
+ ##
 
 ###
 
