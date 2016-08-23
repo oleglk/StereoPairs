@@ -28,11 +28,6 @@ proc _pair_matcher_set_defaults {}  {
   set ::STS(outPairlistPath)  ""
   set ::STS(inPairlistPath)   ""
   set ::STS(dirForUnmatched)  ""
-  set ::STS(namePrefixLeft)   ""
-  set ::STS(nameSuffixLeft)   ""
-  set ::STS(nameDelimeter)    ""
-  set ::STS(namePrefixRight)  ""
-  set ::STS(nameSuffixRight)  ""
   set ::STS(doRestoreLR)      0
   set ::STS(doCreateSBS)      0
   set ::STS(doRenameLR)       0
@@ -141,8 +136,8 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
   -time_diff {val "time difference in seconds between the right- and left cameras"} \
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
   -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
-  -name_format_left {val "name spec for left images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; you define <prefix>, <delimeter> and <suffix>"} \
-  -name_format_right {val "name spec for right images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; you define <prefix>, <delimeter> and <suffix>"} \
+  -name_format_left {val "name spec for left images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_left"} \
+  -name_format_right {val "name spec for right images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_right"} \
   -create_sbs	{"" "join matched pairs into SBS images; requires the directory with standard images"} \
   -rename_lr	{"" "rename left-right images to be recognizable by StereoPhotoMaker batch loading"} \
   -restore_lr	{"" "restore original left-right images' names"} \

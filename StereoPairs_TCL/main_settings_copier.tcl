@@ -100,6 +100,8 @@ proc settings_copier_cmd_line {cmdLineAsStr cmlArrName}  {
   -help {"" "print help"} \
   -global_img_settings_dir {val	"full path of the directory where the RAW converter keeps all image-settings files - specify if relevant for your converter"} \
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
+  -name_format_left {val "name spec for left images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_left"} \
+  -name_format_right {val "name spec for right images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_right"} \
   -out_dir {val	"output directory"} \
   -backup_dir {val	"directory to move overriden settings files to"} \
   -copy_from {val	"'left' == copy settings from left to right, 'right' == from right to left"} \
@@ -110,7 +112,8 @@ proc settings_copier_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-   {-backup_dir "Backup"} }
+    {-name_format_left "[LeftName]-[RightId]_l"} {-name_format_right "[LeftName]-[RightId]_r"} \
+    {-backup_dir "Backup"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -169,6 +172,10 @@ proc _settings_copier_parse_cmdline {cmlArrName}  {
       ok_err_msg "Non-directory '$::STS(origImgDirRight)' specified as right input directory"
       incr errCnt 1
     }
+  }
+  if { 0 == [set_naming_parameters_from_format_spec_array cml \
+                                    "-name_format_left" "-name_format_right"]} {
+    incr errCnt 1;  # error already printed
   }
   if { 0 == [info exists cml(-out_dir)] }  {
     ok_err_msg "Please specify output directory; example: -out_dir D:/Photo/Work"

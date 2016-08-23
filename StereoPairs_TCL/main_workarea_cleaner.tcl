@@ -133,6 +133,8 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
   -orig_img_dir {val	"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)"} \
   -std_img_dir {val	"input directory with standard images (out-of-camera JPEG or converted from RAW and/or intermediate images); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)"} \
   -final_img_dir {val	"directory with ultimate stereopair images"} \
+  -name_format_left {val "name spec for left images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_left"} \
+  -name_format_right {val "name spec for right images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_right"} \
   -out_dir {val	"output directory"} \
   -backup_dir {val	"directory to hide unused files in"} \
   -restore_from_dir {val	"directory to unhide/restore files from"} \
@@ -144,7 +146,8 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-   {-backup_dir "Backup"} }
+    {-name_format_left "[LeftName]-[RightId]_l"} {-name_format_right "[LeftName]-[RightId]_r"} \
+    {-backup_dir "Backup"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -259,6 +262,10 @@ proc _workarea_cleaner_parse_cmdline {cmlArrName}  {
         incr errCnt 1
       }
     }
+  }
+  if { 0 == [set_naming_parameters_from_format_spec_array cml \
+                                    "-name_format_left" "-name_format_right"]} {
+    incr errCnt 1;  # error already printed
   }
   if { 0 == [info exists cml(-final_img_dir)] }  {
     if { 0 == [_workarea_cleaner_is_unhide_mode] } {

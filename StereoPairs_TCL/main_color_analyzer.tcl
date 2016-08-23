@@ -90,6 +90,8 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
   -left_img_subdir {val	"subdirectory for left images; left images to be checked expected in 'img_dir'/'left_img_subdir')"} \
   -right_img_subdir {val "subdirectory for right images; right images to be checked expected in 'img_dir'/'right_img_subdir')"} \
   -ext_left {val	"file extension of left images; standard type only (tif/jpg/etc.)"} \
+  -name_format_left {val "name spec for left images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_left"} \
+  -name_format_right {val "name spec for right images - <prefix>[LeftName]<delimeter>[RightId]<suffix>; example: [LeftName]-[RightId]_right"} \
   -ext_right {val	"file extension of right images; standard type only (tif/jpg/etc.)"} \
   -out_dir {val	"output directory"} \
   -warn_color_diff_above {val "minimal left-right color difference (%) to warn on"} ]
@@ -99,7 +101,8 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-   {-warn_color_diff_above "10"} }
+    {-name_format_left "[LeftName]-[RightId]_l"} {-name_format_right "[LeftName]-[RightId]_r"} \
+    {-warn_color_diff_above "10"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -177,6 +180,10 @@ proc _color_analyzer_parse_cmdline {cmlArrName}  {
       ok_err_msg "Non-directory '$::STS(stdImgPathRight)' specified as right input directory"
       incr errCnt 1
     }
+  }
+  if { 0 == [set_naming_parameters_from_format_spec_array cml \
+                                    "-name_format_left" "-name_format_right"]} {
+    incr errCnt 1;  # error already printed
   }
   if { 0 == [info exists cml(-out_dir)] }  {
     ok_err_msg "Please specify output directory; example: -out_dir D:/Photo/Work"
