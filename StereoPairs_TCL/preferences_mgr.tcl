@@ -48,6 +48,8 @@ proc preferences_get_initial_values {arrayName}  {
   # common - all shared options come here
   set _prefs(-orig_img_dir)        "." ; # results in $_prefs(-INITIAL_WORK_DIR)
   set _prefs(-std_img_dir)         "." ; # results in $_prefs(-INITIAL_WORK_DIR)
+  set _prefs(-name_format_left)    {[LeftName]-[RightId]_l} ; # dsc1234-8765_l
+  set _prefs(-name_format_right)   {[LeftName]-[RightId]_r} ; # dsc1234-8765_r
   set _prefs(-out_dir)             "Data"
   set _prefs(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
   set _prefs(-backup_dir)  "Backup"
@@ -105,39 +107,49 @@ proc preferences_get_initial_values {arrayName}  {
     -time_diff {"time difference in seconds between the right- and left cameras" "%d"} \
     -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
+    -name_format_left  {"name spec for left images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_left" "%s"} \
+    -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
     -min_success_rate {"min percentage of successfull matches to permit image-file operations" "%d"} \
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
   set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir \
-        -std_img_dir -min_success_rate -out_dir -max_frame_gap -simulate_only]
+        -std_img_dir -name_format_left -name_format_right \
+        -min_success_rate -out_dir -max_frame_gap -simulate_only]
   set _prefs(PAIR_MATCHER__keyOnlyArgsList) [list -simulate_only]
   set _prefs(PAIR_MATCHER__hardcodedArgsStr) "-rename_lr"
 ################################################################################
   set _prefs(LR_NAME_RESTORER__keyToDescrAndFormat)  [dict remove \
     $_prefs(PAIR_MATCHER__keyToDescrAndFormat) \
-                            -max_frame_gap -time_diff -min_success_rate]
+                                    -name_format_left -name_format_right \
+                                    -max_frame_gap -time_diff -min_success_rate]
   set _prefs(LR_NAME_RESTORER__keysInOrder)  \
             [ok_lremove $_prefs(PAIR_MATCHER__keysInOrder) \
-                            [list -max_frame_gap -time_diff -min_success_rate]]
+                            [list -name_format_left -name_format_right \
+                                  -max_frame_gap -time_diff -min_success_rate]]
   set _prefs(LR_NAME_RESTORER__keyOnlyArgsList) $_prefs(PAIR_MATCHER__keyOnlyArgsList)
   set _prefs(LR_NAME_RESTORER__hardcodedArgsStr) "-restore_lr"
 ################################################################################
   set _prefs(SETTINGS_COPIER__keyToDescrAndFormat) [dict create \
     -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
     -orig_img_dir {"directory with image files whose settings are dealt with; left (right) images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
+    -name_format_left  {"name spec for left images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_left" "%s"} \
+    -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
     -out_dir {"output directory" "%s"} \
     -backup_dir {"directory to move overriden settings files to" "%s"} \
     -copy_from {"'left' == copy settings from left to right, 'right' == from right to left" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
   set _prefs(SETTINGS_COPIER__keysInOrder) [list -global_img_settings_dir \
+                  -name_format_left -name_format_right \
                   -orig_img_dir -out_dir -backup_dir -copy_from -simulate_only]
   set _prefs(SETTINGS_COPIER__keyOnlyArgsList) [list -simulate_only]
   set _prefs(SETTINGS_COPIER__hardcodedArgsStr) ""
 ################################################################################
 set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   -img_dir {"root input directory" "%s"} \
+  -name_format_left  {"name spec for left images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_left" "%s"} \
+    -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
   -left_img_subdir {"subdirectory for left images; left images expected in 'img_dir'/'left_img_subdir'" "%s"} \
   -right_img_subdir {"subdirectory for right images; right images expected in 'img_dir'/'right_img_subdir'" "%s"} \
   -ext_left {"file extension of left images; standard type only (tif/jpg/etc.)" "%s"} \
@@ -145,6 +157,7 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   -out_dir {"output directory" "%s"} \
   -warn_color_diff_above {"minimal left-right color difference (%) to warn on" "%d"} ]
   set _prefs(COLOR_ANALYZER__keysInOrder) [list -img_dir \
+                  -name_format_left -name_format_right \
                   -left_img_subdir -right_img_subdir -ext_left -ext_right \
                   -out_dir -warn_color_diff_above]
   set _prefs(COLOR_ANALYZER__keyOnlyArgsList) [list]
@@ -154,14 +167,16 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
     -global_img_settings_dir {"full path of the directory where the RAW converter keeps all image-settings files - if relevant for your converter" "%s"} \
     -orig_img_dir {"input directory; left (right) out-of-camera images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -std_img_dir {"input directory with standard images (out-of-camera JPEG or converted from RAW and/or intermediate images); left (right) images expected in 'std_img_dir'/L ('std_img_dir'/R)" "%s"} \
+    -name_format_left  {"name spec for left images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_left" "%s"} \
+    -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
     -final_img_dir {"directory with ultimate stereopair images" "%s"} \
     -out_dir {"output directory" "%s"} \
     -backup_dir {"directory to move overriden settings files to" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
   set _prefs(WORKAREA_CLEANER__keysInOrder) [list -global_img_settings_dir \
-                -orig_img_dir -std_img_dir -final_img_dir -out_dir -backup_dir \
-                -simulate_only]
+              -orig_img_dir -std_img_dir -name_format_left -name_format_right \
+              -final_img_dir -out_dir -backup_dir -simulate_only]
   set _prefs(WORKAREA_CLEANER__keyOnlyArgsList) [list -simulate_only]
   set _prefs(WORKAREA_CLEANER__hardcodedArgsStr) ""
 ################################################################################

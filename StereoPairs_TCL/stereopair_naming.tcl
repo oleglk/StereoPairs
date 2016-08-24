@@ -73,7 +73,7 @@ proc _set_naming_parameters {imgPrefixLeftOrNone imgPrefixRightOrNone  \
   }
   if { 0 == [string equal -nocase $imgDelimeterOrNone "none"] } {
     set NAMING(imgDelimeter)  $imgDelimeterOrNone
-    append descr [expr {($descr=="")?"":" "}] "deliimeter='$imgDelimeterOrNone'"
+    append descr [expr {($descr=="")?"":" "}] "delimeter='$imgDelimeterOrNone'"
   }
   if { 0 == [string equal -nocase $imgSuffixLeftOrNone "none"] } {
     set NAMING(imgSuffixLeft)   $imgSuffixLeftOrNone
