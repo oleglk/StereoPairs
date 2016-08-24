@@ -58,6 +58,7 @@ proc ::ok_utils::ok_key_val_list_scan_strings {keyToDescrAndFormat keyToStrVal \
       append errStr  [expr {($errCnt > 0)? "\n" : ""}]  $msg
       ok_err_msg $msg;  incr errCnt 1;  continue
     }
+    #ok_trace_msg "Key='$key' strVal='$strVal' val='$val'"
     dict append keyToVal $key $val
   }
   set msg "Scanned string value(s) for [dict size $keyToStrVal] key(s); $errCnt error(s) occurred"
@@ -83,8 +84,16 @@ proc ::ok_utils::ok_key_val_list_to_string {keyToValDict keyOnlyArgList errCnt} 
       }
     }
   }
+  # (wrong - encloses complex val-s in {}) set paramStr [join $keyToValDict " "]
   set paramStr [join $keyToValDict " "]
+##   set paramStr ""
+ #   dict for {key val} $keyToValDict {
+ #     append paramStr [expr {($paramStr!="")? " ":""}] $key " " $val
+ #     #ok_trace_msg "Append to command line:  '$key'->'$val'"
+ #   }
+ ##
   append paramStr $keyOnlyArgsStr
+  ok_trace_msg "Assembled command line: '$paramStr'"
   return  $paramStr
 }
 

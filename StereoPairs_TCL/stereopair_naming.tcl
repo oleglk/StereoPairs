@@ -19,6 +19,7 @@ set imgFileIdPattern    {[0-9]+} ;  # example: "dsc(01234).jpg"
 proc set_naming_parameters_from_format_spec_array {arrayName keyLeft keyRight} {
   upvar $arrayName theArray
   if { [info exists theArray($keyLeft)] && [info exists theArray($keyRight)] } {
+    ok_trace_msg "Left name spec: '$theArray($keyLeft)';  right name spec: '$theArray($keyRight)'"
     return  [set_naming_parameters_from_left_right_specs \
                                       $theArray($keyLeft) $theArray($keyRight)]
   } else { ;  # should not get here

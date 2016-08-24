@@ -165,13 +165,14 @@ proc ::ok_utils::ok_read_cmd_line {cmdLineAsString cmlArrName \
 	    }
 	    set prevKey $token;    set valList [list]
 	} else {;    # continuing with values for prev. parameter
-	    lappend valList $token
+	    #(wrong) lappend valList $token
+      set valList [concat $valList $token]
 	}
     }
     if { $prevKey != "" } {;	# save the last parameter
 	lappend paramsList [list $prevKey $valList]
     }
-    puts $paramsList
+    ok_trace_msg $paramsList
     set isOK [ok_set_cmd_line_params cml cmlDescr $paramsList]
     return $isOK
 }
