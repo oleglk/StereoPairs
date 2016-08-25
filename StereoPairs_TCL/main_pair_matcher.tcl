@@ -33,6 +33,7 @@ proc _pair_matcher_set_defaults {}  {
   set ::STS(doRenameLR)       0
   set ::STS(doUseExifTime)    1
   set ::STS(maxFrameGap)      0
+  set ::STS(maxBurstGap)      1.0 ;   # max in-burst inter-frame time diff (sec)
   set ::STS(doSimulateOnly)   0
 }
 ################################################################################
@@ -291,7 +292,7 @@ proc _pair_matcher_parse_cmdline {cmlArrName}  {
     }    
   }
   if { $cml(-max_frame_gap) <= 0 }  {
-    ok_err_msg "Maximal burst interframe gap should be positive"
+    ok_err_msg "Maximal interframe time gap should be positive"
     incr errCnt 1
   } else {
      set ::STS(maxFrameGap) $cml(-max_frame_gap)
@@ -471,7 +472,7 @@ proc _sort_name_to_time_dict_and_detect_bursts {namesToTimesDict descr} {
     set currRec [lindex $listOfLists $i]
     ParseNameTimeRecord $prevRec nameP timeStrP globalTimeP idxInBurstOrZeroP
     ParseNameTimeRecord $currRec nameC timeStrC globalTimeC idxInBurstOrZeroC
-    if { $::STS(maxFrameGap) >= [global_time_diff $globalTimeC $globalTimeP] } {
+    if { $::STS(maxBurstGap) > [global_time_diff $globalTimeC $globalTimeP] } {
       # the 2 records are in burst
       if { $idxInBurst == -1 } {
         incr burstCnt 1
