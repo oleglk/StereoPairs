@@ -41,7 +41,9 @@ proc preferences_get_initial_values {arrayName}  {
   # name-keywords for backup/thrash directories
   set _prefs(BACKUP_DIRNAME_KEY__HIDE_UNUSED)      "HideUnusedFiles"
   set _prefs(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)  "BackupSettingsFiles"
-  set _prefs(BACKUP_DIRNAME_KEYS) [list $_prefs(BACKUP_DIRNAME_KEY__HIDE_UNUSED)]
+  set _prefs(BACKUP_DIRNAME_KEYS) [list \
+                            $_prefs(BACKUP_DIRNAME_KEY__HIDE_UNUSED) \
+                            $_prefs(BACKUP_DIRNAME_KEY__BACKUP_SETTINGS)]
 
   set _prefs(-INITIAL_WORK_DIR)  "." ;  # [pwd] causes Reset to whatever CWD is
   
