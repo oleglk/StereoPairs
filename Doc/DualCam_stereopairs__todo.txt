@@ -27,7 +27,7 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 - rethink:   { set ::ok_utils::WORK_AREA_ROOT_DIR    "" ;   # OK for this use-case}
 
-- compute WB diff for color comparator as R/G, G/B ratios
++ compute WB diff for color comparator as R/G, G/B ratios
 
 + do not abort color comparison on presense of unmatched file(s)
 
@@ -37,14 +37,23 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 + text viewer for colol-comparator output
 
-- text viewer for help file
++ text viewer for help file
 
--  distinguish between left-side and right-side IDs in workarea cleaner
++?  distinguish between left-side and right-side IDs in workarea cleaner
 -- pay attention to find_lr_image_ids_in_pair_namelist performing "lsort -unique"
+
+- test input set with some equal ID(s) on the 2 sides
 
 - hide renamed (only), e.g. dual-ID images with < 2 used IDs
 
-- options for pair-name flexibility
++ options for pair-name flexibility
 
-- make textviewer expand correctly
++ make textviewer expand correctly
 
+- define and perform manual test sequence
+
+- elaborate the text of info/error/warning messages
+
+- improve help file
+
+- write an installation guide

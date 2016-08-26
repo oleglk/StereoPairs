@@ -75,7 +75,7 @@ proc textview_prebuild {wndPath} {
   frame $wndPath.scrolledText -bg NavyBlue
   pack $wndPath.scrolledText -side bottom -padx 1m -pady 1m -anchor center -fill both -expand true
   set mainTextArea [_MainTextArea $wndPath]
-  text $mainTextArea -width $DEFAULT_LINEWIDTH -wrap word -bg LightYellow2 -font FixedSys -bd 2   -yscrollcommand "$wndPath.scrolledText.vscroller set"
+  text $mainTextArea -width $DEFAULT_LINEWIDTH -wrap word -font FixedSys -bd 2   -yscrollcommand "$wndPath.scrolledText.vscroller set"
   scrollbar $wndPath.scrolledText.vscroller -command "$mainTextArea yview"
   pack $wndPath.scrolledText.vscroller -side right -anchor w -fill y  -expand false
   pack $mainTextArea -side right -fill both -expand true
