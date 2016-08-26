@@ -424,7 +424,7 @@ proc preferences_apply {prefListNoHeader}  {
     } else { ;  # $listLng == 2
       set PREFS($key) [lindex $oneOptionList 1]
     }
-    ok_info_msg "Option '$key' set to '$PREFS($key)' by '$oneOptionList'"  
+    ok_trace_msg "Option '$key' set to '$PREFS($key)' by '$oneOptionList'"  
   }
   set errCnt 0
   # TODO: implement
