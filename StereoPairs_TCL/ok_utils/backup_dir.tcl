@@ -184,7 +184,8 @@ proc ::ok_utils::_ok_move_one_file_to_backup_dir {fPath destRootDir \
     set tclExecResult [catch { \
                           file rename -- $fPath $subdirAbsPath } evalExecResult]
     if { $tclExecResult != 0 } {
-      ok_err_msg "$evalExecResult!";    return  0
+      ok_err_msg "Failed moving '$fPath' into '$subdirAbsPath': $evalExecResult!"
+      return  0
     }
     ok_trace_msg "Moved '$fPath' into '$subdirAbsPath'"
   } else  { ok_info_msg $msg } ;  # simulation
@@ -234,7 +235,8 @@ proc ::ok_utils::ok_move_listed_files {preserveSrc pathList destDir} {
   foreach pt $pathList {
     set tclExecResult [catch { file $action -- $pt $destDir } evalExecResult]
     if { $tclExecResult != 0 } {
-      ok_err_msg "$evalExecResult!";  incr cntErr 1
+      ok_err_msg "Failed to $action '$pt' into '$destDir': $evalExecResult!"
+      incr cntErr 1
     } else {                          incr cntGood 1  }
   }
   return  [expr { ($cntErr == 0)? $cntGood : [expr -1 * $cntErr] }]
@@ -280,7 +282,8 @@ proc ::ok_utils::ok_restore_files_from_backup_dir {trashDirRootPath \
       set tclExecResult [catch { \
                             file rename -- $srcPath $destDir } evalExecResult]
       if { $tclExecResult != 0 } {
-        ok_err_msg "$evalExecResult!";    incr errCnt 1;  continue
+        ok_err_msg "Failed to restore '$srcPath' into '$destDir': $evalExecResult!"
+        incr errCnt 1;  continue
       }
       ok_trace_msg "Restored '$srcPath' into '$destDir'"
       incr goodCnt 1

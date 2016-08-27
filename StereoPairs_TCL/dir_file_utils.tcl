@@ -75,10 +75,10 @@ proc dualcam_find_originals {searchHidden skipRenamed origExtDict \
   if { 0 == [llength $origPathsRight] }  { append missingStr " right" }
   if { $missingStr != "" }  {
     if { $searchHidden == 0}  {
-      ok_err_msg "Missing $descrSingle images for:$missingStr"
+      ok_err_msg "Missing $descrSingle images for side(s):$missingStr"
       return  0
     } else {
-      ok_info_msg "No hidden $descrSingle images for:$missingStr"
+      ok_info_msg "No hidden $descrSingle images for side(s):$missingStr"
     }
   }
   ok_info_msg "Found [llength $origPathsLeft] left- and [llength $origPathsRight] right $descrSingle image(s)"
