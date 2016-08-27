@@ -55,7 +55,7 @@ proc preferences_get_initial_values {arrayName}  {
   set _prefs(-out_dir)             "Data"
   set _prefs(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
   set _prefs(-backup_dir)  "Backup"
-  set _prefs(-simulate_only)       YES
+  set _prefs(-simulate_only)       NO
   
   # pair matcher:
   set _prefs(-time_diff)           0

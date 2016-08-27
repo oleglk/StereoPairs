@@ -318,7 +318,7 @@ proc _GUI_reset_options {getIniCBorZero} {
     if { 1 == [ok_name_in_array $key allUserIniOptions] } {
       set KEY_TO_VAL($key) $allUserIniOptions($key)
     } else {
-      ok_warn_msg "No initial value obtained for '$key'"
+      ok_warn_msg "Cannot reset '$key' - no initial value obtained"
     }
   }
   update idletasks

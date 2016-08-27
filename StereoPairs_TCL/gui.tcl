@@ -491,7 +491,7 @@ proc _UpdateGuiStartAction {}   {
 proc _UpdateGuiEndAction {}   {
   global GUI_VARS
   set cnt [expr [ok_msg_get_errwarn_cnt] - $GUI_VARS(CNT_PROBLEMS_BEFORE)]
-  set msg "The last action encountered $cnt problem(s); please see underlined mwssages in the log"
+  set msg "The last action encountered $cnt problem(s); please see underlined messages in the log"
   if { $cnt > 0 }  { ok_warn_msg $msg } else { ok_info_msg $msg }
   set GUI_VARS(PROGRESS) "...Idle..."
   update idletasks
