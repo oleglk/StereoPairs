@@ -112,7 +112,7 @@ proc color_analyzer_cmd_line {cmdLineAsStr cmlArrName}  {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
     ok_info_msg "================================================================"
     ok_info_msg "    DualCam Color Analyzer compares color-channels' statistics of left- and right images of each matched stereopair."
-    ok_info_msg "========= Command line parameters (in any order): =============="
+    ok_info_msg "========= Command line parameters (in random order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="

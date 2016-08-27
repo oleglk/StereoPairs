@@ -114,7 +114,7 @@ proc workarea_cleaner_main {cmdLineAsStr}  {
   set filesToHide [_workarea_cleaner_find_images_with_unused_ids \
                                                   $hideCandidates $usedIDsDict]
   if { 0 == [llength $filesToHide] }  {
-    ok_info_msg "No unused-id files were found; there's nothing to do."
+    ok_info_msg "No unused-id image files were found; there's nothing to do."
     return  0
   }
   
@@ -157,7 +157,7 @@ proc workarea_cleaner_cmd_line {cmdLineAsStr cmlArrName}  {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
     ok_info_msg "================================================================"
     ok_info_msg "    DualCam Workarea_Cleaner hides original and intermediate files not used in final stereopairs."
-    ok_info_msg "========= Command line parameters (in any order): =============="
+    ok_info_msg "========= Command line parameters (in random order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example - hide (note TCL-style directory separators): ======="
@@ -369,7 +369,7 @@ proc _workarea_cleaner_find_ultimate_images {} {
 # Finds and returns RAW- and standard-image files UNDER original-images location
 proc _workarea_cleaner_find_original_images {} {
   if { $::STS(origImgRootPath) == "" }  {
-    ok_info_msg "Cleaning original images not requested"
+    ok_info_msg "Cleaning of original images not requested"
     return  [list]
   }
   ok_info_msg "Start searching for original images"
@@ -392,7 +392,7 @@ proc _workarea_cleaner_find_original_images {} {
 # Finds and returns standard-image files UNDER intermediate-images location
 proc _workarea_cleaner_find_intermediate_images {} {
   if { $::STS(stdImgRootPath) == "" }  {
-    ok_info_msg "Cleaning intermediate images not requested"
+    ok_info_msg "Cleaning of intermediate images not requested"
     return  [list]
   }
   ok_info_msg "Start searching for intermediate images"
@@ -436,10 +436,10 @@ proc _workarea_cleaner_find_images_with_unused_ids {candidates usedIDsDict}  {
     }
     if { (!$id1IsOnLeft && !$id1IsOnRight) || \
          (($id2 != "") && !$id2IsOnRight) } {
-      ok_info_msg "File '$fPath' has unused ID(s)"
+      ok_info_msg "File '$fPath' has unused image ID(s)"
       lappend unusedFilesList $fPath
     } else {
-      ok_info_msg "File '$fPath' has all ID(s) in use"
+      ok_info_msg "All image ID(s) of file '$fPath' is/are in use"
     }
   }
   ok_info_msg "Found [llength $unusedFilesList] file(s) with unused image IDs out of  [llength $candidates] candidate(s); $skipCnt file(s) skipped as irrelevant"

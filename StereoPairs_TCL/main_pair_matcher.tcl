@@ -170,7 +170,7 @@ proc pair_matcher_cmd_line {cmdLineAsStr cmlArrName}  {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
     ok_info_msg "================================================================"
     ok_info_msg "    DualCam Pair Matcher detects pairing of out-of-camera RAW or JPEG images using timestamps."
-    ok_info_msg "========= Command line parameters (in any order): =============="
+    ok_info_msg "========= Command line parameters (in random order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Examples (note TCL-style directory separators): ======="
@@ -808,9 +808,9 @@ proc _pair_matcher_restore_original_names {{simulateOnly 0}}  {
     if { $origPath == $lastRestoredOriginal }  {; # we already restored it
       if { $simulateOnly == 0 }  {
         ok_delete_file $renamedPath;  # not needed - its target already restored
-        ok_info_msg "Deleted unneeded '$renamedPath' - its target already restored"
+        ok_info_msg "Deleted unneeded '$renamedPath' - its target is already restored"
       } else {
-        ok_info_msg "Would have deleted '$renamedPath' - its target already restored"
+        ok_info_msg "Would have deleted '$renamedPath' - its target is already restored"
       }
       continue
     }

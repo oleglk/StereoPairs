@@ -123,7 +123,7 @@ proc settings_copier_cmd_line {cmdLineAsStr cmlArrName}  {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
     ok_info_msg "================================================================"
     ok_info_msg "    DualCam Settings Copier replicates image-conversion settings from  left- to right images of each matched stereopair, or vice-versa."
-    ok_info_msg "========= Command line parameters (in any order): =============="
+    ok_info_msg "========= Command line parameters (in random order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
@@ -278,7 +278,7 @@ proc _clone_settings_files {srcSettingsFiles destDir doSimulateOnly}  {
   set cntDone [expr [llength $srcSettingsFiles] - $cntErr]
   if { $cntGood > 0 } {
     set actDescr [expr {($doSimulateOnly==1)? "Would have cloned" : "Cloned"}]
-    ok_info_msg "$actDescr settings file(s) for $cntDone RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'; $cntErr error(s) occured"
+    ok_info_msg "$actDescr conversion settings file(s) for $cntDone RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'; $cntErr error(s) occured"
   }
   if { $cntErr > 0 } {
     ok_err_msg "Failed to clone settings file(s) for $cntErr RAW(s) out of [llength $srcSettingsFiles] into directory '$destDir'"

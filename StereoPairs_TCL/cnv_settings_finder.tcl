@@ -76,7 +76,7 @@ proc FindSettingsFilesForRawsInDir {dirPath cntMissing {priErr 1}} {
   }
   set settingsPaths [FindSettingsFilesForListedImages $rawPaths \
                                                       cntMissing $priErr]
-  ok_info_msg "Found [llength $settingsPaths] settings file(s) for [llength $rawPaths] RAWs in '$dirPath'"
+  ok_info_msg "Found [llength $settingsPaths] conversion settings file(s) for [llength $rawPaths] RAWs in '$dirPath'"
   ##if { $cntMiss > 0 }  {error "Missing $cntMiss settings file(s) in '$settingsDir'"} ;   #OK_TMP
   return  $settingsPaths
 }
@@ -105,13 +105,13 @@ proc FindSettingsFilesForListedImages {imgPaths cntMissing {priErr 1}} {
     if { 0 == [llength $relevantSettingsFiles] }  {
       incr cntMiss 1
       if { $priErr == 1 }  {
-        ok_warn_msg "No relevant settings files found for '$imgPath' in '$settingsDir'"
+        ok_warn_msg "No relevant conversion settings files found for '$imgPath' in '$settingsDir'"
       }
     } else {
       set settingsPaths [concat $settingsPaths $relevantSettingsFiles]
     }
   }
-  ok_info_msg "Found [llength $settingsPaths] settings file(s) for [llength $imgPaths] image(s)"
+  ok_info_msg "Found [llength $settingsPaths] conversion settings file(s) for [llength $imgPaths] image(s)"
   ##if { $cntMiss > 0 }  {error "Missing $cntMiss settings file(s) in '$settingsDir'"} ;   #OK_TMP
   return  $settingsPaths
 }
