@@ -33,6 +33,20 @@ The simple example used by the author for camera-JPEG based workflow:
 The workflow
 ============
 1) Put the inputs (left- and right sets of out-of-camera images) under a new workarea directory.
-2) In order to determine time-difference between the two cameras, do a dry run with any dummy value for time-difference. That run fails, but produces data files with image timestamps under the data/output directory of your workarea - times_left.txt and times_right.txt . Choose left- and right images that obviously form a stereopair, and subtract left timestamp from the right timestamp - this is the value expected for -time_diff parameter.
-3) Run stereopair-matcher to indicate stereopairs to your stereo-photo editor (e.g. StereoPhotoMaker).
-4) Assuming the colors were taken care off at the time of shooting and are mostly correct, use color comparator to look for large discrepancies between color/brightness in a stereopair. Only small difference is fixable by StereoPhotoMaker, adjust the colors in your tool of choice beforehand.
+2) In order to determine time-difference between the two cameras, do a dry run of stereopair-matcher with any dummy value for time-difference. That run fails, but produces data files with image timestamps under the data/output directory of your workarea - times_left.txt and times_right.txt . Choose left- and right images that obviously form a stereopair, and subtract left timestamp from the right timestamp - this is the value expected for -time_diff parameter.
+3) Run stereopair-matcher to rename your original images so that the new names indicate stereopairs to your stereo-photo editor (e.g. StereoPhotoMaker). Do it before RAW conversion, color correction or alike; any further processing is based on the new names.
+4) Perform color-correction on one set of images, let's say the left one.
+5) Assuming left- and right exposures are mostly similar, copy your color-correction choices from left-side images to their right-side peers.
+If you are using a compatible RAW converter (see TODO: Recommended RAW Converters), you can run settings-copier to clone all the settings in one click.
+Alternatively, with most RAW converters, you can copy-paste the processing settings individually for each pair.
+At the end of this stage you are expected to have produced standard images for both left- and right sides
+5) Use color-comparator to look for large discrepancies between color/brightness in a stereopair. Only small difference is fixable by StereoPhotoMaker, adjust the colors in your tool of choice beforehand, then rerun the color-comparator. Several iterations might be required.
+6) Perform your usual stereopair processing - with StereoPhotoMaker or alike.
+The outcome of this stage - ultimate stereopair images chosen for archival.
+7) If you want to archive the original and intermediate files, remove from your workarea directories those not "utilized" by the ultimate stereopairs.
+Workarea-cleaner (Hide-unused button) does this job automatically by moving the image- and conversion-settings files unrelated to any of the ultimate stereopairs into the specified thrash/backup directory.
+
+Undoing some things
+===================
+The application includes two kinds of "undo" actions - original-images name restoration and unhiding of hidden/cleaned files.
+- Name restoration works by means of reversing the actions done by pair matcher. Under the hood there is a mapping between original image names and their stereopair-friendly targets produced by pair-matcher; only the names included there are restored. E.g. any raw-conversion outputs are ignored - those are not original files and they weren't renamed by the pair-matcher. And name restoration refuses to run when conversion-settings are present - to avoid possible mistreatment.
