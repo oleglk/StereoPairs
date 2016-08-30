@@ -10,13 +10,13 @@ The application is comprised of several essentially independent utilities, each 
 
 The utilities
 ==============
-1) Stereopair matcher
+1) Stereopair matcher ("Rename Pairs" and "Restore Names" buttons)
 Finds stereopairs among left- and right out-of-camera image sets. Builds text file with list of paired image names and renames image files to be recognized as left/right components by StereoPhotoMaker or a similar program.
-2) Conversion settings copier
+2) Conversion settings copier ("Clone Settings" button)
 Clones RAW converter settings files from left image to right or vice-versa.
-3) Color comparator
+3) Color comparator ("Compare Colors" button)
 Compares color statistics between left and right peers and reports differences above a set threshold
-4) Unused inputs cleaner
+4) Unused inputs cleaner ("Hide Unused" and "Unhide Unused" buttons)
 Removes original files not used in ultimately built stereopairs.  May consider removing intermediate files too.
 A better spec: removes from under the specified root directory all image- and converter-settings files whose IDs aren't included in the names of the ultimate stereopair images.
 
@@ -29,6 +29,14 @@ The simple example used by the author for camera-JPEG based workflow:
 +-L/	directory with left-side out-of-camera JPEG images
 +-R/	directory with right-side out-of-camera JPEG images
 +-Data/	directory for the application logs and data files
+
+User Interface Principles
+=========================
+- Pressing a button of an utility first brings a dialogue/form with a line for each invocation option of the utility
+- The initial option values in the dialogue are those set through the preferences' window - accessed by "Preferences" button. Changes to the options done through utility invocation dialogue aren't preserved; subsequent invocation of the same utility will again take the options from the last saved preferences
+- When the application starts, it reads preferences' values from the file TODO located in the current user's home directory; if this file is nonexistent, hardcoded preferences are used; the file is written upon hitting OK button in the Preferences window
+- Pressing OK in the utility dialogue starts the current utility; the GUI stays unresponsive until the utility finishes, status indicator shows "...Working..." (as opposed to "...Idle...")
+- Log box at the bottom of the main application window houses diagnostic messages; those that indicate problems are underlined; the last message an utility prints tells how many problems it encountered; if the number is zero, there's no need to review the log
 
 The workflow
 ============
@@ -43,10 +51,12 @@ At the end of this stage you are expected to have produced standard images for b
 5) Use color-comparator to look for large discrepancies between color/brightness in a stereopair. Only small difference is fixable by StereoPhotoMaker, adjust the colors in your tool of choice beforehand, then rerun the color-comparator. Several iterations might be required.
 6) Perform your usual stereopair processing - with StereoPhotoMaker or alike.
 The outcome of this stage - ultimate stereopair images chosen for archival.
-7) If you want to archive the original and intermediate files, remove from your workarea directories those not "utilized" by the ultimate stereopairs.
-Workarea-cleaner (Hide-unused button) does this job automatically by moving the image- and conversion-settings files unrelated to any of the ultimate stereopairs into the specified thrash/backup directory.
+7) If you want to archive the original and intermediate files, remove from your workarea directories those not "utilized" by the ultimate stereopairs
+Workarea-cleaner ("Hide Unused" button) does this job automatically by moving the image- and conversion-settings files unrelated to any of the ultimate stereopairs into the thrash/backup directory provided in "-backup_dir" option. The related-or-not decision is based on image ID(s) in the filename (for instance, dsc1234-8765.jpg has two IDs: 1234 and 8765). The "-backup_dir" option specifies the root directory for all the backups in your current workarea. Each press of the "Hide Unused" button creates a new subdirectory under it, and all files being hidden by the current backup action are placed under this subdirectory.
 
 Undoing some things
 ===================
-The application includes two kinds of "undo" actions - original-images name restoration and unhiding of hidden/cleaned files.
-- Name restoration works by means of reversing the actions done by pair matcher. Under the hood there is a mapping between original image names and their stereopair-friendly targets produced by pair-matcher; only the names included there are restored. E.g. any raw-conversion outputs are ignored - those are not original files and they weren't renamed by the pair-matcher. And name restoration refuses to run when conversion-settings are present - to avoid possible mistreatment.
+The application includes two kinds of "undo" actions - original-images' name restoration and unhiding of hidden/cleaned files
+- Name restoration ("Restore Names" button) works by means of reversing the actions done by pair matcher. Under the hood there is a mapping between original image names and their stereopair-friendly targets produced by pair-matcher; only the names included there are restored. E.g. any raw-conversion outputs are ignored - those are not original files and they weren't renamed by the pair-matcher. And name restoration refuses to run when conversion-settings are present - to avoid possible mistreatment
+- Unhiding of hidden files ("Unhide Unused" button) asks for a backup subdirectory and moves all files from under it to their original locations.
+Name of a backup subdirectory contains its creation time and a keyword telling which action created this specific backup. There are two kinds of backups: "HideUnusedFiles" - results from workarea-cleaner, and "BackupSettingsFiles" - in case settings-copier overrides an conversion-settings file, it moves the old version there.
