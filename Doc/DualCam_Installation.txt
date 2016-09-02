@@ -3,8 +3,16 @@ Installation of DualCam-Companion
 
 Dependencies
 =============
-1) TCL interpreter with Tk (GUI) support:
-	TCL official site:				www.tcl.tk
-	Standalone TCL version "freewrap":	freewrap.sourceforge.net
+You need to download and install the following two applications/bundles in order to use DualCam-Companion:
+1) TCL interpreter with Tk (GUI) support.
+You need TCL version 8.5 or higher. There exist alernative implementations of the TCL interpreter.
+- A full TCL installation is available from the TCL official site at www.tcl.tk; get it if you plan to use TCL for
+something beyond running DualCam-Companion.
+-	Standalone (single-file) TCL interpreter "freewrap" - at freewrap.sourceforge.net .
+You need to rename freewrap.exe into any name you like in order to use it as a plain interpreter.
+
 2) Imagemagick image-manipulation suite:	www.imagemagick.org
-	(you need 16-bit version of Imagemagick, no matter static or dynamic)
+	(you need 16-bit version of Imagemagick, no matter static or dynamic). 
+  Note that there is a portable version too - the one that doesn't require installation.
+  
+ 
