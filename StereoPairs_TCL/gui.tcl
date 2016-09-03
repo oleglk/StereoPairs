@@ -91,6 +91,7 @@ _InitValuesForGUI
 
 
 wm title . $APP_TITLE
+wm minsize . 500 300  ;   # chosen experimentally on 1600x900 screen
 
 grid [ttk::frame .top -padding "3 3 12 12"] -column 0 -row 0 -sticky nwes
 grid columnconfigure . 0 -weight 1
@@ -114,16 +115,16 @@ grid [ttk::button .top.chooseDir -text "Folder..." -command GUI_ChooseDir] -colu
 
 grid [ttk::entry .top.workDir -width 29 -textvariable GUI_VARS(WORK_DIR) -state disabled] -column 2 -row 2 -columnspan 3 -sticky we
 
-grid [ttk::button .top.renamePairs -text "Rename\nPairs" -command GUI_RenamePairs] -column 1 -row 3 -sticky we
+grid [ttk::button .top.renamePairs -text "Rename\nPairs..." -command GUI_RenamePairs] -column 1 -row 3 -sticky we
 
-grid [ttk::button .top.cloneSettings -text "Clone\nSettings" -command GUI_CloneSettings] -column 2 -row 3 -sticky we
+grid [ttk::button .top.cloneSettings -text "Clone\nSettings..." -command GUI_CloneSettings] -column 2 -row 3 -sticky we
 
-grid [ttk::button .top.compareColors -text "Compare\nColors" -command GUI_CompareColors] -column 3 -row 3 -sticky we
+grid [ttk::button .top.compareColors -text "Compare\nColors..." -command GUI_CompareColors] -column 3 -row 3 -sticky we
 
-grid [ttk::button .top.hideUnused -text "Hide\nUnused" -command GUI_HideUnused] -column 4 -row 3 -sticky we
+grid [ttk::button .top.hideUnused -text "Hide\nUnused..." -command GUI_HideUnused] -column 4 -row 3 -sticky we
 
 
-grid [ttk::button .top.restoreNames -text "Restore\nNames" -command GUI_RestoreNames] -column 1 -row 4 -sticky we
+grid [ttk::button .top.restoreNames -text "Restore\nNames..." -command GUI_RestoreNames] -column 1 -row 4 -sticky we
 
 grid [ttk::label .top.progressLbl -textvariable GUI_VARS(PROGRESS)] -column 2 -row 4 -sticky we
 

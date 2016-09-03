@@ -90,6 +90,7 @@ foreach w [winfo children .optsWnd.f] {grid configure $w -padx 5 -pady 5}
 # from the screen (hide it)
 
 wm title .optsWnd $WND_TITLE
+wm minsize .optsWnd 600 400 ;   # chosen experimentally on 1600x900 screen
 wm withdraw .optsWnd
 
 # Install a binding to handle the dialog getting
@@ -301,11 +302,14 @@ proc _GUI_append_one_option_record {key val descr formatSpec} {
     set res [$tBx  window create end -window $valEntry];  # insert value entry
     set res [$tBx  insert end "\t$strDescr"];  # insert text-only line suffix
     set res [$tBx  insert end "\n"]
-    $tBx see end
+    $tBx see end ;  # stay at the end to continue _appending_
   } execResult]
   if { $tclResult != 0 } {
     set msg "Failed appending option record: $execResult!"
     ok_err_msg $msg;  set retVal 0
+  }
+  if { $retVal > 0 }  {;   # done OK; scroll to the top
+    $tBx see 1.0; $tBx see 1.0;  # for some reason doing it once is insufficient
   }
   return  $retVal
 }
