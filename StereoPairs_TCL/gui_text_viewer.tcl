@@ -39,8 +39,12 @@ set DEFAULT_LINEWIDTH 80
 
 # Open the window and load 'filePath' into it
 proc textview_open {wndPath filePath lineWidth {wndTitle ""}} {
- wm deiconify $wndPath
- return  [_loadfl $wndPath $filePath $lineWidth $wndTitle]
+  if { 0 == ([wm state $wndPath] eq "normal") } {
+    wm deiconify $wndPath
+    set rc [_loadfl $wndPath $filePath $lineWidth $wndTitle]
+    _make_text_readonly [_MainTextArea $wndPath]
+  } else { set rc 1 } ;   # OK - already open
+  return $rc
 }
 
 
@@ -48,7 +52,10 @@ proc textview_open {wndPath filePath lineWidth {wndTitle ""}} {
 # + Close the window +
 # +------------------+
 proc textview_close {wndPath} {
-  wm withdraw $wndPath
+  if { 0 == ([wm state $wndPath] eq "withdrawn") } {
+    wm withdraw $wndPath
+    _make_text_writable [_MainTextArea $wndPath]
+  }
 }
 
 
@@ -160,7 +167,7 @@ proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
     set inEOF -1
     set txln ""
     set mainTextArea [_MainTextArea $wndPath]
-    _make_text_writable $mainTextArea
+    # (didn't work)  _make_text_writable $mainTextArea
     $mainTextArea configure -width $lineWidth
     $mainTextArea delete 1.0 end
     while {[gets $infile inln] != $inEOF} {
@@ -172,14 +179,13 @@ proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
   if { $wndTitle != "" }  {
     wm title $wndPath $wndTitle ; # override the window title
   }
-  _make_text_readonly $mainTextArea
   return $filePath
 }
 
 
 proc _make_text_readonly {textwidget} {
-  rename $textwidget $textwidget.internal
-  proc $textwidget {args} [string map [list WIDGET $textwidget] {
+  rename ::$textwidget ::$textwidget.internal
+  proc ::$textwidget {args} [string map [list WIDGET ::$textwidget] {
       switch [lindex $args 0] {
           "insert" {}
           "delete" {}
@@ -189,8 +195,8 @@ proc _make_text_readonly {textwidget} {
 }
 
 
+# This didn't work; consequent _make_text_readonly fails since *.internal exists
 proc _make_text_writable {textwidget} {
-  if { 1 == [winfo exists $textwidget.internal] }  {
-    rename $textwidget.internal $textwidget
-  }
+  rename $textwidget {} ;                   # delete the wrapper command
+  rename $textwidget.internal $textwidget ; # restore the original command name
 }

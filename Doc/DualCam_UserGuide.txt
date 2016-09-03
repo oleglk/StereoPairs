@@ -40,7 +40,7 @@ User Interface Principles
 
 The workflow
 ============
-1) Put the inputs (left- and right sets of out-of-camera images) under a new workarea directory.
+1) Put the inputs (left- and right sets of out-of-camera images) under a new workarea directory. The application will prefer RAW files as out-of-camera inputs; it chooses JPEG only if no RAWs are present. So if you want to enforce using JPEGs, ensure there are no RAWs in the workarea.
 2) In order to determine time-difference between the two cameras, do a dry run of stereopair-matcher with any dummy value for time-difference. That run fails, but produces data files with image timestamps under the data/output directory of your workarea - times_left.txt and times_right.txt . Choose left- and right images that obviously form a stereopair, and subtract left timestamp from the right timestamp - this is the value expected for -time_diff parameter.
 3) Run stereopair-matcher to rename your original images so that the new names indicate stereopairs to your stereo-photo editor (e.g. StereoPhotoMaker). Do it before RAW conversion, color correction or alike; any further processing is based on the new names.
 4) Perform color-correction on one set of images, let's say the left one.
