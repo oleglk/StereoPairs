@@ -160,6 +160,7 @@ proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
     set inEOF -1
     set txln ""
     set mainTextArea [_MainTextArea $wndPath]
+    _make_text_writable $mainTextArea
     $mainTextArea configure -width $lineWidth
     $mainTextArea delete 1.0 end
     while {[gets $infile inln] != $inEOF} {
@@ -171,7 +172,25 @@ proc _loadfl {wndPath filePath lineWidth {wndTitle ""}} {
   if { $wndTitle != "" }  {
     wm title $wndPath $wndTitle ; # override the window title
   }
-
+  _make_text_readonly $mainTextArea
   return $filePath
 }
 
+
+proc _make_text_readonly {textwidget} {
+  rename $textwidget $textwidget.internal
+  proc $textwidget {args} [string map [list WIDGET $textwidget] {
+      switch [lindex $args 0] {
+          "insert" {}
+          "delete" {}
+          "default" { return [eval WIDGET.internal $args] }
+      }
+  }]
+}
+
+
+proc _make_text_writable {textwidget} {
+  if { 1 == [winfo exists $textwidget.internal] }  {
+    rename $textwidget.internal $textwidget
+  }
+}
