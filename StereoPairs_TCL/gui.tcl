@@ -149,7 +149,7 @@ grid [ttk::scrollbar .top.logBoxScroll -orient vertical -command ".top.logBox yv
 
 foreach w [winfo children .top] {grid configure $w -padx 5 -pady 5}
 
-focus .top.chooseDir
+focus -force .top.chooseDir ;   # -force ensures focus upon initial GUI build
 
 
 ok_msg_set_callback "_AppendLogText" ;            # only after the GUI is built
