@@ -59,6 +59,18 @@ proc textview_close {wndPath} {
 }
 
 
+################################################################################
+if { "" == [info commands _GUI_UnbindModifiersWithKey] }  {
+  proc _GUI_UnbindModifiersWithKey {bindTag key}  {
+    set script [bind $bindTag $key] ;   # the existing binding
+    bind $bindTag <Control-$key>  continue; # ? break
+    bind $bindTag <Alt-$key>      continue; # ? break
+    bind $bindTag $key            $script 
+  }
+}
+################################################################################
+
+
 # +-------------------------------------------------+
 # + Initial TK Widget Definitions For Viewer Window +
 # +-------------------------------------------------+
@@ -75,6 +87,10 @@ proc textview_prebuild {wndPath} {
   # +-----------------------------------------------------+
   button $wndPath.close -text "< Close >" -fg Navy -bg NavajoWhite2   -font bold -command [list textview_close $wndPath]
   pack $wndPath.close -side bottom -padx 1m -pady 1m 
+  
+  # Unbind alt-Space from button(s) to let system menu react on Alt-Space
+  _GUI_UnbindModifiersWithKey $wndPath.close space
+  _GUI_UnbindModifiersWithKey Button space
 
   # +----------------------------------------+
   # + Text File Contents & Scrollbar Widgets +
@@ -108,6 +124,7 @@ proc textview_prebuild {wndPath} {
     set wndPath [winfo toplevel [focus]]
     $wndPath.close invoke
   }
+
 }
 
 
