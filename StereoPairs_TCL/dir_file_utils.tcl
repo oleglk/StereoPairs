@@ -400,12 +400,17 @@ proc IsRawExtension {ext} {
 }
 
 
+proc IsStdImageExtension {ext} {
+  return  [dict exists $::KNOWN_STD_IMG_EXTENSIONS_DICT $ext]
+}
+
+
 # Returns list of known standard-image extensions (no dot) in directory 'dirPath'
 proc FindStdImageExtensionsInDir {dirPath} {
   set allExtensions [FindSingleDotExtensionsInDir $dirPath]
   set foundExtensions [list]
   foreach ext $allExtensions {
-    if { 1 == [dict exists $::KNOWN_STD_IMG_EXTENSIONS_DICT $ext] }  {
+    if { 1 == [IsStdImageExtension $ext] }  {
       lappend foundExtensions $ext
     }
   }

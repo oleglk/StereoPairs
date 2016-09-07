@@ -50,10 +50,15 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 + make textviewer expand correctly
 
+- replace R,G,B color-comparison with total brightness (1 value instead of 3)
+
+- print RAW color multipliers into color-comparison output - whenever RAWs are available; only print, do not use in sorting
+
 - define and perform manual test sequence
 
-- elaborate the text of info/error/warning messages
++ elaborate the text of info/error/warning messages
 
 - improve help file
 
 - write an installation guide
+
