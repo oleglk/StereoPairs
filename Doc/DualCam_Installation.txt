@@ -14,5 +14,23 @@ You need to rename freewrap.exe into any name you like in order to use it as a p
 2) Imagemagick image-manipulation suite:	www.imagemagick.org
 	(you need 16-bit version of Imagemagick, no matter static or dynamic). 
   Note that there is a portable version too - the one that doesn't require installation.
-  
+
+
+Setting up DualCam-Companion
+============================
+- Unpack the archive into the directory where you want to run it from.
+- Edit the paths in "Stereopairs" shortcut:
+    "<Full-path-of-TCL-interpreter>" "<Full-path-of-gui.tcl>"
+    Example:
+      "C:\Program Files (x86)\etcl\bin\etcl.exe" D:\Work\StereoPairs\StereoPairs_TCL\gui.tcl
+- Edit Imagemagick directory path in "ext_tool_dirs.csv"
+    Example:
+      ###################################################
+      # ext_tool_dirs.csv
+      Environment-variable-name,Path
+      _IM_DIR,C:/Program Files (x86)/ImageMagick-6.8.7-3
+    Note 1: lines starting from # are comments; there are two non-comment lines in the example: header line and one data line.
+    Note 2: in the data line, _IM_DIR is a hardcoded keyword; the user changes only directory path after ",".
+- Now you are ready to run DualCam-Companion software.
+
  

@@ -62,3 +62,4 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 - write an installation guide
 
+- fix focus by TAB - it ignores option lines that are outside of the viewport
