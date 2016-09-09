@@ -18,12 +18,15 @@ You need to rename freewrap.exe into any name you like in order to use it as a p
 
 Setting up DualCam-Companion
 ============================
-- Unpack the archive into the directory where you want to run it from.
-- Edit the paths in "Stereopairs" shortcut:
-    "<Full-path-of-TCL-interpreter>" "<Full-path-of-gui.tcl>"
+- Unpack the archive into the directory where you want to run it from
+- Now you need to change two text files, both located in the root directory of the installation
+  (In the example here the above-mentioned root directory is "D:\Work\StereoPairs\")
+-- Edit the excutable- and TCL-code paths in "StereoPairs" shortcut :
+    "<Full-path-of--TCL-interpreter>" "<Full-path-of--gui.tcl>"
     Example:
       "C:\Program Files (x86)\etcl\bin\etcl.exe" D:\Work\StereoPairs\StereoPairs_TCL\gui.tcl
-- Edit Imagemagick directory path in "ext_tool_dirs.csv"
+    (A path should be enclosed in double-quotes if it contains spaces)
+-- Edit Imagemagick directory path in "ext_tool_dirs.csv"
     Example:
       ###################################################
       # ext_tool_dirs.csv
@@ -31,6 +34,20 @@ Setting up DualCam-Companion
       _IM_DIR,C:/Program Files (x86)/ImageMagick-6.8.7-3
     Note 1: lines starting from # are comments; there are two non-comment lines in the example: header line and one data line.
     Note 2: in the data line, _IM_DIR is a hardcoded keyword; the user changes only directory path after ",".
+    Note 3: no quotes are needed in ext_tool_dirs.csv even if the path has spaces
 - Now you are ready to run DualCam-Companion software.
 
- 
+Invocation of DualCam-Companion: from now on just double-click on the "StereoPairs" shortcut
+
+
+Configuring DualCam-Companion
+=============================
+This applies to making DualCam-Companion fit your workflow. The idea is that you configure your preferaeces one time, and then don't have to change any option during the usage. Unless your workflow varies, of course.
+
+So, start DualCam-Companion, open Preferences window and do the folllowing changes:
+- if you tend to keep your per-shooting-session work areas under one root directory, set -INITIAL_WORK_DIR to this directory
+- define by -name_format_left/-name_format_right the left/right image name formats as accepted by your stereo-photo editor
+-- see the help on the right side in the preferences window
+-- for StereoPhotoMaker the formats are [LeftName]-[RightId]_l / [LeftName]-[RightId]_r
+- if the clocks on your cameras are stable (it should be the case for anything other than smartphone-driven camera), set time difference (in seconds) between right and left cameras in -time_diff
+
