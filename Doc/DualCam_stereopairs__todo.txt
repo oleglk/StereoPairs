@@ -62,4 +62,10 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 - write an installation guide
 
-- fix focus by TAB - it ignores option lines that are outside of the viewport
+- fix UI focus by TAB - it ignores option lines that are outside of the viewport
+
+- test input set with different left/right RAW extensions (formats)
+
+- test input set with different left/right std-image extensions (formats)
+
+- let -left_img_subdir/-right_img_subdir conrol the names of subdirectories in all relevant utilities; currently it works for analyzer, while the pair-matcher has its left/right image subdirectory names hardcoded to "L"/"R"
