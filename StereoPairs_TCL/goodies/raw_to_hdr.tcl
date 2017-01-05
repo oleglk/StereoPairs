@@ -2,6 +2,9 @@
 
 set SCRIPT_DIR [file dirname [info script]]
 
+# TODO: make locally arragements to find the package(s)
+package require ok_utils;   namespace import -force ::ok_utils::*
+
 
 set ENFUSE "C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
 set IM_DIR "C:\Program Files (x86)\ImageMagick-6.8.7-3"
@@ -21,20 +24,20 @@ set _dirHDR HDR
 
 # _dcrawParamsMain and _convertSaveParams control intermediate files - 8b or 16b
 set _dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3 -6"
-set _convertSaveParams=-depth 16 -compress LZW
-# set _dcrawParamsMain=-v -c -w -H 2 -o 1 -q 3
-# set _convertSaveParams=-depth 8 -compress LZW
+set _convertSaveParams "-depth 16 -compress LZW"
+# set _dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3"
+# set _convertSaveParams "-depth 8 -compress LZW"
 
-# set _fuseOpt=--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5
-# set _fuseOpt=--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6
-# set _fuseOpt=--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6
-# set _fuseOpt=--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:99%% --exposure-mu=0.6
-# set _fuseOpt=--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6
-# set _fuseOpt=--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6
-# set _fuseOpt=--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6
-set _fuseOpt=--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.7
+# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
+# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
+# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
+# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:99%% --exposure-mu=0.6"
+# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
+# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
+# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6"
+set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.7"
 
-set _finalDepth=8
+set _finalDepth 8
 
 
 # Uncomment the below in order to perform only the blending stage
@@ -80,17 +83,57 @@ exit /B 0
 
 # ============== Subroutines =======================
 
-# Subroutine that assigns SCRIPT_DIR to full dir path of the script source code
-# Invocation:  call :assign_SCRIPT_DIR %0
-:Assign_SCRIPT_DIR
-  if (%1)==() (
-   echo -E- :assign_SCRIPT_DIR requires script full path as the 1-st parameter
-   exit /B 1
-  )
-  set SCRIPT_PATH=%1
-  for %%f in (%SCRIPT_PATH%) do set SCRIPT_FULL_PATH=%%~ff
-  for %%f in (%SCRIPT_FULL_PATH%) do set SCRIPT_DIR=%%~dpf
-  set SCRIPT_PATH=
-  set SCRIPT_FULL_PATH=
-  echo -L- Script source code located in "$::SCRIPT_DIR"
-exit /B 0
+
+
+# Raw-converts 'inpPath' into temp dir
+# and returns path of the output or 0 on error.
+proc _raw_conv_only {inpPath} {
+  #  _ext1 is lossless extension for intermediate files and maybe for output;
+	set fnameNoExt [file rootname [file tail $inpPath]]
+	ok_info_msg "Converting RAW file '$inpPath'; output into folder '[pwd]'"
+  set outName "$fnameNoExt.$::_ext1"
+  set outPath [file join $::_temp_dir $outName]
+  set nv_inpPath [format "{%s}" [file nativename $inpPath]]
+  set nv_outPath [format "{%s}" [file nativename $outPath]]
+  set cmdListRawConv [concat $::_DCRAW $::_def_rawconv -o $::_raw_colorspace \
+                      -O $nv_outPath $nv_inpPath]
+  if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
+    return  0; # error already printed
+  }
+
+	ok_info_msg "Done RAW conversion of '$inpPath' into '$outPath'"
+	return  $outPath
+}
+
+
+# Copy-pasted from Lazyconv "::dcraw::is_dcraw_result_ok"
+# Verifies whether dcraw command line ended OK through the test it printed.
+# Returns 1 if it was good, 0 otherwise.
+proc _is_dcraw_result_ok {execResultText} {
+    # 'execResultText' tells how dcraw-based command ended
+    # - OK if noone of 'errKeys' appears
+    set result 1;    # as if it ended OK
+    set errKeys [list {Improper} {No such file} {missing} {unable} {unrecognized} {Non-numeric}]
+#     puts ">>> Check for error keys '$errKeys' the following string:"
+#     puts "--------------------------------------------"
+#     puts "'$execResultText'"
+#     puts "--------------------------------------------"
+    foreach key $errKeys {
+	if { [string first "$key" $execResultText] >= 0 } {    set result 0  }
+    }
+    return  $result
+}
+
+
+# Bad attempt at DCRAW with redirection:
+#~ TMP> set DCRAW "C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe"
+#~ C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe
+#~ TMP> set CONVERT "C:/Program Files (x86)/ImageMagick-6.8.7-3/convert.exe"
+#~ C:/Program Files (x86)/ImageMagick-6.8.7-3/convert.exe
+#~ dict dir dump
+#~ TMP> set inF "./Img/DSC01745.ARW"
+#~ ./Img/DSC01745.ARW
+#~ TMP> set cmdList [list $DCRAW -v -c -w -H 2 -o 1 -q 3 -6 $inF |$CONVERT ppm:- -quality 90 outfile.jpg]
+#~ {C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe} -v -c -w -H 2 -o 1 -q 3 -6 ./Img/DSC01745.ARW {|C:/Program Files (x86)/ImageMagick-6.8.7-3/convert.exe} ppm:- -quality 90 outfile.jpg
+#~ TMP> set tclExecResult1 [catch { set result [eval exec $cmdList] } cmdExecResult]
+#~ 1
