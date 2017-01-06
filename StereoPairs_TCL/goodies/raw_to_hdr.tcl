@@ -16,26 +16,26 @@ set MOGRIFY $::IM_DIR\mogrify.exe
 
 set _tmpDir TMP
 # directories for RAW conversions
-set _dirNorm $::_tmpDir\OUT_NORM
-set _dirLow $::_tmpDir\OUT_LOW
-set _dirHigh $::_tmpDir\OUT_HIGH
+set g_dirNorm $::_tmpDir\OUT_NORM
+set g_dirLow $::_tmpDir\OUT_LOW
+set g_dirHigh $::_tmpDir\OUT_HIGH
 set _outdirPattern $::_tmpDir\OUT_*
-set _dirHDR HDR
+set g_dirHDR HDR
 
-# _dcrawParamsMain and _convertSaveParams control intermediate files - 8b or 16b
-set _dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3 -6"
-set _convertSaveParams "-depth 16 -compress LZW"
-# set _dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3"
-# set _convertSaveParams "-depth 8 -compress LZW"
+# g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
+set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3 -6"
+set g_convertSaveParams "-depth 16 -compress LZW"
+# set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3"
+# set g_convertSaveParams "-depth 8 -compress LZW"
 
-# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
-# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
-# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
-# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:99%% --exposure-mu=0.6"
-# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
-# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
-# set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6"
-set _fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.7"
+# set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
+# set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
+# set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
+# set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:99%% --exposure-mu=0.6"
+# set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
+# set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
+# set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6"
+set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.7"
 
 set _finalDepth 8
 
@@ -43,24 +43,28 @@ set _finalDepth 8
 # Uncomment the below in order to perform only the blending stage
 # goto __fuseLbl
 
+if { 0 == [ok_create_absdirs_in_list \
+        [list $::g_dirLow $::g_dirNorm $::g_dirHigh] \
+        {"folder-for-darker-images" "folder-for-normal-images" \
+         "folder-for-brighter-images"}] }  {
+  ok_err_msg "Aborting because of failure to create temporary output directory"
+  return  -1
+}
 
 # ########### Make RAW conversions
-md $::_dirLow
-md %_dirNorm%
-md $::_dirHigh
 # ########### "Blend" approach looks the best for varied-exposure RAW conversions ##########
 echo ====== Begin RAW conversions ========
 for %%f in (*.arw) DO  (
-  $::DCRAW  $::_dcrawParamsMain -b 0.3 %%f |$::CONVERT ppm:- %_convertSaveParams% $::_dirLow\%%~nf.TIF
-  if NOT EXIST "$::_dirLow\%%~nf.TIF" (echo * Missing "$::_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
+  $::DCRAW  $::g_dcrawParamsMain -b 0.3 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
+  if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
 )
 for %%f in (*.arw) DO  (
-  $::DCRAW  $::_dcrawParamsMain -b 1.0 %%f |$::CONVERT ppm:- %_convertSaveParams% %_dirNorm%\%%~nf.TIF
-  if NOT EXIST %_dirNorm%\%%~nf.TIF (echo * Missing "%_dirNorm%\%%~nf.TIF". Aborting... & exit /B -1)
+  $::DCRAW  $::g_dcrawParamsMain -b 1.0 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirNorm\%%~nf.TIF
+  if NOT EXIST $::g_dirNorm\%%~nf.TIF (echo * Missing "$::g_dirNorm\%%~nf.TIF". Aborting... & exit /B -1)
 )
 for %%f in (*.arw) DO  (
-  $::DCRAW  $::_dcrawParamsMain -b 1.7 %%f |$::CONVERT ppm:- %_convertSaveParams% $::_dirHigh\%%~nf.TIF
-  if NOT EXIST $::_dirHigh\%%~nf.TIF (echo * Missing "$::_dirHigh\%%~nf.TIF". Aborting... & exit /B -1)
+  $::DCRAW  $::g_dcrawParamsMain -b 1.7 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirHigh\%%~nf.TIF
+  if NOT EXIST $::g_dirHigh\%%~nf.TIF (echo * Missing "$::g_dirHigh\%%~nf.TIF". Aborting... & exit /B -1)
 )
 echo ====== Done  RAW conversions ========
 
@@ -68,13 +72,13 @@ echo ====== Done  RAW conversions ========
 :__fuseLbl
 
 # ######### Enfuse ###########
-md $::_dirHDR
+md $::g_dirHDR
 echo ====== Begin fusing HDR versions ========
 for %%f in (*.arw) DO (
-  %ENFUSE%  %_fuseOpt%  --depth=%_finalDepth% --compression=lzw --output=$::_dirHDR\%%~nf.TIF  $::_dirLow\%%~nf.TIF %_dirNorm%\%%~nf.TIF $::_dirHigh\%%~nf.TIF
-  if NOT EXIST "$::_dirHDR\%%~nf.TIF" (echo * Missing "$::_dirHDR\%%~nf.TIF". Aborting... & exit /B -1)
+  %ENFUSE%  %g_fuseOpt%  --depth=%_finalDepth% --compression=lzw --output=$::g_dirHDR\%%~nf.TIF  $::g_dirLow\%%~nf.TIF $::g_dirNorm\%%~nf.TIF $::g_dirHigh\%%~nf.TIF
+  if NOT EXIST "$::g_dirHDR\%%~nf.TIF" (echo * Missing "$::g_dirHDR\%%~nf.TIF". Aborting... & exit /B -1)
   # #ove alpha channel
-  $::MOGRIFY -alpha off -depth %_finalDepth% -compress LZW $::_dirHDR\%%~nf.TIF
+  $::MOGRIFY -alpha off -depth %_finalDepth% -compress LZW $::g_dirHDR\%%~nf.TIF
 )
 echo ====== Done  fusing HDR versions ========
 
@@ -86,22 +90,27 @@ exit /B 0
 proc _convert_one_raw {rawPath outDir {rgbMultList 0}} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname [file tail $rawPath]].TIF"]
+  if { 0 == [CanWriteFile $outPath] }  {
+    ok_err_msg "Cannot write into '$outPath'";    return 0
+  }
+
   if { $rgbMultList != 0 }  {
     set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
-    set mB [lindex $rgbMultList 2]
+    set mB [lindex $rgbMultList 2];    set colorSwitches "-r $mR $mG $mB $mG"
   } else {
-    set mR "";   set mG "";   set mB ""
+    set mR "";   set mG "";   set mB "";    set colorSwitches ""
   }
-  ok_info_msg "ConvertOneRaw: processing $rawPath; colors: {$mR $mG $mB}..."
-  
-    set outPath  [file join $outDir "[file rootname [file tail $rawPath]].JPG"]
-    if { 0 == [CanWriteFile $outPath] }  {
-      ok_err_msg "Cannot write into '$outPath'";    return 0
-    }
-    #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
-    #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
-    exec $DCRAW  -r $mR $mG $mB $mG  -o 1  -q 3  -h           -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
+  set colorInfo [expr {($rgbMultList != 0)? "{$mR $mG $mB}" : "as-shot"}]
+  ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
+
+  #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
+  #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
+  exec $DCRAW  $::g_dcrawParamsMain $colorSwitches  $rawPath | $CONVERT ppm:- $::g_convertSaveParams $outPath
+  # TODO: catch and check result by _is_dcraw_result_ok
+	ok_info_msg "Done RAW conversion of '$rawPath' into '$outPath'"
+  return  1
 }
+
 
 # Raw-converts 'inpPath' into temp dir
 # and returns path of the output or 0 on error.
