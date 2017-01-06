@@ -83,7 +83,25 @@ exit /B 0
 
 # ============== Subroutines =======================
 
-
+proc _convert_one_raw {rawPath outDir {rgbMultList 0}} {
+  if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
+  set outPath  [file join $outDir "[file rootname [file tail $rawPath]].TIF"]
+  if { $rgbMultList != 0 }  {
+    set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
+    set mB [lindex $rgbMultList 2]
+  } else {
+    set mR "";   set mG "";   set mB ""
+  }
+  ok_info_msg "ConvertOneRaw: processing $rawPath; colors: {$mR $mG $mB}..."
+  
+    set outPath  [file join $outDir "[file rootname [file tail $rawPath]].JPG"]
+    if { 0 == [CanWriteFile $outPath] }  {
+      ok_err_msg "Cannot write into '$outPath'";    return 0
+    }
+    #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
+    #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
+    exec $DCRAW  -r $mR $mG $mB $mG  -o 1  -q 3  -h           -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
+}
 
 # Raw-converts 'inpPath' into temp dir
 # and returns path of the output or 0 on error.
