@@ -1,8 +1,8 @@
-# raw_to_hdr.tcl - pseudo-HDR RAW conversion script
+# raw_to_hdr.tcl - pseudo-HDR RAW conversion script - processes all RAWs in current dir
 
 set SCRIPT_DIR [file dirname [info script]]
 
-# TODO: make locally arragements to find the package(s)
+# TODO: make locally arrangements to find the package(s)
 package require ok_utils;   namespace import -force ::ok_utils::*
 
 
@@ -23,6 +23,7 @@ set _outdirPattern $::_tmpDir\OUT_*
 set g_dirHDR HDR
 
 # g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
+##### "Blend" approach looks the best for varied-exposure RAW conversions ######
 set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3 -6"
 set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3"
@@ -40,34 +41,53 @@ set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 
 set _finalDepth 8
 
 
-# Uncomment the below in order to perform only the blending stage
-# goto __fuseLbl
-
-if { 0 == [ok_create_absdirs_in_list \
-        [list $::g_dirLow $::g_dirNorm $::g_dirHigh] \
-        {"folder-for-darker-images" "folder-for-normal-images" \
-         "folder-for-brighter-images"}] }  {
-  ok_err_msg "Aborting because of failure to create temporary output directory"
-  return  -1
+proc do_job_in_current_dir {rawExt {doRawConv 1} {doBlend 1}}  {
+  if { $doRawConv } {
+    if { 0 == [_arrange_dirs]  {
+      ok_err_msg "Aborting because of failure to create a temporary output directory"
+      return  0
+    }
+    #TODO: impement
+  }
+  if { $doBlend } {
+    #TODO: impement
+  }
+  return  1
 }
 
-# ########### Make RAW conversions
-# ########### "Blend" approach looks the best for varied-exposure RAW conversions ##########
-echo ====== Begin RAW conversions ========
-for %%f in (*.arw) DO  (
-  $::DCRAW  $::g_dcrawParamsMain -b 0.3 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
-  if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
-)
-for %%f in (*.arw) DO  (
-  $::DCRAW  $::g_dcrawParamsMain -b 1.0 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirNorm\%%~nf.TIF
-  if NOT EXIST $::g_dirNorm\%%~nf.TIF (echo * Missing "$::g_dirNorm\%%~nf.TIF". Aborting... & exit /B -1)
-)
-for %%f in (*.arw) DO  (
-  $::DCRAW  $::g_dcrawParamsMain -b 1.7 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirHigh\%%~nf.TIF
-  if NOT EXIST $::g_dirHigh\%%~nf.TIF (echo * Missing "$::g_dirHigh\%%~nf.TIF". Aborting... & exit /B -1)
-)
-echo ====== Done  RAW conversions ========
 
+proc _arrange_dirs {} {
+  if { 0 == [ok_create_absdirs_in_list \
+          [list $::g_dirLow $::g_dirNorm $::g_dirHigh] \
+          {"folder-for-darker-images" "folder-for-normal-images" \
+           "folder-for-brighter-images"}] }  {
+    return  0
+  }
+  return  1
+}
+
+# Makes RAW conversions; returnsnm of processed files, 0 if none, -1 on error
+proc _convert_all_raws_in_current_dir {rawExt} {
+  puts "====== Begin RAW conversions in '[pwd]' ========"
+  set rawPaths [glob -nocomplain "*.$rawExt"]
+  if { 0 == [llength $rawPaths] }  {
+    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+    return  0
+  }
+  set brightValToOutDir [dict create \
+                            0.3 $::g_dirLow  1.0 $::g_dirNorm  1.7 $::g_dirHigh]
+  dict for {brightVal outDir} $brightValToOutDir {
+    foreach rawPath $rawPaths {
+      if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal"] } {
+        return  -1;  # error already printed
+      }
+      ##$::DCRAW  $::g_dcrawParamsMain -b 0.3 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
+      ##if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
+    }
+  }
+  puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
+  return  [llength $rawPaths]
+}
 
 :__fuseLbl
 
@@ -87,7 +107,7 @@ exit /B 0
 
 # ============== Subroutines =======================
 
-proc _convert_one_raw {rawPath outDir {rgbMultList 0}} {
+proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname [file tail $rawPath]].TIF"]
   if { 0 == [CanWriteFile $outPath] }  {
@@ -105,7 +125,7 @@ proc _convert_one_raw {rawPath outDir {rgbMultList 0}} {
 
   #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
   #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
-  exec $DCRAW  $::g_dcrawParamsMain $colorSwitches  $rawPath | $CONVERT ppm:- $::g_convertSaveParams $outPath
+  exec $DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $CONVERT ppm:- $::g_convertSaveParams $outPath
   # TODO: catch and check result by _is_dcraw_result_ok
 	ok_info_msg "Done RAW conversion of '$rawPath' into '$outPath'"
   return  1
