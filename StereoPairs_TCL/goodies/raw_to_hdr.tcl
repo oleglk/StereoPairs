@@ -2,17 +2,16 @@
 
 set SCRIPT_DIR [file dirname [info script]]
 
-# TODO: make locally arrangements to find the package(s)
+# TODO: make locally arrangements to find the package(s) instead
+source [file join $SCRIPT_DIR   ".." "setup_stereopairs.tcl"]
+
 package require ok_utils;   namespace import -force ::ok_utils::*
 
 
-set ENFUSE "C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
-set IM_DIR "C:\Program Files (x86)\ImageMagick-6.8.7-3"
+# set ENFUSE "C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
+# set IM_DIR "C:\Program Files (x86)\ImageMagick-6.8.7-3"
 # set ENFUSE "$::SCRIPT_DIR\enblend-enfuse-4.1.4-win32\bin\enfuse.exe"
 # set IM_DIR "$::SCRIPT_DIR\ImageMagick"
-set DCRAW $::IM_DIR\OK_dcraw.exe
-set CONVERT $::IM_DIR\convert.exe
-set MOGRIFY $::IM_DIR\mogrify.exe
 
 set _tmpDir TMP
 # directories for RAW conversions
@@ -49,6 +48,9 @@ proc do_job_in_current_dir {rawExt {doRawConv 1} {doBlend 1}}  {
     }
     #TODO: impement
   }
+  if { $doRawConv } {
+    #TODO: impement
+  }
   if { $doBlend } {
     #TODO: impement
   }
@@ -81,7 +83,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal"] } {
         return  -1;  # error already printed
       }
-      ##$::DCRAW  $::g_dcrawParamsMain -b 0.3 %%f |$::CONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
+      ##$::_DCRAW  $::g_dcrawParamsMain -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
       ##if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
     }
   }
@@ -98,7 +100,7 @@ for %%f in (*.arw) DO (
   %ENFUSE%  %g_fuseOpt%  --depth=%_finalDepth% --compression=lzw --output=$::g_dirHDR\%%~nf.TIF  $::g_dirLow\%%~nf.TIF $::g_dirNorm\%%~nf.TIF $::g_dirHigh\%%~nf.TIF
   if NOT EXIST "$::g_dirHDR\%%~nf.TIF" (echo * Missing "$::g_dirHDR\%%~nf.TIF". Aborting... & exit /B -1)
   # #ove alpha channel
-  $::MOGRIFY -alpha off -depth %_finalDepth% -compress LZW $::g_dirHDR\%%~nf.TIF
+  $::_IMMOGRIFY -alpha off -depth %_finalDepth% -compress LZW $::g_dirHDR\%%~nf.TIF
 )
 echo ====== Done  fusing HDR versions ========
 
@@ -123,9 +125,9 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
   set colorInfo [expr {($rgbMultList != 0)? "{$mR $mG $mB}" : "as-shot"}]
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
-  #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
-  #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $CONVERT ppm:- -quality 95 $outPath
-  exec $DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $CONVERT ppm:- $::g_convertSaveParams $outPath
+  #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $::_IMCONVERT ppm:- -quality 95 $outPath
+  #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $::_IMCONVERT ppm:- -quality 95 $outPath
+  exec $_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
   # TODO: catch and check result by _is_dcraw_result_ok
 	ok_info_msg "Done RAW conversion of '$rawPath' into '$outPath'"
   return  1
@@ -169,6 +171,42 @@ proc _is_dcraw_result_ok {execResultText} {
 	if { [string first "$key" $execResultText] >= 0 } {    set result 0  }
     }
     return  $result
+}
+
+
+
+# Reads the system-dependent paths from 'csvPath',
+# then assigns ultimate tool paths
+proc _set_ext_tool_paths_from_csv {csvPath}  {
+  if { 0 ==[ok_read_variable_values_from_csv $csvPath "external tool path(s)"]} {
+    return  0;  # error already printed
+  }
+  if { 0 == [info exists ::_IM_DIR] }  {
+    ok_err_msg "Imagemagick directory path not assigned to variable _IM_DIR by '$csvPath'"
+    return  0
+  }
+  if { 0 == [info exists ::_ENFUSE_DIR] }  {
+    ok_err_msg "Enfuse directory path not assigned to variable _ENFUSE_DIR by '$csvPath'"
+    return  0
+  }
+  set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
+  set ::_IMMOGRIFY  [format "{%s}"  [file join $::_IM_DIR "mogrify.exe"]]
+  # - DCRAW:
+  #set _DCRAW "dcraw.exe"
+  # TMP: use custom-build OK_dcraw.exe
+  set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "OK_dcraw.exe"]]
+  set ::_ENFUSE     [format "{%s}"  [file join $::_ENFUSE_DIR "enfuse.exe"]]
+  return  1
+}
+
+
+proc _read_and_check_ext_tool_paths {}  {
+  set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  if { 0 == [_set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
+    return  0;  # error already printed
+  }
+  # TODO: custom _verify_external_tools
+  if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
 }
 
 
