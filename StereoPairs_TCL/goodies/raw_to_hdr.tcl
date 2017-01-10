@@ -40,6 +40,69 @@ set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 
 set _finalDepth 8
 
 
+################################################################################
+
+proc raw_to_hdr_main {cmdLineAsStr}  {
+  global SCRIPT_DIR
+  _raw_to_hdr_set_defaults ;  # calling it in a function for repeated invocations
+  # TODO: custom _verify_external_tools
+  if { 0 == [_verify_external_tools] }  { return  0  };  # error already printed
+  
+  if { 0 == [raw_to_hdr_cmd_line $cmdLineAsStr cml] }  {
+    return  0;  # error or help already printed
+  }
+  set extToolPathsFilePath $cml(-ext_tools_filepath)
+  if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
+    return  0;  # error already printed
+  }
+  # TODO: implement
+}
+
+
+proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
+  upvar $cmlArrName      cml
+  # create the command-line description
+  set descrList \
+[list \
+  -help {"" "print help"} \
+  -ext_tools_filepath {val	"path of the file with external tool locations"} \
+  -final_depth {val	"color-depth of the final images (bit); 8 or 16"}        \
+ ]
+  array unset cmlD
+  ok_new_cmd_line_descr cmlD $descrList
+  # create dummy command line with the default parameters and copy it
+  # (if an argument inexistent by default, don't provide dummy value)
+  array unset defCml
+  ok_set_cmd_line_params defCml cmlD { \
+    {-final_depth "8"} }
+  ok_copy_array defCml cml;    # to preset default parameters
+  # now parse the user's command line
+  if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
+    ok_err_msg "Aborted because of invalid command line";	return  0
+  }
+  if { [info exists cml(-help)] } {
+    set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
+    ok_info_msg "================================================================"
+    ok_info_msg "    RAW-to-HDR converter makes RAW image conversions with accent of preserving maximal color-brightness range."
+    ok_info_msg "========= Command line parameters (in random order): =============="
+    ok_info_msg $cmdHelp
+    ok_info_msg "================================================================"
+    ok_info_msg "========= Example (note TCL-style directory separators): ======="
+    ok_info_msg " raw_to_hdr_main \"-ext_tools_filepath ../ext_tool_dirs.csv -final-depth 8\""
+    ok_info_msg "================================================================"
+    return  0
+  }
+  if { 0 == [_raw_to_hdr_parse_cmdline cml] }  {
+    ok_err_msg "Error(s) in command parameters. Aborting..."
+    return  0
+  }
+  set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
+  ok_info_msg "==== Now compare stereopairs' color-channel statistics by the following spec: ===="
+  ok_info_msg "==== \n$cmdStrNoHelp\n===="
+  return  1
+}
+
+
 proc do_job_in_current_dir {rawExt {doRawConv 1} {doBlend 1}}  {
   if { $doRawConv } {
     if { 0 == [_arrange_dirs]  {
@@ -197,16 +260,6 @@ proc _set_ext_tool_paths_from_csv {csvPath}  {
   set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "OK_dcraw.exe"]]
   set ::_ENFUSE     [format "{%s}"  [file join $::_ENFUSE_DIR "enfuse.exe"]]
   return  1
-}
-
-
-proc _read_and_check_ext_tool_paths {}  {
-  set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
-  if { 0 == [_set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
-    return  0;  # error already printed
-  }
-  # TODO: custom _verify_external_tools
-  if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
 }
 
 
