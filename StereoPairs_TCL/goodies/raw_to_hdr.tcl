@@ -42,17 +42,26 @@ set _finalDepth 8
 
 ################################################################################
 
+proc raw_to_hdr_set_defaults {}  {
+  set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
+  set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
+  set ::STS(rawExt)           "" ;  # extension of RAW iamges
+  set ::STS(outDirPath)       "" ;  # full path or relative to the current directory
+}
+################################################################################
+raw_to_hdr_set_defaults ;  # load only;  do call it in a function for repeated invocations
+################################################################################
+
 proc raw_to_hdr_main {cmdLineAsStr}  {
   global SCRIPT_DIR
   _raw_to_hdr_set_defaults ;  # calling it in a function for repeated invocations
   # TODO: custom _verify_external_tools
-  if { 0 == [_verify_external_tools] }  { return  0  };  # error already printed
+  if { 0 == [_raw_to_hdr_verify_external_tools] }  { return  0  };  # error already printed
   
   if { 0 == [raw_to_hdr_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
-  set extToolPathsFilePath $cml(-ext_tools_filepath)
-  if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
+  if { 0 == [set_ext_tool_paths_from_csv $::STS(toolsPathsFile)] }  {
     return  0;  # error already printed
   }
   # TODO: implement
@@ -65,8 +74,10 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   set descrList \
 [list \
   -help {"" "print help"} \
-  -ext_tools_filepath {val	"path of the file with external tool locations"} \
+  -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"}         \
   -final_depth {val	"color-depth of the final images (bit); 8 or 16"}        \
+  -raw_ext {val "extension of RAW images; example: arw"}                     \
+  -out_dir {val	"output directory (for HDR images)"} \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -88,7 +99,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg " raw_to_hdr_main \"-ext_tools_filepath ../ext_tool_dirs.csv -final-depth 8\""
+    ok_info_msg " raw_to_hdr_main \"-tools_paths_file ../ext_tool_dirs.csv -final-depth 8\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -97,8 +108,55 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     return  0
   }
   set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
-  ok_info_msg "==== Now compare stereopairs' color-channel statistics by the following spec: ===="
+  ok_info_msg "==== Now run RAW conversions by the following spec: ===="
   ok_info_msg "==== \n$cmdStrNoHelp\n===="
+  return  1
+}
+
+
+proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
+  upvar $cmlArrName      cml
+  set errCnt 0
+
+##   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
+ #   set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
+ #   set ::STS(rawExt)           "" ;  # extension of RAW iamges
+ #   -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"}         \
+ #   -final_depth {val "color-depth of the final images (bit); 8 or 16"}        \
+ #   -raw_ext {val "extension of RAW images; example: arw"}                     \
+ #   -out_dir {val	"output directory"} \
+ ##
+
+  if { 0 == [info exists cml(-tools_paths_file)] }  {
+    ok_err_msg "Please specify path of the CSV file with external tool locations; example: ../ext_tool_dirs.csv"
+    incr errCnt 1
+  } elseif { 0 == [ok_filepath_is_readable $cml(-tools_paths_file)] }  {
+    ok_err_msg "Inexistent or invalid file '$cml(-tools_paths_file)' specified as file with external tool locations"
+    incr errCnt 1
+  } else {
+    set ::STS(toolsPathsFile) $cml(-tools_paths_file)
+  }
+  if { [info exists cml(-raw_ext)] }  {
+    set ::STS(rawExt) $cml(-raw_ext)
+  } else {
+    ok_err_msg "Please specify extension for RAW images; example: -raw_ext ARW"
+    incr errCnt 1
+  } 
+  if { 0 == [info exists cml(-out_dir)] }  {
+    ok_err_msg "Please specify output directory; example: -out_dir HDR"
+    incr errCnt 1
+  } elseif { (1 == [file exists $cml(-out_dir)]) && \
+             (0 == [file isdirectory $cml(-out_dir)]) }  {
+    ok_err_msg "Non-directory '$cml(-out_dir)' specified as output directory"
+    incr errCnt 1
+  } else {
+    set ::STS(outDirPath)      [file normalize $cml(-out_dir)]
+  }
+  if { $errCnt > 0 }  {
+    #ok_err_msg "Error(s) in command parameters!"
+    return  0
+  }
+  #ok_info_msg "Command parameters are valid"
   return  1
 }
 
@@ -131,7 +189,7 @@ proc _arrange_dirs {} {
   return  1
 }
 
-# Makes RAW conversions; returnsnm of processed files, 0 if none, -1 on error
+# Makes RAW conversions; returns num of processed files, 0 if none, -1 on error
 proc _convert_all_raws_in_current_dir {rawExt} {
   puts "====== Begin RAW conversions in '[pwd]' ========"
   set rawPaths [glob -nocomplain "*.$rawExt"]
@@ -154,10 +212,10 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   return  [llength $rawPaths]
 }
 
-:__fuseLbl
+proc _fuse_converted_images {}  {
 
 # ######### Enfuse ###########
-md $::g_dirHDR
+md $::STS(outDirPath)
 echo ====== Begin fusing HDR versions ========
 for %%f in (*.arw) DO (
   %ENFUSE%  %g_fuseOpt%  --depth=%_finalDepth% --compression=lzw --output=$::g_dirHDR\%%~nf.TIF  $::g_dirLow\%%~nf.TIF $::g_dirNorm\%%~nf.TIF $::g_dirHigh\%%~nf.TIF
@@ -166,8 +224,7 @@ for %%f in (*.arw) DO (
   $::_IMMOGRIFY -alpha off -depth %_finalDepth% -compress LZW $::g_dirHDR\%%~nf.TIF
 )
 echo ====== Done  fusing HDR versions ========
-
-exit /B 0
+}
 
 
 # ============== Subroutines =======================
@@ -237,7 +294,6 @@ proc _is_dcraw_result_ok {execResultText} {
 }
 
 
-
 # Reads the system-dependent paths from 'csvPath',
 # then assigns ultimate tool paths
 proc _set_ext_tool_paths_from_csv {csvPath}  {
@@ -260,6 +316,38 @@ proc _set_ext_tool_paths_from_csv {csvPath}  {
   set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "OK_dcraw.exe"]]
   set ::_ENFUSE     [format "{%s}"  [file join $::_ENFUSE_DIR "enfuse.exe"]]
   return  1
+}
+
+
+proc _raw_to_hdr_verify_external_tools {} {
+  set errCnt 0
+  if { 0 == [file isdirectory $::_IM_DIR] }  {
+    ok_err_msg "Inexistent or invalid Imagemagick directory '$::_IM_DIR'"
+    incr errCnt 1
+  }
+  if { 0 == [file exists [string trim $::_IMCONVERT " {}"]] }  {
+    ok_err_msg "Inexistent ImageMagick 'convert' tool '$::_IMCONVERT'"
+    incr errCnt 1
+  }
+  if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
+    ok_err_msg "Inexistent ImageMagick 'montage' tool '$::_IMMONTAGE'"
+    incr errCnt 1
+  }
+  if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
+    ok_err_msg "Inexistent 'dcraw' tool '$::_DCRAW'"
+    incr errCnt 1
+  }
+  if { 0 == [file exists [string trim $::_ENFUSE " {}"]] }  {
+    ok_err_msg "Inexistent 'enfuse' tool '$::_ENFUSE'"
+    incr errCnt 1
+  }
+  if { $errCnt == 0 }  {
+    ok_info_msg "All external tools are present"
+    return  1
+  } else {
+    ok_err_msg "Some or all external tools are missing"
+    return  0
+  }
 }
 
 

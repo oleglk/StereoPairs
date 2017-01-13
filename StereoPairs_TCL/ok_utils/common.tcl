@@ -36,6 +36,7 @@ namespace eval ::ok_utils:: {
 	ok_copy_file_if_target_inexistent \
 	ok_move_file_if_target_inexistent \
 	ok_filepath_is_writable \
+  ok_filepath_is_readable \
   ok_filepath_is_existent_dir \
 	ok_delete_file \
 	ok_force_delete_dir \
@@ -490,6 +491,19 @@ proc ::ok_utils::ok_filepath_is_writable { fullPath } {
     set dirPath [file dirname $fullPath]
     if { ![file exists $dirPath] } {	return  0    }
     if { [expr {[file exists $fullPath]} && {[file writable $fullPath]==0}] } {
+	return  0
+    }
+    return  1
+}
+
+
+# Returns 1 if 'fullPath' is readable to the current user as a regular file
+proc ::ok_utils::ok_filepath_is_readable { fullPath } {
+    if { $fullPath == "" } {	return  0    }
+    if { [file isdirectory $fullPath] } {	return  0    }
+    set dirPath [file dirname $fullPath]
+    if { ![file exists $dirPath] } {	return  0    }
+    if { [expr {[file exists $fullPath]} && {[file readable $fullPath]==0}] } {
 	return  0
     }
     return  1
