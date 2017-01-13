@@ -47,6 +47,8 @@ proc raw_to_hdr_set_defaults {}  {
   set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
   set ::STS(outDirPath)       "" ;  # full path or relative to the current directory
+  set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
+  set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
 }
 ################################################################################
 raw_to_hdr_set_defaults ;  # load only;  do call it in a function for repeated invocations
@@ -71,6 +73,7 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
 proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   upvar $cmlArrName      cml
   # create the command-line description
+  # TODO: parameter with list of dir-s
   set descrList \
 [list \
   -help {"" "print help"} \
@@ -78,6 +81,8 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -final_depth {val	"color-depth of the final images (bit); 8 or 16"}        \
   -raw_ext {val "extension of RAW images; example: arw"}                     \
   -out_dir {val	"output directory (for HDR images)"} \
+  -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not" \
+  -do_blend    {val "1 means do perform blending (fusing) step; 0 means do not" \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -85,7 +90,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-    {-final_depth "8"} }
+    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -121,10 +126,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 ##   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
  #   set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
  #   set ::STS(rawExt)           "" ;  # extension of RAW iamges
+ #   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
+ #   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
  #   -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"}         \
  #   -final_depth {val "color-depth of the final images (bit); 8 or 16"}        \
  #   -raw_ext {val "extension of RAW images; example: arw"}                     \
  #   -out_dir {val	"output directory"} \
+ #   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not" \
+ #   -do_blend    {val "1 means do perform blending (fusing) step; 0 means do not" \
  ##
 
   if { 0 == [info exists cml(-tools_paths_file)] }  {
@@ -136,6 +145,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
   } else {
     set ::STS(toolsPathsFile) $cml(-tools_paths_file)
   }
+  if { [info exists cml(-final_depth)] }  {
+    if { ($cml(-final_depth) == 8) || ($cml(-final_depth) == 16) }  {
+      set ::STS(finalDepth) $cml(-final_depth)
+    } else {
+      ok_err_msg "Invalid value specified for final images color depth (-final_depth); should be 8 or 16"
+      incr errCnt 1
+    }
+  } 
   if { [info exists cml(-raw_ext)] }  {
     set ::STS(rawExt) $cml(-raw_ext)
   } else {
@@ -152,6 +169,22 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
   } else {
     set ::STS(outDirPath)      [file normalize $cml(-out_dir)]
   }
+  if { [info exists cml(-do_raw_conv)] }  {
+    if { ($cml(-do_raw_conv) == 0) || ($cml(-do_raw_conv) == 1) }  {
+      set ::STS(doRawConv) $cml(-do_raw_conv)
+    } else {
+      ok_err_msg "Parameter telling whether to perform RAW-conversion step (-do_raw_conv); should be 0 or 1"
+      incr errCnt 1
+    }
+  } 
+  if { [info exists cml(-do_blend)] }  {
+    if { ($cml(-do_blend) == 0) || ($cml(-do_blend) == 1) }  {
+      set ::STS(doBlend) $cml(-do_blend)
+    } else {
+      ok_err_msg "Parameter telling whether to perform blending (fusing) step (-do_blend); should be 0 or 1"
+      incr errCnt 1
+    }
+  } 
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
     return  0
@@ -161,23 +194,23 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 }
 
 
-proc do_job_in_current_dir {rawExt {doRawConv 1} {doBlend 1}}  {
-  if { $doRawConv } {
+proc do_job_in_one_dir {dirPath}  {
+  
+  if { $::STS(doRawConv) } {
     if { 0 == [_arrange_dirs]  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
       return  0
     }
+    if { 0 == [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
+      return  0;  # errors already printed
+    }
     #TODO: impement
   }
-  if { $doRawConv } {
-    #TODO: impement
-  }
-  if { $doBlend } {
+  if { $::STS(doBlend) } {
     #TODO: impement
   }
   return  1
 }
-
 
 proc _arrange_dirs {} {
   if { 0 == [ok_create_absdirs_in_list \
