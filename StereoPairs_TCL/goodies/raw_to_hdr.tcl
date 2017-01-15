@@ -46,6 +46,7 @@ proc raw_to_hdr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
   set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
+  set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
   set ::STS(outDirPath)       "" ;  # full path or relative to the current directory
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
@@ -80,7 +81,8 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"}         \
   -final_depth {val	"color-depth of the final images (bit); 8 or 16"}        \
   -raw_ext {val "extension of RAW images; example: arw"}                     \
-  -out_dir {val	"output directory (for HDR images)"} \
+  -inp_dirs {list "list of input directories' paths; absolute or relative to the current directory"} \
+  -out_dir {val	"output directory (for HDR images)"}                         \
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not" \
   -do_blend    {val "1 means do perform blending (fusing) step; 0 means do not" \
  ]
@@ -104,7 +106,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg " raw_to_hdr_main \"-tools_paths_file ../ext_tool_dirs.csv -final-depth 8\""
+    ok_info_msg " raw_to_hdr_main \"-tools_paths_file ../ext_tool_dirs.csv -final-depth 8 -inp_dirs {L R}\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -126,11 +128,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 ##   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
  #   set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
  #   set ::STS(rawExt)           "" ;  # extension of RAW iamges
+ #   set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
+ #   set ::STS(outDirPath)       "" ;  # full path or relative to the current directory
  #   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
  #   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
  #   -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"}         \
  #   -final_depth {val "color-depth of the final images (bit); 8 or 16"}        \
  #   -raw_ext {val "extension of RAW images; example: arw"}                     \
+ #   -inp_dirs {list "list of input directories' paths; absolute or relative to the current directory"} \
  #   -out_dir {val	"output directory"} \
  #   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not" \
  #   -do_blend    {val "1 means do perform blending (fusing) step; 0 means do not" \
@@ -159,6 +164,20 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     ok_err_msg "Please specify extension for RAW images; example: -raw_ext ARW"
     incr errCnt 1
   } 
+  if { 0 == [info exists cml(-inp_dirs)] }  {
+    ok_err_msg "Please specify list of input directories; example: -inp_dirs L R"
+    incr errCnt 1
+  } else {
+    set ::STS(inpDirPaths) [list]
+    foreach inDir $cml(-inp_dirs) {
+      if { 0 == [ok_filepath_is_existent_dir $inDir]) }  {
+        ok_err_msg "Non-directory '$inDir' specified as one of input directories"
+        incr errCnt 1
+      } else {
+        lappend ::STS(inpDirPaths)      [file normalize $inDir)]
+      }
+    }
+  }
   if { 0 == [info exists cml(-out_dir)] }  {
     ok_err_msg "Please specify output directory; example: -out_dir HDR"
     incr errCnt 1
