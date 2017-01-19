@@ -79,7 +79,8 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
     }
     ok_err_msg "Done RAW processing in directory #$cntDone out of $nInpDirs"
   }
-  # TODO: implement
+  ok_pri_info "Done processing RAW files under $cntDone out of $nInpDirs input directory(ies)"
+  return  1
 }
 
 
@@ -225,8 +226,17 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 }
 
 
+# Does conversion and blending for all inputs in 'dirPath'
+# Assumes 'dirPath' is a valid directory
 proc do_job_in_one_dir {dirPath}  {
   # TODO: save the old cwd, cd to dirPath
+  set oldWD [pwd]
+  set tclResult [catch { set res [cd $dirPath] } execResult]
+  if { $tclResult != 0 } {
+    ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
+    return  0
+  }
+
   if { $::STS(doRawConv) } {
     if { 0 == [_arrange_dirs]  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
@@ -240,7 +250,11 @@ proc do_job_in_one_dir {dirPath}  {
   if { $::STS(doBlend) } {
     #TODO: impement
   }
-  # TODO: cd to the old cwd
+  set tclResult [catch { set res [cd $oldWD] } execResult]
+  if { $tclResult != 0 } {
+    ok_err_msg "Failed restoring work directory to '$oldWD': $execResult!"
+    return  0
+  }
   return  1
 }
 
@@ -277,12 +291,19 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   return  [llength $rawPaths]
 }
 
-proc _fuse_converted_images {}  {
+proc _fuse_converted_images_in_current_dir {}  {
 
 # ######### Enfuse ###########
-md $::STS(outDirName)
-echo ====== Begin fusing HDR versions ========
-for %%f in (*.arw) DO (
+###  md $::STS(outDirName)
+set rawPaths [glob -nocomplain "*.$rawExt"];  # browse by original names
+if { 0 == [llength $rawPaths] }  {
+  ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+  return  0
+}
+
+puts "====== Begin fusing HDR versions in '[pwd]' ========"
+
+foreach rawPath $rawPaths {
   %ENFUSE%  %g_fuseOpt%  --depth=%_finalDepth% --compression=lzw --output=$::g_dirHDR\%%~nf.TIF  $::g_dirLow\%%~nf.TIF $::g_dirNorm\%%~nf.TIF $::g_dirHigh\%%~nf.TIF
   if NOT EXIST "$::g_dirHDR\%%~nf.TIF" (echo * Missing "$::g_dirHDR\%%~nf.TIF". Aborting... & exit /B -1)
   # #ove alpha channel
