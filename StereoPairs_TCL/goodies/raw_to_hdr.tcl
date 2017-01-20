@@ -38,14 +38,13 @@ set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6"
 set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.7"
 
-set _finalDepth 8
 
 
 ################################################################################
 
 proc raw_to_hdr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
-  set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
+  set ::STS(finalDepth)       8  ;  # color depth of final images; 8 or 16
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
   set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
@@ -73,7 +72,7 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
   set cntDone 0
   foreach inDir $::STS(inpDirPaths) {
     incr cntDone 1
-    if { 0 == [do_job_in_one_dir $inDir] }  {
+    if { 0 == [_do_job_in_one_dir $inDir] }  {
       ok_err_msg "RAW processing aborted at directory #$cntDone out of $nInpDirs"
       return  0
     }
@@ -228,9 +227,8 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 
 # Does conversion and blending for all inputs in 'dirPath'
 # Assumes 'dirPath' is a valid directory
-proc do_job_in_one_dir {dirPath}  {
-  # TODO: save the old cwd, cd to dirPath
-  set oldWD [pwd]
+proc _do_job_in_one_dir {dirPath}  {
+  set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
   set tclResult [catch { set res [cd $dirPath] } execResult]
   if { $tclResult != 0 } {
     ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
@@ -248,6 +246,7 @@ proc do_job_in_one_dir {dirPath}  {
     #TODO: impement
   }
   if { $::STS(doBlend) } {
+    # assume that RAW conversions are done and thus the directories prepared
     #TODO: impement
   }
   set tclResult [catch { set res [cd $oldWD] } execResult]
@@ -291,25 +290,28 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   return  [llength $rawPaths]
 }
 
-proc _fuse_converted_images_in_current_dir {}  {
 
 # ######### Enfuse ###########
+# Makes HDR fusings; returns num of processed files, 0 if none, -1 on error
+proc _fuse_converted_images_in_current_dir {}  {
+  # assume that directories are prepared by RAW-conversion sage
 ###  md $::STS(outDirName)
-set rawPaths [glob -nocomplain "*.$rawExt"];  # browse by original names
-if { 0 == [llength $rawPaths] }  {
-  ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
-  return  0
-}
+  set rawPaths [glob -nocomplain "*.$rawExt"];  # browse by original names
+  if { 0 == [llength $rawPaths] }  {
+    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+    return  0
+  }
+  set outDir [file join [pwd] $::STS(outDirName)];  # abs path for msg clarity
 
-puts "====== Begin fusing HDR versions in '[pwd]' ========"
-
-foreach rawPath $rawPaths {
-  %ENFUSE%  %g_fuseOpt%  --depth=%_finalDepth% --compression=lzw --output=$::g_dirHDR\%%~nf.TIF  $::g_dirLow\%%~nf.TIF $::g_dirNorm\%%~nf.TIF $::g_dirHigh\%%~nf.TIF
-  if NOT EXIST "$::g_dirHDR\%%~nf.TIF" (echo * Missing "$::g_dirHDR\%%~nf.TIF". Aborting... & exit /B -1)
-  # #ove alpha channel
-  $::_IMMOGRIFY -alpha off -depth %_finalDepth% -compress LZW $::g_dirHDR\%%~nf.TIF
-)
-echo ====== Done  fusing HDR versions ========
+  puts "====== Begin fusing [llength $rawPaths] HDR versions in '[pwd]' ========"
+  foreach rawPath $rawPaths {
+    set rawName [file rootname [file tail $rawPaths]]
+    if { 0 == [_fuse_one_hdr $rawName $outDir $::g_fuseOpt] }  {
+      return  -1
+    }
+  }
+  puts "====== Finished HDR fusing in '[pwd]'; [llength $rawPaths] image(s) processed ========"
+  return  [llength $rawPaths]
 }
 
 
@@ -331,6 +333,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
   set colorInfo [expr {($rgbMultList != 0)? "{$mR $mG $mB}" : "as-shot"}]
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
+  # TODO: enclose in catch block
   #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $::_IMCONVERT ppm:- -quality 95 $outPath
   #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $::_IMCONVERT ppm:- -quality 95 $outPath
   exec $_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
@@ -340,25 +343,56 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
 }
 
 
-# Raw-converts 'inpPath' into temp dir
-# and returns path of the output or 0 on error.
-proc _raw_conv_only {inpPath} {
-  #  _ext1 is lossless extension for intermediate files and maybe for output;
-	set fnameNoExt [file rootname [file tail $inpPath]]
-	ok_info_msg "Converting RAW file '$inpPath'; output into folder '[pwd]'"
-  set outName "$fnameNoExt.$::_ext1"
-  set outPath [file join $::_temp_dir $outName]
-  set nv_inpPath [format "{%s}" [file nativename $inpPath]]
-  set nv_outPath [format "{%s}" [file nativename $outPath]]
-  set cmdListRawConv [concat $::_DCRAW $::_def_rawconv -o $::_raw_colorspace \
-                      -O $nv_outPath $nv_inpPath]
-  if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
-    return  0; # error already printed
+proc _fuse_one_hdr {rawName outDir fuseOpt} {
+  if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
+  set outPath  [file join $outDir "$rawName.TIF"]
+  if { 0 == [CanWriteFile $outPath] }  {
+    ok_err_msg "Cannot write into '$outPath'";    return 0
   }
-
-	ok_info_msg "Done RAW conversion of '$inpPath' into '$outPath'"
-	return  $outPath
+  set inPathLow  [file join $::g_dirLow  "$rawName.TIF"]
+  set inPathNorm [file join $::g_dirNorm "$rawName.TIF"]
+  set inPathHigh [file join $::g_dirHigh "$rawName.TIF"]
+  foreach p [list $inPathLow $inPathNorm $inPathHigh]  {
+    if { ![ok_filepath_is_readable $p] }  {
+      ok_err_msg "Inexistent or unreadable intermediate image '$p'";    return 0
+    }
+  }
+  # TODO: enclose in catch block
+  exec $_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh
+  if { ![file exists $outPath] }  {
+    ok_err_msg "Missing output HDR image '$outPath'";     return 0
+  }
+##   %ENFUSE%  %g_fuseOpt%  --depth=%::STS(finalDepth)% --compression=lzw --output=$::g_dirHDR\%%~nf.TIF  $::g_dirLow\%%~nf.TIF $::g_dirNorm\%%~nf.TIF $::g_dirHigh\%%~nf.TIF
+ #   if NOT EXIST "$::g_dirHDR\%%~nf.TIF" (echo * Missing "$::g_dirHDR\%%~nf.TIF". Aborting... & exit /B -1)
+ ##
+  # TODO
+  # remove alpha channel
+  $::_IMMOGRIFY -alpha off -depth %::STS(finalDepth)% -compress LZW $::g_dirHDR\%%~nf.TIF
+ ok_info_msg "Success fusing HDR image '$outPath'"
+ return  1
 }
+
+
+## # Raw-converts 'inpPath' into temp dir
+ # # and returns path of the output or 0 on error.
+ # proc _raw_conv_only {inpPath} {
+ #   #  _ext1 is lossless extension for intermediate files and maybe for output;
+ # 	set fnameNoExt [file rootname [file tail $inpPath]]
+ # 	ok_info_msg "Converting RAW file '$inpPath'; output into folder '[pwd]'"
+ #   set outName "$fnameNoExt.$::_ext1"
+ #   set outPath [file join $::_temp_dir $outName]
+ #   set nv_inpPath [format "{%s}" [file nativename $inpPath]]
+ #   set nv_outPath [format "{%s}" [file nativename $outPath]]
+ #   set cmdListRawConv [concat $::_DCRAW $::_def_rawconv -o $::_raw_colorspace \
+ #                       -O $nv_outPath $nv_inpPath]
+ #   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
+ #     return  0; # error already printed
+ #   }
+ # 
+ # 	ok_info_msg "Done RAW conversion of '$inpPath' into '$outPath'"
+ # 	return  $outPath
+ # }
+ ##
 
 
 # Copy-pasted from Lazyconv "::dcraw::is_dcraw_result_ok"
