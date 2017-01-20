@@ -14,13 +14,6 @@ package require ok_utils;   namespace import -force ::ok_utils::*
 # set ENFUSE "$::SCRIPT_DIR\enblend-enfuse-4.1.4-win32\bin\enfuse.exe"
 # set IM_DIR "$::SCRIPT_DIR\ImageMagick"
 
-set _tmpDir TMP
-# directories for RAW conversions
-set g_dirNorm $::_tmpDir\OUT_NORM
-set g_dirLow $::_tmpDir\OUT_LOW
-set g_dirHigh $::_tmpDir\OUT_HIGH
-set _outdirPattern $::_tmpDir\OUT_*
-set g_dirHDR HDR
 
 # g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
 ##### "Blend" approach looks the best for varied-exposure RAW conversions ######
@@ -50,6 +43,12 @@ proc raw_to_hdr_set_defaults {}  {
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
+
+  set _tmpDir TMP
+  # directories for RAW conversions - relative paths - to use under CWD
+  set ::STS(dirNorm) [file join $_tmpDir OUT_NORM]
+  set ::STS(dirLow)  [file join $_tmpDir OUT_LOW]
+  set ::STS(dirHigh) [file join $_tmpDir OUT_HIGH]
 }
 ################################################################################
 raw_to_hdr_set_defaults ;  # load only;  do call it in a function for repeated invocations
@@ -86,7 +85,6 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
 proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   upvar $cmlArrName      cml
   # create the command-line description
-  # TODO: parameter with list of dir-s
   set descrList \
 [list \
   -help {"" "print help"} \
@@ -236,18 +234,19 @@ proc _do_job_in_one_dir {dirPath}  {
   }
 
   if { $::STS(doRawConv) } {
-    if { 0 == [_arrange_dirs]  {
+    if { 0 == [_arrange_dirs_in_current_dir]  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
       return  0
     }
     if { 0 == [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
     }
-    #TODO: impement
-  }
+   }
   if { $::STS(doBlend) } {
     # assume that RAW conversions are done and thus the directories prepared
-    #TODO: impement
+    if { 0 == [_fuse_converted_images_in_current_dir $::STS(rawExt)] }  {
+      return  0;  # errors already printed
+    }
   }
   set tclResult [catch { set res [cd $oldWD] } execResult]
   if { $tclResult != 0 } {
@@ -257,9 +256,9 @@ proc _do_job_in_one_dir {dirPath}  {
   return  1
 }
 
-proc _arrange_dirs {} {
+proc _arrange_dirs_in_current_dir {} {
   if { 0 == [ok_create_absdirs_in_list \
-          [list $::g_dirLow $::g_dirNorm $::g_dirHigh $::STS(outDirName)] \
+          [list $::STS(dirLow) $::STS(dirNorm) $::STS(dirHigh) $::STS(outDirName)] \
           {"folder-for-darker-images" "folder-for-normal-images" \
            "folder-for-brighter-images" "folder-for-final-HDR-images"}] }  {
     return  0
@@ -276,7 +275,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     return  0
   }
   set brightValToOutDir [dict create \
-                            0.3 $::g_dirLow  1.0 $::g_dirNorm  1.7 $::g_dirHigh]
+                            0.3 $::STS(dirLow)  1.0 $::STS(dirNorm)  1.7 $::STS(dirHigh)]
   dict for {brightVal outDir} $brightValToOutDir {
     foreach rawPath $rawPaths {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal"] } {
@@ -293,12 +292,11 @@ proc _convert_all_raws_in_current_dir {rawExt} {
 
 # ######### Enfuse ###########
 # Makes HDR fusings; returns num of processed files, 0 if none, -1 on error
-proc _fuse_converted_images_in_current_dir {}  {
+proc _fuse_converted_images_in_current_dir {rawExt}  {
   # assume that directories are prepared by RAW-conversion sage
-###  md $::STS(outDirName)
   set rawPaths [glob -nocomplain "*.$rawExt"];  # browse by original names
   if { 0 == [llength $rawPaths] }  {
-    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'; required by blend stage"
     return  0
   }
   set outDir [file join [pwd] $::STS(outDirName)];  # abs path for msg clarity
@@ -349,9 +347,9 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
   if { 0 == [CanWriteFile $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
-  set inPathLow  [file join $::g_dirLow  "$rawName.TIF"]
-  set inPathNorm [file join $::g_dirNorm "$rawName.TIF"]
-  set inPathHigh [file join $::g_dirHigh "$rawName.TIF"]
+  set inPathLow  [file join $::STS(dirLow)  "$rawName.TIF"]
+  set inPathNorm [file join $::STS(dirNorm) "$rawName.TIF"]
+  set inPathHigh [file join $::STS(dirHigh) "$rawName.TIF"]
   foreach p [list $inPathLow $inPathNorm $inPathHigh]  {
     if { ![ok_filepath_is_readable $p] }  {
       ok_err_msg "Inexistent or unreadable intermediate image '$p'";    return 0
@@ -367,7 +365,8 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
  ##
   # TODO
   # remove alpha channel
-  $::_IMMOGRIFY -alpha off -depth %::STS(finalDepth)% -compress LZW $::g_dirHDR\%%~nf.TIF
+  exec $::_IMMOGRIFY -alpha off -depth $::STS(finalDepth) -compress LZW $outPath
+##  $::_IMMOGRIFY -alpha off -depth %::STS(finalDepth)% -compress LZW $::g_dirHDR\%%~nf.TIF
  ok_info_msg "Success fusing HDR image '$outPath'"
  return  1
 }
