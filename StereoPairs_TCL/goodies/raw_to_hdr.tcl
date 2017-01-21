@@ -35,7 +35,7 @@ set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 
 
 ################################################################################
 
-proc raw_to_hdr_set_defaults {}  {
+proc _raw_to_hdr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
   set ::STS(finalDepth)       8  ;  # color depth of final images; 8 or 16
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
@@ -51,14 +51,12 @@ proc raw_to_hdr_set_defaults {}  {
   set ::STS(dirHigh) [file join $_tmpDir OUT_HIGH]
 }
 ################################################################################
-raw_to_hdr_set_defaults ;  # load only;  do call it in a function for repeated invocations
+_raw_to_hdr_set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
 proc raw_to_hdr_main {cmdLineAsStr}  {
   global SCRIPT_DIR
   _raw_to_hdr_set_defaults ;  # calling it in a function for repeated invocations
-  # TODO: custom _verify_external_tools
-  if { 0 == [_raw_to_hdr_verify_external_tools] }  { return  0  };  # error already printed
   
   if { 0 == [raw_to_hdr_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
@@ -66,8 +64,11 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
   if { 0 == [set_ext_tool_paths_from_csv $::STS(toolsPathsFile)] }  {
     return  0;  # error already printed
   }
+  # TODO: custom _verify_external_tools
+  if { 0 == [_raw_to_hdr_verify_external_tools] }  { return  0  };  # error already printed
+
   set nInpDirs [llength $::STS(inpDirPaths)]
-  ok_pri_info "Start processing RAW files under $nInpDirs input directory(ies)"
+  ok_pri_info "Start processing RAW file(s) under $nInpDirs input directory(ies)"
   set cntDone 0
   foreach inDir $::STS(inpDirPaths) {
     incr cntDone 1
@@ -77,7 +78,7 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
     }
     ok_err_msg "Done RAW processing in directory #$cntDone out of $nInpDirs"
   }
-  ok_pri_info "Done processing RAW files under $cntDone out of $nInpDirs input directory(ies)"
+  ok_pri_info "Done processing RAW file(s) under $cntDone out of $nInpDirs input directory(ies)"
   return  1
 }
 
@@ -87,14 +88,14 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # create the command-line description
   set descrList \
 [list \
-  -help {"" "print help"} \
-  -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"}         \
-  -final_depth {val	"color-depth of the final images (bit); 8 or 16"}        \
-  -raw_ext {val "extension of RAW images; example: arw"}                     \
+  -help {"" "print help"}                                                      \
+  -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
+  -final_depth {val	"color-depth of the final images (bit); 8 or 16"}         \
+  -raw_ext {val "extension of RAW images; example: arw"}                      \
   -inp_dirs {list "list of input directories' paths; absolute or relative to the current directory"} \
   -out_subdir_name {val	"name of output directory (for HDR images); created under the input directory"} \
-  -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not" \
-  -do_blend    {val "1 means do perform blending (fusing) step; 0 means do not" \
+  -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
+  -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -116,7 +117,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg " raw_to_hdr_main \"-tools_paths_file ../ext_tool_dirs.csv -final-depth 8 -inp_dirs {L R}\""
+    ok_info_msg " raw_to_hdr_main \"-tools_paths_file ../ext_tool_dirs.csv -final-depth 8 -inp_dirs {L R} -out_subdir_name OUT\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -134,23 +135,6 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
 proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
   upvar $cmlArrName      cml
   set errCnt 0
-
-##   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
- #   set ::STS(finalDepth)       "" ;  # color depth of final images; 8 or 16
- #   set ::STS(rawExt)           "" ;  # extension of RAW iamges
- #   set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
- #   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
- #   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
- #   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
- #   -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"}         \
- #   -final_depth {val "color-depth of the final images (bit); 8 or 16"}        \
- #   -raw_ext {val "extension of RAW images; example: arw"}                     \
- #   -inp_dirs {list "list of input directories' paths; absolute or relative to the current directory"} \
- #   -out_subdir_name {val	"output directory"} \
- #   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not" \
- #   -do_blend    {val "1 means do perform blending (fusing) step; 0 means do not" \
- ##
-
   if { 0 == [info exists cml(-tools_paths_file)] }  {
     ok_err_msg "Please specify path of the CSV file with external tool locations; example: ../ext_tool_dirs.csv"
     incr errCnt 1
@@ -234,14 +218,14 @@ proc _do_job_in_one_dir {dirPath}  {
   }
 
   if { $::STS(doRawConv) } {
-    if { 0 == [_arrange_dirs_in_current_dir]  {
+    if { 0 == [_arrange_dirs_in_current_dir] }  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
       return  0
     }
     if { 0 == [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
     }
-   }
+  }
   if { $::STS(doBlend) } {
     # assume that RAW conversions are done and thus the directories prepared
     if { 0 == [_fuse_converted_images_in_current_dir $::STS(rawExt)] }  {

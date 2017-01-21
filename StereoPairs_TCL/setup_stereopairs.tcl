@@ -23,7 +23,8 @@ set normTclStdExtRoot [file normalize $OK_TCLSTDEXT_ROOT]
 source [file join $normTclSrcRoot setup_utils.tcl]
 ##############################################################################
 #LZC: set dirList [list $normTclSrcRoot $normTclStdExtRoot $normConvWorkDir]
-set dirList [list $normTclSrcRoot $normTclStdExtRoot]
+## set dirList [list $normTclSrcRoot $normTclStdExtRoot]
+set dirList [list $normTclSrcRoot];  # Stereopairs code doesn't use std lib-s
 setup::check_dirs_in_list $dirList
 ##############################################################################
 setup::define_src_path $normTclSrcRoot $normTclStdExtRoot
