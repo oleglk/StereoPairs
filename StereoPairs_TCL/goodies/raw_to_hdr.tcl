@@ -4,7 +4,7 @@ set SCRIPT_DIR [file dirname [info script]]
 
 # TODO: make locally arrangements to find the package(s) instead
 # TODO: for instance use the setup file from StereoPairs if found in ../
-source [file join $SCRIPT_DIR   ".." "setup_stereopairs.tcl"]
+source [file join $SCRIPT_DIR "setup_goodies.tcl"]
 
 package require ok_utils;   namespace import -force ::ok_utils::*
 
@@ -61,14 +61,14 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
   if { 0 == [raw_to_hdr_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
-  if { 0 == [set_ext_tool_paths_from_csv $::STS(toolsPathsFile)] }  {
+  if { 0 == [_raw_to_hdr_set_ext_tool_paths_from_csv $::STS(toolsPathsFile)] } {
     return  0;  # error already printed
   }
   # TODO: custom _verify_external_tools
   if { 0 == [_raw_to_hdr_verify_external_tools] }  { return  0  };  # error already printed
 
   set nInpDirs [llength $::STS(inpDirPaths)]
-  ok_pri_info "Start processing RAW file(s) under $nInpDirs input directory(ies)"
+  ok_info_msg "Start processing RAW file(s) under $nInpDirs input directory(ies)"
   set cntDone 0
   foreach inDir $::STS(inpDirPaths) {
     incr cntDone 1
@@ -78,7 +78,7 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
     }
     ok_err_msg "Done RAW processing in directory #$cntDone out of $nInpDirs"
   }
-  ok_pri_info "Done processing RAW file(s) under $cntDone out of $nInpDirs input directory(ies)"
+  ok_info_msg "Done processing RAW file(s) under $cntDone out of $nInpDirs input directory(ies)"
   return  1
 }
 
@@ -117,7 +117,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg " raw_to_hdr_main \"-tools_paths_file ../ext_tool_dirs.csv -final-depth 8 -inp_dirs {L R} -out_subdir_name OUT\""
+    ok_info_msg " raw_to_hdr_main \"-final-depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -164,11 +164,11 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
   } else {
     set ::STS(inpDirPaths) [list]
     foreach inDir $cml(-inp_dirs) {
-      if { 0 == [ok_filepath_is_existent_dir $inDir]) }  {
+      if { 0 == [ok_filepath_is_existent_dir $inDir] }  {
         ok_err_msg "Non-directory '$inDir' specified as one of input directories"
         incr errCnt 1
       } else {
-        lappend ::STS(inpDirPaths)      [file normalize $inDir)]
+        lappend ::STS(inpDirPaths)      [file normalize $inDir]
       }
     }
   }
@@ -399,7 +399,7 @@ proc _is_dcraw_result_ok {execResultText} {
 
 # Reads the system-dependent paths from 'csvPath',
 # then assigns ultimate tool paths
-proc _set_ext_tool_paths_from_csv {csvPath}  {
+proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
   if { 0 ==[ok_read_variable_values_from_csv $csvPath "external tool path(s)"]} {
     return  0;  # error already printed
   }
