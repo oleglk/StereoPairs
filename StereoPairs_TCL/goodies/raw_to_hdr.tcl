@@ -216,6 +216,7 @@ proc _do_job_in_one_dir {dirPath}  {
     ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
     return  0
   }
+  TODO: set ::g_workDir $::STS(dirLow); then use as root-path for tmp-dirs, etc.
 
   if { $::STS(doRawConv) } {
     if { 0 == [_arrange_dirs_in_current_dir] }  {
@@ -302,7 +303,7 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
 proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname [file tail $rawPath]].TIF"]
-  if { 0 == [CanWriteFile $outPath] }  {
+  if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
 
@@ -316,10 +317,13 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
   # TODO: enclose in catch block
-  #exec dcraw  -r $mR $mG $mB $mG  -o 2  -q 3  -h  -k 10   -c  $rawPath | $::_IMCONVERT ppm:- -quality 95 $outPath
-  #exec dcraw  -r $mR $mG $mB $mG  -o 1  -q 3  -h   -k 10   -c  $rawPath | $::_IMCONVERT ppm:- -quality 95 $outPath
-  exec $_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
+  #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
   # TODO: catch and check result by _is_dcraw_result_ok
+  set cmdListRawConv [concat $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath]
+  if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
+    return  0; # error already printed
+  }
+
 	ok_info_msg "Done RAW conversion of '$rawPath' into '$outPath'"
   return  1
 }
@@ -328,7 +332,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "$rawName.TIF"]
-  if { 0 == [CanWriteFile $outPath] }  {
+  if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
   set inPathLow  [file join $::STS(dirLow)  "$rawName.TIF"]
@@ -340,7 +344,7 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
     }
   }
   # TODO: enclose in catch block
-  exec $_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh
+  eval exec $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh
   if { ![file exists $outPath] }  {
     ok_err_msg "Missing output HDR image '$outPath'";     return 0
   }
@@ -349,7 +353,7 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
  ##
   # TODO
   # remove alpha channel
-  exec $::_IMMOGRIFY -alpha off -depth $::STS(finalDepth) -compress LZW $outPath
+  eval exec $::_IMMOGRIFY -alpha off -depth $::STS(finalDepth) -compress LZW $outPath
 ##  $::_IMMOGRIFY -alpha off -depth %::STS(finalDepth)% -compress LZW $::g_dirHDR\%%~nf.TIF
  ok_info_msg "Success fusing HDR image '$outPath'"
  return  1

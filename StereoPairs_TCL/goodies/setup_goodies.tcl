@@ -4,9 +4,9 @@ set SCRIPT_DIR [file dirname [info script]]
 
 ##############################################################################
 # OK_TCLSRC_ROOT <- root directory for TCL source code
-set OK_TCLSRC_ROOT    $SCRIPT_DIR
+set OK_TCLSRC_ROOT    [file join $SCRIPT_DIR ".."]; # "goodies" are in subdir
 # OK_TCLSTDEXT_ROOT <- root directory for TCL standard extension libraries
-set OK_TCLSTDEXT_ROOT $SCRIPT_DIR/../Libs_TCL
+set OK_TCLSTDEXT_ROOT [file join $SCRIPT_DIR ".." "Libs_TCL"]
 #LZC: # OK_CONV_WORK_DIR <- root directory for converter internal use
 #LZC: set OK_CONV_WORK_DIR  "e:/LazyConv/TCL/Work"
 ##############################################################################
