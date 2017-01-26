@@ -29,7 +29,7 @@ set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6"
-set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.7"
+set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%:95% --exposure-mu=0.7"
 
 
 
@@ -180,7 +180,7 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     ok_err_msg "Non-directory '$cml(-out_subdir_name)' specified as output directory"
     incr errCnt 1
   } else {
-    set ::STS(outDirName)      [file normalize $cml(-out_subdir_name)]
+    set ::STS(outDirName)      $cml(-out_subdir_name)
   }
   if { [info exists cml(-do_raw_conv)] }  {
     if { ($cml(-do_raw_conv) == 0) || ($cml(-do_raw_conv) == 1) }  {
@@ -216,8 +216,7 @@ proc _do_job_in_one_dir {dirPath}  {
     ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
     return  0
   }
-  TODO: set ::g_workDir $::STS(dirLow); then use as root-path for tmp-dirs, etc.
-
+  ok_info_msg "Success changing work directory to '$dirPath'"
   if { $::STS(doRawConv) } {
     if { 0 == [_arrange_dirs_in_current_dir] }  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
@@ -259,9 +258,11 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
     return  0
   }
-  set brightValToOutDir [dict create \
-                            0.3 $::STS(dirLow)  1.0 $::STS(dirNorm)  1.7 $::STS(dirHigh)]
-  dict for {brightVal outDir} $brightValToOutDir {
+  set brightValToAbsOutDir [dict create \
+                            0.3 [file join [pwd] $::STS(dirLow)] \
+                            1.0 [file join [pwd] $::STS(dirNorm)] \
+                            1.7 [file join [pwd] $::STS(dirHigh)]]
+  dict for {brightVal outDir} $brightValToAbsOutDir {
     foreach rawPath $rawPaths {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal"] } {
         return  -1;  # error already printed
@@ -344,6 +345,7 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
     }
   }
   # TODO: enclose in catch block
+  puts "enfuse cmd-line: '[subst  -nocommands {$::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh}]'"
   eval exec $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh
   if { ![file exists $outPath] }  {
     ok_err_msg "Missing output HDR image '$outPath'";     return 0
