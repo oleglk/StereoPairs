@@ -289,7 +289,7 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
 
   puts "====== Begin fusing [llength $rawPaths] HDR versions in '[pwd]' ========"
   foreach rawPath $rawPaths {
-    set rawName [file rootname [file tail $rawPaths]]
+    set rawName [file rootname [file tail $rawPath]]
     if { 0 == [_fuse_one_hdr $rawName $outDir $::g_fuseOpt] }  {
       return  -1
     }
@@ -345,8 +345,15 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
     }
   }
   # TODO: enclose in catch block
-  puts "enfuse cmd-line: '[subst  -nocommands {$::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh}]'"
-  eval exec $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh
+  ####puts "enfuse cmd-line (rawName='$rawName', outDir='$outDir'):   '[subst  -nocommands {$::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh}]'"
+  puts "enfuse cmd-line (rawName='$rawName', outDir='$outDir'):  {$cmdListFuse}"
+  set cmdListFuse [concat $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) \
+                          --compression=lzw "--output=$outPath"  \
+                          "$inPathLow" "$inPathNorm" "$inPathHigh"]
+  if { 0 == [ok_run_loud_os_cmd $cmdListFuse 0] }  {
+    return  0; # error already printed
+  }
+
   if { ![file exists $outPath] }  {
     ok_err_msg "Missing output HDR image '$outPath'";     return 0
   }
