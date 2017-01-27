@@ -344,13 +344,11 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
       ok_err_msg "Inexistent or unreadable intermediate image '$p'";    return 0
     }
   }
-  # TODO: enclose in catch block
-  ####puts "enfuse cmd-line (rawName='$rawName', outDir='$outDir'):   '[subst  -nocommands {$::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) --compression=lzw --output=$outPath  $inPathLow $inPathNorm $inPathHigh}]'"
-  puts "enfuse cmd-line (rawName='$rawName', outDir='$outDir'):  {$cmdListFuse}"
   set cmdListFuse [concat $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) \
                           --compression=lzw "--output=$outPath"  \
                           "$inPathLow" "$inPathNorm" "$inPathHigh"]
-  if { 0 == [ok_run_loud_os_cmd $cmdListFuse 0] }  {
+  ok_info_msg "enfuse cmd-line (rawName='$rawName', outDir='$outDir'):  {$cmdListFuse}"
+  if { 0 == [ok_run_loud_os_cmd $cmdListFuse _is_enfuse_result_ok] }  {
     return  0; # error already printed
   }
 
@@ -405,6 +403,28 @@ proc _is_dcraw_result_ok {execResultText} {
 #     puts "--------------------------------------------"
     foreach key $errKeys {
 	if { [string first "$key" $execResultText] >= 0 } {    set result 0  }
+    }
+    return  $result
+}
+
+
+# Verifies whether enfuse command line ended OK through the test it printed.
+# Returns 1 if it was good, 0 otherwise.
+proc _is_enfuse_result_ok {execResultText} {
+    # 'execResultText' tells how enfuse-based command ended
+    # - OK if noone of 'errKeys' appears
+    set result 1;    # as if it ended OK
+    set errKeys [list {enfuse: no input files specified} {require arguments} {enfuse: unrecognized} {enfuse: error opening output file}]
+#     puts ">>> Check for error keys '$errKeys' the following string:"
+#     puts "--------------------------------------------"
+#     puts "'$execResultText'"
+#     puts "--------------------------------------------"
+    foreach key $errKeys {
+      ok_trace_msg "Look for '$key' in command output"
+      if { [string first "$key" $execResultText] >= 0 } {
+        ok_err_msg "Error indicator detected in command output: '$key'"
+        set result 0
+      }
     }
     return  $result
 }
