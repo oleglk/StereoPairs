@@ -17,7 +17,7 @@ package require ok_utils;   namespace import -force ::ok_utils::*
 
 # g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
 ##### "Blend" approach looks the best for varied-exposure RAW conversions ######
-set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3 -6"
+set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3 -6 -g 2.4 12.9"
 set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3"
 # set g_convertSaveParams "-depth 8 -compress LZW"
@@ -76,7 +76,7 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
       ok_err_msg "RAW processing aborted at directory #$cntDone out of $nInpDirs"
       return  0
     }
-    ok_err_msg "Done RAW processing in directory #$cntDone out of $nInpDirs"
+    ok_info_msg "Done RAW processing in directory #$cntDone out of $nInpDirs"
   }
   ok_info_msg "Done processing RAW file(s) under $cntDone out of $nInpDirs input directory(ies)"
   return  1
@@ -317,9 +317,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
   set colorInfo [expr {($rgbMultList != 0)? "{$mR $mG $mB}" : "as-shot"}]
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
-  # TODO: enclose in catch block
   #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
-  # TODO: catch and check result by _is_dcraw_result_ok
   set cmdListRawConv [concat $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath]
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
     return  0; # error already printed

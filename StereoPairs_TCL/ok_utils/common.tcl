@@ -758,7 +758,7 @@ proc ::ok_utils::ok_exec_under_catch {scriptToExec scriptResult} {
 # Returns 1 on success, 0 on error.
 # This proc did not appear in LazyConv.
 proc ::ok_utils::ok_run_silent_os_cmd {cmdList}  {
-	ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
+	#ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
   set tclExecResult [catch {    set result [eval exec $cmdList]
     #if { 1 == [ok_loud_mode] } {	    flush $logFile	}
     if { $result == 0 }  { return 0 } ;  # error already printed
@@ -777,7 +777,7 @@ proc ::ok_utils::ok_run_silent_os_cmd {cmdList}  {
 # Returns 1 on success, 0 on error.
 # This proc did not appear in LazyConv.
 proc ::ok_utils::ok_run_loud_os_cmd {cmdList outputCheckCB}  {
-	ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
+	#ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
   set tclExecResult1 [catch { set result [eval exec $cmdList] } cmdExecResult]
   set tclExecResult2 [catch {
     if { 0 == [$outputCheckCB $cmdExecResult] } {
