@@ -88,6 +88,12 @@ proc preferences_get_initial_values {arrayName}  {
   set _prefs(-workarea_root_dir)  "." ; # results in $_prefs(-INITIAL_WORK_DIR)
   # TODO
 
+  # user command #1
+  set _prefs(-usr_1_cmd_line)  "" ; # custom user command #1 - full cmd line
+
+  # user command #2
+  set _prefs(-usr_2_cmd_line)  "" ; # custom user command #2 - full cmd line
+  
 #  set _prefs(-)  ""
 
   
@@ -196,6 +202,22 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set _prefs(WORKAREA_RESTORER__keyOnlyArgsList) [list -simulate_only]
   set _prefs(WORKAREA_RESTORER__hardcodedArgsStr) ""
 ################################################################################
+################################################################################
+  set _prefs(USR_1_CMD__keyToDescrAndFormat) [dict create \
+    -usr_1_cmd_line {"full command line of user command #1" "%s"} \
+  ]
+  set _prefs(USR_1_CMD__keysInOrder) [list -usr_1_cmd_line]
+  set _prefs(USR_1_CMD__keyOnlyArgsList) [list]
+  set _prefs(USR_1_CMD__hardcodedArgsStr) ""
+################################################################################
+################################################################################
+  set _prefs(USR_2_CMD__keyToDescrAndFormat) [dict create \
+    -usr_2_cmd_line {"full command line of user command #2" "%s"} \
+  ]
+  set _prefs(USR_2_CMD__keysInOrder) [list -usr_2_cmd_line]
+  set _prefs(USR_2_CMD__keyOnlyArgsList) [list]
+  set _prefs(USR_2_CMD__hardcodedArgsStr) ""
+################################################################################
 
 ################################################################################
 ## ALL_PREFERENCES__keyToDescrAndFormat should automatically assemble ALL RECORDS
@@ -216,7 +238,12 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
               [list "HEADER: ==== Options specific to Workarea-Cleaner  ===="] \
               $_prefs(WORKAREA_CLEANER__keysInOrder)   \
               [list "HEADER: ==== Options specific to Workarea-Restorer ===="] \
-              $_prefs(WORKAREA_RESTORER__keysInOrder)  ]
+              $_prefs(WORKAREA_RESTORER__keysInOrder)  \
+              [list "HEADER: ==== Options specific to User-Command-1    ===="] \
+              $_prefs(USR_1_CMD__keysInOrder)  \
+              [list "HEADER: ==== Options specific to User-Command-2    ===="] \
+              $_prefs(USR_2_CMD__keysInOrder)  \
+              ]
   # prepend SHARED section with its header
   set keysUsedByUtils [ok_group_repeated_elements_in_list     \
                                                   $keysInOrderWithRepetitions 0]
