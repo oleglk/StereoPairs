@@ -200,6 +200,8 @@ proc GUI_UsrCmd1 {}  {
   return  1
 }
 
+# ?Cmd-line example: catch {open "|\"[info nameofexecutable]\" \"C:/Program Files (x86)/etcl/TKCon/tkcon.tcl\""} res
+# Non-working: catch {open "|\"c:/Windows/System32/cmd.exe\" \"/K\" \"D:/Photo/TMP/Try_raw2hdr/SCRIPT_TMP/trial_batch.bat\""} res
 
 proc GUI_UsrCmd2 {}  {
   global APP_TITLE
