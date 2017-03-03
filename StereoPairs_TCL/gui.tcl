@@ -196,7 +196,13 @@ textview_prebuild $TEXTVIEW_HELP  ; # prepare window for the help
 proc GUI_UsrCmd1 {}  {
   global APP_TITLE
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
+  set paramStr [_GUI_RequestOptions "Custom-command-1" \
+                                    "CUST_1_CMD" errCnt]
+  if { $errCnt > 0 } {
+    _UpdateGuiEndAction;  return  0;  # error already reported
+  }
+  catch {exec $paramStr} ;   # THE EXECUTION
+  #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
   return  1
 }
