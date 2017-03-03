@@ -108,10 +108,10 @@ wm minsize . 500 300  ;   # chosen experimentally on 1600x900 screen
 
 grid [ttk::frame .top -padding "3 3 12 12"] -column 0 -row 0 -sticky nwes
 grid columnconfigure . 0 -weight 1
-grid columnconfigure .top 0 -weight 0
+#grid columnconfigure .top 0 -weight 0
 grid columnconfigure .top 1 -weight 1 -uniform 88;  grid columnconfigure .top 2 -weight 1 -uniform 88
 grid columnconfigure .top 3 -weight 1 -uniform 88;  grid columnconfigure .top 4 -weight 1 -uniform 88
-grid columnconfigure .top 6 -weight 0
+#grid columnconfigure .top 6 -weight 0
 grid rowconfigure . 0 -weight 1
 grid rowconfigure .top 0 -weight 0
 grid rowconfigure .top 1 -weight 0;   grid rowconfigure .top 2 -weight 0
@@ -120,8 +120,9 @@ grid rowconfigure .top 5 -weight 1
 
 
 grid [ttk::frame .top.userCmds -relief sunken] -column 1 -row 1 -sticky we
-pack [ttk::button .top.userCmds.usr1 -text "Usr1" -command GUI_UsrCmd1] -side left -fill y -expand 0
-pack [ttk::button .top.userCmds.usr2 -text "Usr2" -command GUI_UsrCmd2] -side left -fill y -expand 0
+# usr buttons get explicit min-width to override that of the style
+pack [ttk::button .top.userCmds.usr1 -text "Usr1" -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
+pack [ttk::button .top.userCmds.usr2 -text "Usr2" -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
 
 grid [ttk::button .top.preferences -text "Preferences..." -command GUI_ChangePreferences] -column 3 -row 1 -sticky we
 
