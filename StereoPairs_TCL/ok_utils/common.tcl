@@ -18,6 +18,7 @@ namespace eval ::ok_utils:: {
 	ok_name_in_array \
 	ok_discard_empty_list_elements \
   ok_group_repeated_elements_in_list \
+  ok_split_string_by_whitespace \
 	ok_subtract_list_from_list \
 	ok_copy_array \
 	ok_list_to_array \
@@ -47,6 +48,7 @@ namespace eval ::ok_utils:: {
   ok_strip_prefix_from_filepath   \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
+  ok_exec_under_catch \
   ok_run_silent_os_cmd \
   ok_run_loud_os_cmd
 }
@@ -142,6 +144,12 @@ proc ::ok_utils::ok_group_repeated_elements_in_list {inpList headOrTail} {
   }
   if { $headOrTail == 0 } { return  [concat $repKeys $uniKeys]
   } else                  { return  [concat $uniKeys $repKeys] }
+}
+
+
+# Returns a list with words from 'inpStr'
+proc ::ok_utils::ok_split_string_by_whitespace {inpStr} {
+  return  [regexp -all -inline {\S+} $inpStr]
 }
 
 

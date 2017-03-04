@@ -201,7 +201,12 @@ proc GUI_UsrCmd1 {}  {
   if { $errCnt > 0 } {
     _UpdateGuiEndAction;  return  0;  # error already reported
   }
-  catch {exec $paramStr} ;   # THE EXECUTION
+  set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  ##catch {exec $cmdLine} ;   # THE EXECUTION
+  ##exec $cmdLine ;   # THE EXECUTION
+  ok_exec_under_catch [list exec $cmdLine] resultText
+  #TODO: print only several starting and trailing lines from the cmd output
+  ok_info_msg "Custom-command-1 output:\n==========\n$resultText\n==========\n"
   #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
   return  1
