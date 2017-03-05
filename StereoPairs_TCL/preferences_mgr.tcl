@@ -211,12 +211,12 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   set _prefs(CUST_1_CMD__hardcodedArgsStr) ""
 ################################################################################
 ################################################################################
-  set _prefs(USR_2_CMD__keyToDescrAndFormat) [dict create \
+  set _prefs(CUST_2_CMD__keyToDescrAndFormat) [dict create \
     -custom_cmd_2 {"full command line of custom command #2" "%s"} \
   ]
-  set _prefs(USR_2_CMD__keysInOrder) [list -custom_cmd_2]
-  set _prefs(USR_2_CMD__keyOnlyArgsList) [list]
-  set _prefs(USR_2_CMD__hardcodedArgsStr) ""
+  set _prefs(CUST_2_CMD__keysInOrder) [list -custom_cmd_2]
+  set _prefs(CUST_2_CMD__keyOnlyArgsList) [list]
+  set _prefs(CUST_2_CMD__hardcodedArgsStr) ""
 ################################################################################
 
 ################################################################################
@@ -242,7 +242,7 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
               [list "HEADER: ==== Options specific to User-Command-1    ===="] \
               $_prefs(CUST_1_CMD__keysInOrder)  \
               [list "HEADER: ==== Options specific to User-Command-2    ===="] \
-              $_prefs(USR_2_CMD__keysInOrder)  \
+              $_prefs(CUST_2_CMD__keysInOrder)  \
               ]
   # prepend SHARED section with its header
   set keysUsedByUtils [ok_group_repeated_elements_in_list     \

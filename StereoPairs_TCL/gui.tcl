@@ -202,11 +202,10 @@ proc GUI_UsrCmd1 {}  {
     _UpdateGuiEndAction;  return  0;  # error already reported
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
-  ##catch {exec $cmdLine} ;   # THE EXECUTION
-  ##exec $cmdLine ;   # THE EXECUTION
-  ok_exec_under_catch [list exec $cmdLine] resultText
-  #TODO: print only several starting and trailing lines from the cmd output
-  ok_info_msg "Custom-command-1 output:\n==========\n$resultText\n==========\n"
+  if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
+    #TODO: print only several starting and trailing lines from the cmd output
+    ok_info_msg "Custom-command-1 output:\n==========\n$resultText\n==========\n"
+  }
   #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
   return  1
@@ -218,7 +217,17 @@ proc GUI_UsrCmd1 {}  {
 proc GUI_UsrCmd2 {}  {
   global APP_TITLE
   if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
-  tk_messageBox -message "User-command-2 not implemented" -title $APP_TITLE
+  set paramStr [_GUI_RequestOptions "Custom-command-2" \
+                                    "CUST_2_CMD" errCnt]
+  if { $errCnt > 0 } {
+    _UpdateGuiEndAction;  return  0;  # error already reported
+  }
+  set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
+    #TODO: print only several starting and trailing lines from the cmd output
+    ok_info_msg "Custom-command-2 output:\n==========\n$resultText\n==========\n"
+  }
+  #tk_messageBox -message "User-command-2 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
   return  1
 }
