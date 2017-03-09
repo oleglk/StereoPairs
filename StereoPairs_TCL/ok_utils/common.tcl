@@ -46,6 +46,7 @@ namespace eval ::ok_utils:: {
   ok_dirpath_equal  \
   ok_find_filepaths_common_prefix \
   ok_strip_prefix_from_filepath   \
+  ok_truncate_text \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
   ok_exec_under_catch \
@@ -683,6 +684,13 @@ proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix \
   
   # stick it all together (the eval is to flatten the filePath list)
   return [eval file join $prefix $tt]
+}
+
+
+# Returns 1st 'nFirstToKeep' and 'nLastToKeep' lines from 'inpMultilineText'
+proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
+  # TODO: find newline #nFirstToKeep from the beginning
+  # TODO: find newline #nLastToKeep from the end
 }
 
 
