@@ -688,9 +688,20 @@ proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix \
 
 
 # Returns 1st 'nFirstToKeep' and 'nLastToKeep' lines from 'inpMultilineText'
+# On error returns 0.
 proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
-  # TODO: find newline #nFirstToKeep from the beginning
-  # TODO: find newline #nLastToKeep from the end
+  if { ($nFirstToKeep < 0) || ($nLastToKeep < 0) }  {
+    ok_err_msg "ok_truncate_text: negative count(s) - first($nFirstToKeep), last($nLastToKeep)"
+    return  0
+  }
+  set crIdxPairs [regexp -inline -all -indices "\n" $inpMultilineText]
+  # find newline #nFirstToKeep from the beginning
+  set startCutFrom [lindex [lindex $crIdxPairs $nFirstToKeep] 0]
+  # find newline #nLastToKeep from the end
+  set lastI [expr {[llength $crIdxPairs] - $nLastToKeep}]
+  set stopCutAt  [lindex [lindex $crIdxPairs $lastI] 0]
+  ok_trace_msg "Cutting: 0...$startCutFrom...$stopCutAt...[expr {[string length $inpMultilineText]-1}]"
+  return  [string replace $inpMultilineText $startCutFrom $stopCutAt ""]
 }
 
 
