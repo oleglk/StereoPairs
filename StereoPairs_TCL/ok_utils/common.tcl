@@ -700,17 +700,27 @@ proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
   if {        $nFirstToKeep == 0 }  {
     set startCutFrom 0
   } elseif {  $nFirstToKeep < $nLines }  {
-    set startCutFrom [lindex [lindex $crIdxPairs [expr $nFirstToKeep-1]] 0]
+    set startCutFrom [expr 1 + \
+                        [lindex [lindex $crIdxPairs [expr $nFirstToKeep-1]] 0]]
   } else {
     set startCutFrom end
   }
   # find newline #nLastToKeep from the end
   #TODO: fix last index
-  set lastI [expr {[llength $crIdxPairs] - 1 - $nLastToKeep}]
-  set stopCutAt  [lindex [lindex $crIdxPairs $lastI] 0]
+  if { $nLastToKeep == 0 }  {
+    set lastI end;  set stopCutAt end
+  } elseif { $nLastToKeep < $nLines }  {
+    set lastI [expr {[llength $crIdxPairs] - $nLastToKeep}]
+    set stopCutAt  [expr 0 + [lindex [lindex $crIdxPairs $lastI] 0]]
+  } else {
+    set lastI 0;  set stopCutAt 0
+  }
   ok_trace_msg "crIdxPairs={$crIdxPairs}; lastI=$lastI; stopCutAt=$stopCutAt"
   ok_trace_msg "Cutting: 0...($startCutFrom...$stopCutAt)...[expr {[string length $inpMultilineText]-1}]"
-  return  [string replace $inpMultilineText $startCutFrom $stopCutAt ""]
+  set res [expr {($startCutFrom < $stopCutAt)?                                \
+              [string replace $inpMultilineText $startCutFrom $stopCutAt ""]  \
+              : $inpMultilineText}]
+  return  $res
 }
 
 
