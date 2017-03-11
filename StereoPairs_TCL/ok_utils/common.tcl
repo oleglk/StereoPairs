@@ -695,12 +695,21 @@ proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
     return  0
   }
   set crIdxPairs [regexp -inline -all -indices "\n" $inpMultilineText]
+  set nLines [llength $crIdxPairs]
   # find newline #nFirstToKeep from the beginning
-  set startCutFrom [lindex [lindex $crIdxPairs $nFirstToKeep] 0]
+  if {        $nFirstToKeep == 0 }  {
+    set startCutFrom 0
+  } elseif {  $nFirstToKeep < $nLines }  {
+    set startCutFrom [lindex [lindex $crIdxPairs [expr $nFirstToKeep-1]] 0]
+  } else {
+    set startCutFrom end
+  }
   # find newline #nLastToKeep from the end
-  set lastI [expr {[llength $crIdxPairs] - $nLastToKeep}]
+  #TODO: fix last index
+  set lastI [expr {[llength $crIdxPairs] - 1 - $nLastToKeep}]
   set stopCutAt  [lindex [lindex $crIdxPairs $lastI] 0]
-  ok_trace_msg "Cutting: 0...$startCutFrom...$stopCutAt...[expr {[string length $inpMultilineText]-1}]"
+  ok_trace_msg "crIdxPairs={$crIdxPairs}; lastI=$lastI; stopCutAt=$stopCutAt"
+  ok_trace_msg "Cutting: 0...($startCutFrom...$stopCutAt)...[expr {[string length $inpMultilineText]-1}]"
   return  [string replace $inpMultilineText $startCutFrom $stopCutAt ""]
 }
 
