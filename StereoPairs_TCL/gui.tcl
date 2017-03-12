@@ -16,7 +16,7 @@ source [file join $SCRIPT_DIR   "gui_text_viewer.tcl"]
 ### Sketch of the GUI #####
 # |                 |                 |                   |                   | |
 # +---------------------------------------------------------------------------+-+
-# |                 |                 |BTN preferences    |BTN help           | |
+# |BTNcust1|BTNcust2|                 |BTN preferences    |BTN help           | |
 # +---------------------------------------------------------------------------+-+
 # |BTN chooseDir    |                 ENT workDir                             | |
 # +---------------------------------------------------------------------------+-+
@@ -121,8 +121,8 @@ grid rowconfigure .top 5 -weight 1
 
 grid [ttk::frame .top.userCmds -relief sunken] -column 1 -row 1 -sticky we
 # usr buttons get explicit min-width to override that of the style
-pack [ttk::button .top.userCmds.usr1 -text "Usr1" -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
-pack [ttk::button .top.userCmds.usr2 -text "Usr2" -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
+pack [ttk::button .top.userCmds.usr1 -text "Cust1" -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
+pack [ttk::button .top.userCmds.usr2 -text "Cust2" -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
 
 grid [ttk::button .top.preferences -text "Preferences..." -command GUI_ChangePreferences] -column 3 -row 1 -sticky we
 
@@ -203,8 +203,8 @@ proc GUI_UsrCmd1 {}  {
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
-    #TODO: print only several starting and trailing lines from the cmd output
-    ok_info_msg "Custom-command-1 output:\n==========\n$resultText\n==========\n"
+    set truncText [ok_truncate_text $resultText 2 4]
+    ok_info_msg "Custom-command-1 output:\n==========\n$truncText\n==========\n"
   }
   #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
@@ -224,8 +224,8 @@ proc GUI_UsrCmd2 {}  {
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
-    #TODO: print only several starting and trailing lines from the cmd output
-    ok_info_msg "Custom-command-2 output:\n==========\n$resultText\n==========\n"
+    set truncText [ok_truncate_text $resultText 2 4]
+    ok_info_msg "Custom-command-2 output:\n==========\n$truncText\n==========\n"
   }
   #tk_messageBox -message "User-command-2 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
