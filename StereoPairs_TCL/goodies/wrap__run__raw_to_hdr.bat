@@ -1,4 +1,4 @@
-@REM run__raw_to_hdr.bat
+@REM wrap__run__raw_to_hdr.bat
 
 @echo off
 
@@ -9,20 +9,8 @@ if ERRORLEVEL 1 (
   goto :abort
 )
 
-start cmd /k (
- echo ==============================================
- echo == run__raw_to_hdr.bat started in '%cd%'
- echo ==============================================
- cd L
- call %SCRIPT_DIR%\raw_to_hdr.bat
- cd ..\R
- call %SCRIPT_DIR%\raw_to_hdr.bat
- cd ..\
- echo ==============================================
- echo == run__raw_to_hdr.bat finished in '%cd%'
- echo ==============================================
- pause
-)
+start cmd /k %SCRIPT_DIR%\run__raw_to_hdr_on_l_r.bat
+
 @echo on
 
 

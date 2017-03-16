@@ -1,4 +1,4 @@
-@REM run__raw_to_hdr.bat
+@REM run__raw_to_hdr_on_l_r.bat
 
 @echo off
 
@@ -9,7 +9,6 @@ if ERRORLEVEL 1 (
   goto :abort
 )
 
-start cmd /k (
  echo ==============================================
  echo == run__raw_to_hdr.bat started in '%cd%'
  echo ==============================================
@@ -22,7 +21,6 @@ start cmd /k (
  echo == run__raw_to_hdr.bat finished in '%cd%'
  echo ==============================================
  pause
-)
 @echo on
 
 
