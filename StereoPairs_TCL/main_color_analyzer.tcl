@@ -196,20 +196,27 @@ proc _color_analyzer_parse_cmdline {cmlArrName}  {
     set ::STS(outDirPath)      [file normalize $cml(-out_dir)]
     # validity of pair-list path will be checked after out-dir creation
   }
- if { 1 == [info exists cml(-ext_left)] }  {
+ if { ([info exists cml(-ext_left)]) && \
+      ([IsStdImageExtension $cml(-ext_left)]) }  {
     set ::STS(stdImgExtLeft) $cml(-ext_left)
   } else {
-    ok_err_msg "Please specify extension for left images; example: -ext_left TIF"
+    ok_err_msg "Please specify extension for left images; example: -ext_left TIF; only standard images permitted ([dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT])"
     incr errCnt 1
   } 
- if { 1 == [info exists cml(-ext_right)] }  {
+ if { ([info exists cml(-ext_right)]) && \
+      ([IsStdImageExtension $cml(-ext_right)]) }  {
     set ::STS(stdImgExtRight) $cml(-ext_right)
   } else {
-    ok_err_msg "Please specify extension for right images; example: -ext_right TIF"
+    ok_err_msg "Please specify extension for right images; example: -ext_right TIF; only standard images permitted ([dict keys $::KNOWN_STD_IMG_EXTENSIONS_DICT])"
     incr errCnt 1
   } 
   if { 1 == [info exists cml(-warn_color_diff_above)] }  {
-    set ::STS(colorDiffThresh) $cml(-warn_color_diff_above)
+    if { $cml(-warn_color_diff_above) >= 0.0 }  {
+      set ::STS(colorDiffThresh) $cml(-warn_color_diff_above)
+    } else {
+      ok_err_msg "Please specify positive or zero value for minimal left-right color difference (%) to warn on; example: -warn_color_diff_above 15"
+      incr errCnt 1
+    }
   }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"

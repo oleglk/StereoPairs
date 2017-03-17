@@ -50,10 +50,22 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 
 + make textviewer expand correctly
 
+- replace R,G,B color-comparison with total brightness (1 value instead of 3)
+
+- print RAW color multipliers into color-comparison output - whenever RAWs are available; only print, do not use in sorting
+
 - define and perform manual test sequence
 
-- elaborate the text of info/error/warning messages
++ elaborate the text of info/error/warning messages
 
 - improve help file
 
 - write an installation guide
+
+- fix UI focus by TAB - it ignores option lines that are outside of the viewport
+
+- test input set with different left/right RAW extensions (formats)
+
+- test input set with different left/right std-image extensions (formats)
+
+- let -left_img_subdir/-right_img_subdir conrol the names of subdirectories in all relevant utilities; currently it works for analyzer, while the pair-matcher has its left/right image subdirectory names hardcoded to "L"/"R"

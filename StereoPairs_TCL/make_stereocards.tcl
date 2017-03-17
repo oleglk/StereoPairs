@@ -2,12 +2,12 @@
 
 set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR  "ok_utils" "debug_utils.tcl"]
-ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 source [file join $SCRIPT_DIR   "ext_tools.tcl"]
 
 package require ok_utils;   namespace import -force ::ok_utils::*
 package require img_proc;   namespace import -force ::img_proc::*
 
+ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 
 
 ################################################################################
@@ -19,6 +19,9 @@ package require img_proc;   namespace import -force ::img_proc::*
 ######## TDC (11:12):
 # make 2x2 ~2.5*6.4cm horizontal(!) prints for 10x15 picture. 
 #  make_cards_in_current_dir "tif" 6.4 [expr 22.0/24]
+######## DualCam horizontal (11:12):
+# make 2x2 ~2.4*6.4cm horizontal(!) prints for 10x15 picture. 
+#  make_cards_in_current_dir "tif" 6.4 [expr 4.0/3.0]
 ################################################################################
 
 set CARD_NAME_PREFFIX "C_"
@@ -32,6 +35,9 @@ set g_gapCm           1.0 ;  # distance between two pairs on the canvas
 # pairWidthCm (cm) = width (of one stereopair) - up to 6.4cm
 # origWhRatio = out-of-camera width/height ratio for single image
 proc make_cards_in_current_dir {ext pairWidthCm origWhRatio}  {
+  if { 0 == [_read_and_check_ext_tool_paths] }  {
+    return  0;   # error already printed
+  }
   if { 0 == [set listOfQuads [_sort_cards_in_current_dir $ext]] }  {
     return  0;   # error already printed
   }
@@ -40,6 +46,15 @@ proc make_cards_in_current_dir {ext pairWidthCm origWhRatio}  {
     return  0;   # error already printed
   }
   return  1
+}
+
+
+proc _read_and_check_ext_tool_paths {}  {
+  set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
+    return  0;  # error already printed
+  }
+  if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
 }
 
 

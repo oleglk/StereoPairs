@@ -90,6 +90,19 @@ _InitValuesForGUI
 ################################################################################
 
 
+################################################################################
+if { "" == [info commands _GUI_UnbindModifiersWithKey] }  {
+  proc _GUI_UnbindModifiersWithKey {bindTag key}  {
+    set script [bind $bindTag $key] ;   # the existing binding
+    bind $bindTag <Control-$key>  continue; # ? break
+    bind $bindTag <Alt-$key>      continue; # ? break
+    bind $bindTag $key            $script 
+  }
+}
+################################################################################
+
+
+
 wm title . $APP_TITLE
 wm minsize . 500 300  ;   # chosen experimentally on 1600x900 screen
 
@@ -145,11 +158,17 @@ grid [ttk::scrollbar .top.logBoxScroll -orient vertical -command ".top.logBox yv
 .top.logBox tag configure underline   -underline on
 
 
+foreach w [winfo children .top] {
+  grid configure $w -padx 5 -pady 5
+  # Unbind alt-Space from buttons to let system menu react on Alt-Space
+  if { "TButton" == [winfo class $w] }   {
+    _GUI_UnbindModifiersWithKey $w space
+  }
+}
+_GUI_UnbindModifiersWithKey TButton space
 
 
-foreach w [winfo children .top] {grid configure $w -padx 5 -pady 5}
-
-focus .top.chooseDir
+focus -force .top.chooseDir ;   # -force ensures focus upon initial GUI build
 
 
 ok_msg_set_callback "_AppendLogText" ;            # only after the GUI is built
