@@ -1,64 +1,174 @@
-# TODO: workarea_cleaner
-+ check why "020416__Balcony/.../dsc00908.jpg.pp3" isn't hidden
-++ it's because its RAW original was already under Unmatched/ directory
-
-+ check why 'D:/Photo/DualCam_Inp/280516__KishGlen/TRASH/2016-06-09_22-22-50__HideUnusedFiles__1/D_colon__slash_/Photo/Du
-alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
-++ the bug is in ok_find_filepaths_common_prefix - investigate it
-
-+ provide global settings dir in pair-matcher CLI - for locating unmatched settings files
-
-+ what about simulate-only for hiding unmatched images AND their settings ?
-
-+ support restoring settings of unmatched images
-
-? support renaming and restoring names of settings files of matched images
-?? QUESTIONABLE - the mainstream flow suggests renaming originals first
-
-- check workarea for compliance before each action
-
-+ backup overriden settings files
-+ avoid per-file dir-s while backup overriden settings files
-
-+ HOWTO: refuse "unhide" if supplied dir is not a "backup"
--- for instance, require that it lies under the -backup_dir ?
--- better: always create a backup/hide indicator file by "hide" action; do pay attention at namerestoration action too
-++ or better: detect allowed subdirectory names by action key
-
-- rethink:   { set ::ok_utils::WORK_AREA_ROOT_DIR    "" ;   # OK for this use-case}
-
-+ compute WB diff for color comparator as R/G, G/B ratios
-
-+ do not abort color comparison on presense of unmatched file(s)
-
-+ add "common" section in preferences; should include "-INITIAL_WORK_DIR"
-
-+ allow opening preferences window multiple times - "reset" button should not be created each time
-
-+ text viewer for colol-comparator output
-
-+ text viewer for help file
-
-+?  distinguish between left-side and right-side IDs in workarea cleaner
--- pay attention to find_lr_image_ids_in_pair_namelist performing "lsort -unique"
-
-- test input set with some equal ID(s) on the 2 sides
-
-- hide renamed (only), e.g. dual-ID images with < 2 used IDs
-
-+ options for pair-name flexibility
-
-+ make textviewer expand correctly
-
-- replace R,G,B color-comparison with total brightness (1 value instead of 3)
-
-- print RAW color multipliers into color-comparison output - whenever RAWs are available; only print, do not use in sorting
-
-- define and perform manual test sequence
-
-+ elaborate the text of info/error/warning messages
-
-- improve help file
-
-- write an installation guide
-
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03863.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03865.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03868.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03870.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03873.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03874.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03877.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03878.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03880.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03882.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03883.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03885.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03890.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03894.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03896.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03898.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03899.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03901.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03902.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03903.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03906.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03908.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03910.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03911.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03918.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03929.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03932.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03938.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03941.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03944.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03946.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03947.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03950.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03955.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03956.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03957.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03961.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03965.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03966.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03974.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03977.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03986.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03988.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03991.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03993.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03994.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03999.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04000.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04003.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04005.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04008.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04009.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04014.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04024.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04026.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04028.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE1\JPEG\DSC04037.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE2\JPEG\DSC04043.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE2\JPEG\DSC04044.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE2\JPEG\DSC04046.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE2\JPEG\DSC04054.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04059.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04066.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04071.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04074.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04075.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04077.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04078.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04083.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04084.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04088.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04090.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04093.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04097.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04113.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04120.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04132.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04134.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04136.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04147.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04153.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04160.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04167.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04169.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04113.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04120.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04132.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04134.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04136.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04147.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04153.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04160.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04167.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04169.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03863.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03865.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03868.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03870.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03874.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03877.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03878.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03880.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03882.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE1\JPEG\DSC03885.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03890.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03894.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03896.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03898.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03899.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03901.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03902.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03906.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03908.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03910.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03911.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03918.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03929.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D01_150217\DIVE2\JPEG\DSC03932.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03938.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03941.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03944.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03946.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03957.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03961.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03965.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03966.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE1\JPEG\DSC03974.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03977.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03988.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03993.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03994.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC03999.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04003.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04005.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04014.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04024.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04026.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D02_160217\DIVE2\JPEG\DSC04028.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE1\JPEG\DSC04037.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE2\JPEG\DSC04044.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE2\JPEG\DSC04046.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE2\JPEG\DSC04054.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04059.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04071.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04074.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04078.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04084.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04088.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04090.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04093.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D03_170217\DIVE3\JPEG\DSC04097.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04113.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04120.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04132.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04134.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04147.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04153.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04160.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04167.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE1\JPEG\DSC04169.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04173.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04176.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04180.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04185.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04193.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04203.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04205.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04208.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04217.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04223.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04226.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04234.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04240.jpg
+F:\Photo\Sony_NexC3\1702__ThailandUW\D04_180217\DIVE2\JPEG\DSC04242.jpg
