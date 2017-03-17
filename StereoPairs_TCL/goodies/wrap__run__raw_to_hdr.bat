@@ -1,6 +1,7 @@
-@REM wrap__run__raw_to_hdr.bat
+@REM wrap__run__raw_to_hdr.bat - provides single-line command to facilitate running run__raw_to_hdr_on_l_r.bat in a new persistent DOS window.
 
 @echo off
+
 
 VER>NUL
 call :Assign_SCRIPT_DIR %0

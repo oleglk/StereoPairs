@@ -1,4 +1,4 @@
-@REM run__raw_to_hdr_on_l_r.bat
+@REM run__raw_to_hdr_on_l_r.bat - runs raw_to_hdr.bat (raw conversion) in subdirectories L\ and R\
 
 @echo off
 
@@ -9,18 +9,17 @@ if ERRORLEVEL 1 (
   goto :abort
 )
 
- echo ==============================================
- echo == run__raw_to_hdr.bat started in '%cd%'
- echo ==============================================
+ echo =======================================================
+ echo == run__raw_to_hdr_on_l_r.bat started in workarea '%cd%'
+ echo =======================================================
  cd L
  call %SCRIPT_DIR%\raw_to_hdr.bat
  cd ..\R
  call %SCRIPT_DIR%\raw_to_hdr.bat
  cd ..\
- echo ==============================================
- echo == run__raw_to_hdr.bat finished in '%cd%'
- echo ==============================================
- pause
+ echo =======================================================
+ echo == run__raw_to_hdr_on_l_r.bat finished in workarea '%cd%'
+ echo =======================================================
 @echo on
 
 
