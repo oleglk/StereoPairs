@@ -1,9 +1,0 @@
-# ext_tool_dirs.csv
-Environment-variable-name,Path
-#### Desktop:
-_IM_DIR,C:/Program Files (x86)/ImageMagick-6.8.7-3
-_ENFUSE_DIR,C:/Program Files/enblend-enfuse-4.1.4/bin
-#### Asus:
-#_IM_DIR,C:/Program Files/ImageMagick-6.8.6-8
-#### Yoga:
-#_IM_DIR,C:/Program Files (x86)/ImageMagick-6.8.6-8
