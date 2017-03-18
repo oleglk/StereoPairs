@@ -37,7 +37,16 @@ Setting up DualCam-Companion
     Note 3: no quotes are needed in ext_tool_dirs.csv even if the path has spaces
 - Now you are ready to run DualCam-Companion software.
 
-Invocation of DualCam-Companion: from now on just double-click on the "StereoPairs" shortcut
+Invocation of DualCam-Companion: from now on just double-click on the "StereoPairs" shortcut.
+
+If the above fails (unlikely), you need to see startup diagnostics. In order to obtain it, invoke DualCam-Companion fromTCL console (as opposed to the shortcut):
+- start your TCL interpreter executable without command-line parameter (you can just double-click it)
+- the console window opens and gives you the command prompt
+- type the following command at the prompt, then press <Enter>:
+    source <Full-path-of--gui.tcl>
+      Example:
+        source  D:\Work\StereoPairs\StereoPairs_TCL\gui.tcl
+- watch for error messages being output to the console
 
 
 Configuring DualCam-Companion

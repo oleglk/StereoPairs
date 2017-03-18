@@ -19,6 +19,7 @@ namespace eval ::ok_utils:: {
 	ok_warn_msg \
   ok_msg_get_errwarn_cnt \
 	ok_assert \
+  ok_pause_console \
   ok_finalize_diagnostics \
   ok_init_diagnostics     \
 	ok_set_loud \
@@ -167,6 +168,12 @@ proc ::ok_utils::ok_assert {condExpr {msgText ""}} {
     }
 }
 
+
+proc ::ok_utils::ok_pause_console {{message "Press Enter to continue ==> "}} {
+  puts -nonewline $message
+  flush stdout
+  gets stdin
+}
 
 
 

@@ -16,7 +16,7 @@ source [file join $SCRIPT_DIR   "gui_text_viewer.tcl"]
 ### Sketch of the GUI #####
 # |                 |                 |                   |                   | |
 # +---------------------------------------------------------------------------+-+
-# |                 |                 |BTN preferences    |BTN help           | |
+# |BTNcust1|BTNcust2|                 |BTN preferences    |BTN help           | |
 # +---------------------------------------------------------------------------+-+
 # |BTN chooseDir    |                 ENT workDir                             | |
 # +---------------------------------------------------------------------------+-+
@@ -108,16 +108,21 @@ wm minsize . 500 300  ;   # chosen experimentally on 1600x900 screen
 
 grid [ttk::frame .top -padding "3 3 12 12"] -column 0 -row 0 -sticky nwes
 grid columnconfigure . 0 -weight 1
-grid columnconfigure .top 0 -weight 0
-grid columnconfigure .top 1 -weight 1;  grid columnconfigure .top 2 -weight 1
-grid columnconfigure .top 3 -weight 1;  grid columnconfigure .top 4 -weight 1
-grid columnconfigure .top 6 -weight 0
+#grid columnconfigure .top 0 -weight 0
+grid columnconfigure .top 1 -weight 1 -uniform 88;  grid columnconfigure .top 2 -weight 1 -uniform 88
+grid columnconfigure .top 3 -weight 1 -uniform 88;  grid columnconfigure .top 4 -weight 1 -uniform 88
+#grid columnconfigure .top 6 -weight 0
 grid rowconfigure . 0 -weight 1
 grid rowconfigure .top 0 -weight 0
 grid rowconfigure .top 1 -weight 0;   grid rowconfigure .top 2 -weight 0
 grid rowconfigure .top 3 -weight 0;   grid rowconfigure .top 4 -weight 0
 grid rowconfigure .top 5 -weight 1
 
+
+grid [ttk::frame .top.userCmds -relief sunken] -column 1 -row 1 -sticky we
+# usr buttons get explicit min-width to override that of the style
+pack [ttk::button .top.userCmds.usr1 -text "Cust1" -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
+pack [ttk::button .top.userCmds.usr2 -text "Cust2" -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
 
 grid [ttk::button .top.preferences -text "Preferences..." -command GUI_ChangePreferences] -column 3 -row 1 -sticky we
 
@@ -186,6 +191,46 @@ wm protocol . WM_DELETE_WINDOW {
 textview_prebuild $TEXTVIEW_DIFF  ; # prepare window for L/R color differences
 textview_prebuild $TEXTVIEW_HELP  ; # prepare window for the help
 ################################################################################
+
+
+proc GUI_UsrCmd1 {}  {
+  global APP_TITLE
+  if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
+  set paramStr [_GUI_RequestOptions "Custom-command-1" \
+                                    "CUST_1_CMD" errCnt]
+  if { $errCnt > 0 } {
+    _UpdateGuiEndAction;  return  0;  # error already reported
+  }
+  set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
+    set truncText [ok_truncate_text $resultText 10 10]
+    ok_info_msg "Custom-command-1 output:\n==========\n$truncText\n==========\n"
+  }
+  #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
+  _UpdateGuiEndAction
+  return  1
+}
+
+# ?Cmd-line example: catch {open "|\"[info nameofexecutable]\" \"C:/Program Files (x86)/etcl/TKCon/tkcon.tcl\""} res
+# Non-working: catch {open "|\"c:/Windows/System32/cmd.exe\" \"/K\" \"D:/Photo/TMP/Try_raw2hdr/SCRIPT_TMP/trial_batch.bat\""} res
+
+proc GUI_UsrCmd2 {}  {
+  global APP_TITLE
+  if { 0 == [_GUI_TryStartAction] }  { return  0 };  # error already printed
+  set paramStr [_GUI_RequestOptions "Custom-command-2" \
+                                    "CUST_2_CMD" errCnt]
+  if { $errCnt > 0 } {
+    _UpdateGuiEndAction;  return  0;  # error already reported
+  }
+  set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
+    set truncText [ok_truncate_text $resultText 10 10]
+    ok_info_msg "Custom-command-2 output:\n==========\n$truncText\n==========\n"
+  }
+  #tk_messageBox -message "User-command-2 not implemented" -title $APP_TITLE
+  _UpdateGuiEndAction
+  return  1
+}
 
 
 proc GUI_ChangePreferences {}  {

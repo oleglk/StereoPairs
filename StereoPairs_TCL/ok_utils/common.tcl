@@ -18,6 +18,7 @@ namespace eval ::ok_utils:: {
 	ok_name_in_array \
 	ok_discard_empty_list_elements \
   ok_group_repeated_elements_in_list \
+  ok_split_string_by_whitespace \
 	ok_subtract_list_from_list \
 	ok_copy_array \
 	ok_list_to_array \
@@ -36,6 +37,7 @@ namespace eval ::ok_utils:: {
 	ok_copy_file_if_target_inexistent \
 	ok_move_file_if_target_inexistent \
 	ok_filepath_is_writable \
+  ok_filepath_is_readable \
   ok_filepath_is_existent_dir \
 	ok_delete_file \
 	ok_force_delete_dir \
@@ -44,8 +46,10 @@ namespace eval ::ok_utils:: {
   ok_dirpath_equal  \
   ok_find_filepaths_common_prefix \
   ok_strip_prefix_from_filepath   \
+  ok_truncate_text \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
+  ok_exec_under_catch \
   ok_run_silent_os_cmd \
   ok_run_loud_os_cmd
 }
@@ -141,6 +145,12 @@ proc ::ok_utils::ok_group_repeated_elements_in_list {inpList headOrTail} {
   }
   if { $headOrTail == 0 } { return  [concat $repKeys $uniKeys]
   } else                  { return  [concat $uniKeys $repKeys] }
+}
+
+
+# Returns a list with words from 'inpStr'
+proc ::ok_utils::ok_split_string_by_whitespace {inpStr} {
+  return  [regexp -all -inline {\S+} $inpStr]
 }
 
 
@@ -496,6 +506,19 @@ proc ::ok_utils::ok_filepath_is_writable { fullPath } {
 }
 
 
+# Returns 1 if 'fullPath' is readable to the current user as a regular file
+proc ::ok_utils::ok_filepath_is_readable { fullPath } {
+    if { $fullPath == "" } {	return  0    }
+    if { [file isdirectory $fullPath] } {	return  0    }
+    set dirPath [file dirname $fullPath]
+    if { ![file exists $dirPath] } {	return  0    }
+    if { [expr {[file exists $fullPath]} && {[file readable $fullPath]==0}] } {
+	return  0
+    }
+    return  1
+}
+
+
 proc ::ok_utils::ok_filepath_is_existent_dir {fullPath} {
   return  [expr {([file exists $fullPath]) && ([file isdirectory $fullPath])}]
 }
@@ -664,6 +687,45 @@ proc ::ok_utils::ok_strip_prefix_from_filepath {filePath dirPathPrefix \
 }
 
 
+# Returns 1st 'nFirstToKeep' and 'nLastToKeep' lines from 'inpMultilineText'
+# On error returns 0.
+proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
+  if { ($nFirstToKeep < 0) || ($nLastToKeep < 0) }  {
+    ok_err_msg "ok_truncate_text: negative count(s) - first($nFirstToKeep), last($nLastToKeep)"
+    return  0
+  }
+  set crIdxPairs [regexp -inline -all -indices "\n" $inpMultilineText]
+  set nLines [llength $crIdxPairs]
+  # find newline #nFirstToKeep from the beginning
+  if {        $nFirstToKeep == 0 }  {
+    set startCutFrom 0
+  } elseif {  $nFirstToKeep < $nLines }  {
+    set startCutFrom [expr 1 + \
+                        [lindex [lindex $crIdxPairs [expr $nFirstToKeep-1]] 0]]
+  } else {
+    set startCutFrom end
+  }
+  # find newline #nLastToKeep from the end
+  #TODO: fix last index
+  if { $nLastToKeep == 0 }  {
+    set lastI end;  set stopCutAt end
+  } elseif { $nLastToKeep < $nLines }  {
+    set lastI [expr {[llength $crIdxPairs] - $nLastToKeep}]
+    set stopCutAt  [expr 0 + [lindex [lindex $crIdxPairs $lastI] 0]]
+  } else {
+    set lastI 0;  set stopCutAt 0
+  }
+  set replText [format  "  ... ... ... ... ~ %d line(s) cut ... ... ... ...\n" \
+                        [expr $nLines - $nFirstToKeep - $nLastToKeep + 1]] 
+  ok_trace_msg "crIdxPairs={$crIdxPairs}; lastI=$lastI; stopCutAt=$stopCutAt"
+  ok_trace_msg "Cutting: 0...($startCutFrom...$stopCutAt)...[expr {[string length $inpMultilineText]-1}]"
+  set res [expr {($startCutFrom < $stopCutAt)?                                \
+              [string replace $inpMultilineText $startCutFrom $stopCutAt $replText]  \
+              : $inpMultilineText}]
+  return  $res
+}
+
+
 # Builds and returns an ordered list of run-time arguments
 # for (existing!) procedure 'procName'
 # out of argument-spec array 'swArgArr' that maps argument name to its value.
@@ -744,7 +806,7 @@ proc ::ok_utils::ok_exec_under_catch {scriptToExec scriptResult} {
 # Returns 1 on success, 0 on error.
 # This proc did not appear in LazyConv.
 proc ::ok_utils::ok_run_silent_os_cmd {cmdList}  {
-	ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
+	#ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
   set tclExecResult [catch {    set result [eval exec $cmdList]
     #if { 1 == [ok_loud_mode] } {	    flush $logFile	}
     if { $result == 0 }  { return 0 } ;  # error already printed
@@ -763,7 +825,7 @@ proc ::ok_utils::ok_run_silent_os_cmd {cmdList}  {
 # Returns 1 on success, 0 on error.
 # This proc did not appear in LazyConv.
 proc ::ok_utils::ok_run_loud_os_cmd {cmdList outputCheckCB}  {
-	ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
+	#ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
   set tclExecResult1 [catch { set result [eval exec $cmdList] } cmdExecResult]
   set tclExecResult2 [catch {
     if { 0 == [$outputCheckCB $cmdExecResult] } {
