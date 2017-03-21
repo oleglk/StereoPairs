@@ -12,7 +12,7 @@ if ERRORLEVEL 1 (
 @REM start cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\trial_tcl.tcl""
 @REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\trial_tcl.tcl""
 @REM (opens cmd window, but then nothing) start cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\trial_tcl.tcl" -inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -tools_paths_file d:/Work/StereoPairs/ext_tool_dirs.csv"
-cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\raw_to_hdr.tcl" -inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -tools_paths_file d:/Work/StereoPairs/ext_tool_dirs.csv"
+cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\raw_to_hdr.tcl" "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -tools_paths_file d:/Work/StereoPairs/ext_tool_dirs.csv""
 
 exit /B 0
 
