@@ -1,5 +1,7 @@
 @REM Example demonstrating invocation of a TCL script in a new interperter
 
+@echo off
+
 VER>NUL
 call :Assign_SCRIPT_DIR %0
 if ERRORLEVEL 1 (
@@ -11,10 +13,12 @@ if ERRORLEVEL 1 (
 @REM ============ The invocation ======================
 @REM start cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\trial_tcl.tcl""
 @REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\trial_tcl.tcl""
-@REM (opens cmd window, but then nothing) start cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\trial_tcl.tcl" -inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -tools_paths_file d:/Work/StereoPairs/ext_tool_dirs.csv"
-cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\raw_to_hdr.tcl" "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -tools_paths_file d:/Work/StereoPairs/ext_tool_dirs.csv""
 
-exit /B 0
+@REM If the command preceded by "start", the DOS and wish windows aren't closed when finished
+cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl""
+
+@echo on
+@exit /B 0
 
 
 @REM ============== Subroutines =======================
