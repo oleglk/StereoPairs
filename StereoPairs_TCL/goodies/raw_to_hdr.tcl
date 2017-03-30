@@ -43,6 +43,8 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
+  set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
+  set ::STS(wbOutFile)        "" ;  # output file with per-image white balance coefficients
 
   set _tmpDir TMP
   # directories for RAW conversions - relative paths - to use under CWD
@@ -96,6 +98,8 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -out_subdir_name {val	"name of output directory (for HDR images); created under the input directory"} \
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
+  -wb_inp_file {val	"path of the CSV file with white-balance coefficients to be used for RAW images"} \
+  -wb_out_file {val	"path of the CSV file for white-balance coefficients that were used for RAW images"} \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -103,7 +107,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} }
+    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} {-wb_out_file "Data/wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -117,7 +121,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example (note TCL-style directory separators): ======="
-    ok_info_msg " raw_to_hdr_main \"-final-depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " raw_to_hdr_main \"-final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -198,6 +202,22 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
       incr errCnt 1
     }
   } 
+  if { [info exists cml(-wb_inp_file)] }  {
+    if { 0 == [ok_filepath_is_readable $cml(-wb_inp_file)] }  {
+      ok_err_msg "Inexistent or invalid file '$cml(-wb_inp_file)' specified as the input file with white-balance coefficients"
+      incr errCnt 1
+    } else {
+      set ::STS(wbInpFile) $cml(-wb_inp_file)
+    }
+  }
+  if { [info exists cml(-wb_out_file)] }  {
+    if { 0 == [ok_filepath_is_writable $cml(-wb_out_file)] }  {
+      ok_err_msg "Inexistent or invalid file '$cml(-wb_out_file)' specified as the output file for white-balance coefficients"
+    incr errCnt 1
+  } else {
+    set ::STS(wbOutFile) $cml(-wb_out_file)
+  }
+  }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
     return  0
