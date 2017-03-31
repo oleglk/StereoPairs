@@ -278,13 +278,20 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
     return  0
   }
+  if { "" == ::STS(wbInpFile) }  { 
+    set rawNamesToWbMults  [dict create]
+  } else {
+    ok_warn_msg "Reading WB multipliers not implemented yet"
+    set rawNamesToWbMults  [dict create]
+  }
   set brightValToAbsOutDir [dict create \
                             0.3 [file join [pwd] $::STS(dirLow)] \
                             1.0 [file join [pwd] $::STS(dirNorm)] \
                             1.7 [file join [pwd] $::STS(dirHigh)]]
   dict for {brightVal outDir} $brightValToAbsOutDir {
     foreach rawPath $rawPaths {
-      if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal"] } {
+      if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
+                                  rawNamesToWbMults] } {
         return  -1;  # error already printed
       }
       ##$::_DCRAW  $::g_dcrawParamsMain -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
@@ -321,20 +328,35 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
 
 # ============== Subroutines =======================
 
-proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rgbMultList 0}} {
+proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
+  upvar $rawNameToRgbMultList rawNameToRgb
+  set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
-  set outPath  [file join $outDir "[file rootname [file tail $rawPath]].TIF"]
+  set outPath  [file join $outDir "[file rootname $rawName].TIF"]
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
 
-  if { $rgbMultList != 0 }  {
+  if { $rawNameToRgb != 0 }  {
+    if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
+      set rgbMultList [dict get $rawNameToRgb $rawName]
+      set rgbInputted 1
+    } else {                                        # provide output RGB
+      if { [::img_proc::get_image_attributes_by_dcraw $rawPath imgInfoArr] }  {
+        set rgbMultList $imgInfoArr($::iMetaRGBG)
+        dict set rawNameToRgb $rawName $rgbMultList
+      } else {;  # read error - set init values
+        set mR "";   set mG "";   set mB "";   set colorSwitches ""
+      }
+      set rgbInputted 0
+    }
     set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
-    set mB [lindex $rgbMultList 2];    set colorSwitches "-r $mR $mG $mB $mG"
+    set mB [lindex $rgbMultList 2];
+    set colorSwitches [expr [($rgbInputted)? "-r $mR $mG $mB $mG" : ""}]
   } else {
-    set mR "";   set mG "";   set mB "";    set colorSwitches ""
+    set mR "";   set mG "";   set mB "";    set colorSwitches "";  # init
   }
-  set colorInfo [expr {($rgbMultList != 0)? "{$mR $mG $mB}" : "as-shot"}]
+  set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
   #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
