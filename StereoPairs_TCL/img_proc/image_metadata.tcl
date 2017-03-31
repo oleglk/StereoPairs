@@ -15,7 +15,7 @@ namespace eval ::img_proc:: {
       get_image_timestamp_by_imagemagick      \
       get_image_brightness_by_imagemagick     \
       get_image_dimensions_by_imagemagick     \
-      
+      get_image_attributes_by_dcraw           \
 }
 
 set SCRIPT_DIR [file dirname [info script]]
@@ -26,10 +26,14 @@ ok_trace_msg "---- Sourcing '[info script]' in '$UTIL_DIR' ----"
 source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 
 ################################################################################
+## (DOES NOT WORK:) To obtain the list of available EXIF attributes, run:
+####  identify -format "%[EXIF:*]" <IMAGE_PATH>
+################################################################################
 # indices for metadata fields
 set iMetaDate 0
 set iMetaTime 1
 set iMetaISO  2
+set iMetaRGBG 3
 
 # extensions of standard image files
 set g_stdImageExtensions {.bmp .jpg .png .tif}
@@ -91,7 +95,7 @@ proc ::img_proc::get_image_global_timestamp {fullPath} {
   } else {
     ok_info_msg "Image '$fullPath' considered a RAW image format"
     set formatStr {%Y %b %d %H %M %S}
-    set res [GetImageAttributesByDcraw $fullPath imgInfoArr]
+    set res [get_image_attributes_by_dcraw $fullPath imgInfoArr]
   }
   if { $res == 0 }  {
     return  -1; # error already printed
@@ -303,31 +307,38 @@ proc ::img_proc::_is_exiftool_result_ok {execResultText} {
 }
 
 
-########### DCRAW-based section. Copied from UWIC "read_image_metadata.tcl" ####
+########## DCRAW-based section. Adapted from UWIC "read_image_metadata.tcl" ####
 
 # Processes the following exif line(s):
 # Timestamp: Sat Aug 23 08:58:21 2014
 # Returns 1 if line was recognized, otherwise 0
-proc ::img_proc::_ProcessDcrawMetadataLine {line imgInfoArr} {
-  global iMetaDate iMetaTime iMetaISO
+proc ::img_proc::_process_dcraw_metadata_line {line imgInfoArr} {
+  global iMetaDate iMetaTime iMetaISO iMetaRGBG
   upvar $imgInfoArr imgInfo
-  # example:'Timestamp: Sat Aug 23 08:58:21 2014'
-  set isMatched [regexp {Timestamp: ([a-zA-Z]+) ([a-zA-Z]+) ([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([0-9]+)} $line fullMach \
-                                    weekday month day hours minutes seconds year]
-  if { $isMatched == 0 } {
-    return  0
+  # Time/date;  example:'Timestamp: Sat Aug 23 08:58:21 2014'
+  if { 1 == [regexp {Timestamp: ([a-zA-Z]+) ([a-zA-Z]+) ([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([0-9]+)} $line fullMach \
+                       weekday month day hours minutes seconds year] }  {
+    set imgInfo($iMetaDate) [list $year $month $day]
+    set imgInfo($iMetaTime) [list $hours $minutes $seconds]
   }
-  set imgInfo($iMetaDate) [list $year $month $day]
-  set imgInfo($iMetaTime) [list $hours $minutes $seconds]
+  # ISO;  example:'ISO speed: 800'
+  if { 1 == [regexp {ISO speed: ([0-9]+)} $line fullMach isoVal] }  {
+    set imgInfo($isoVal) $isoVal
+  }
+  # Color multipliers;  example:'Camera multipliers: 2072.0 1024.0 2152.0 1024.0'
+  if { 1 == [regexp {Camera multipliers: ([0-9]+(.[0-9]+)*) ([0-9]+(.[0-9]+)*) ([0-9]+(.[0-9]+)*) ([0-9]+(.[0-9]+)*)} \
+                        $line fullMach mR _r mG _g mB _b mG2 _g2] }  {
+    set imgInfo($iMetaRGBG) [list $mR $mG $mB $mG2]
+  }
   return  1
 }
 
 
 # Puts into 'imgInfoArr' ISO, etc. of image 'fullPath'.
 # On success returns number of data fields being read, 0 on error.
-proc ::img_proc::GetImageAttributesByDcraw {fullPath imgInfoArr} {
+proc ::img_proc::get_image_attributes_by_dcraw {fullPath imgInfoArr} {
   global _DCRAW
-  global iMetaDate iMetaTime iMetaISO
+  global iMetaDate iMetaTime iMetaISO iMetaRGBG
   upvar $imgInfoArr imgInfo
   if { ![file exists $fullPath] || ![file isfile $fullPath] } {
     ok_err_msg "Invalid image path '$fullPath'"
@@ -343,8 +354,8 @@ proc ::img_proc::GetImageAttributesByDcraw {fullPath imgInfoArr} {
     # while { 0 == [eof $io] } { set len [gets $io line]; puts $line }
     while { 0 == [eof $io] } {
       set len [gets $io line]
-      #puts $line
-      if { 0 != [_ProcessDcrawMetadataLine $line imgInfo] } {
+      #ok_trace_msg "Analyzing line '$line'"
+      if { 0 != [_process_dcraw_metadata_line $line imgInfo] } {
         incr readFieldsCnt
       }
     }
@@ -360,7 +371,7 @@ proc ::img_proc::GetImageAttributesByDcraw {fullPath imgInfoArr} {
     ok_err_msg "Cannot understand metadata of '$fullPath'"
     return  0
   }
-  ok_trace_msg "Metadata of '$fullPath': time=$imgInfo($iMetaTime)"
+  ok_trace_msg "Metadata of '$fullPath': time=$imgInfo($iMetaTime) rgbg={$imgInfo($iMetaRGBG)}"
   return  $readFieldsCnt
 }
-##### End of DCRAW-based section. Copied from UWIC "read_image_metadata.tcl" ###
+#### End of DCRAW-based section. Adapted from UWIC "read_image_metadata.tcl" ###
