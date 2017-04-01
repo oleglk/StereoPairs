@@ -7,6 +7,7 @@ set SCRIPT_DIR [file dirname [info script]]
 source [file join $SCRIPT_DIR "setup_goodies.tcl"]
 
 package require ok_utils;   namespace import -force ::ok_utils::*
+package require img_proc;   namespace import -force ::img_proc::*
 
 
 # set ENFUSE "C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
@@ -107,7 +108,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} {-wb_out_file "Data/wb_out.csv"} }
+    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -211,12 +212,8 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     }
   }
   if { [info exists cml(-wb_out_file)] }  {
-    if { 0 == [ok_filepath_is_writable $cml(-wb_out_file)] }  {
-      ok_err_msg "Inexistent or invalid file '$cml(-wb_out_file)' specified as the output file for white-balance coefficients"
-    incr errCnt 1
-  } else {
+    # accept the name - cannot check writability before dir-s created
     set ::STS(wbOutFile) $cml(-wb_out_file)
-  }
   }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
@@ -278,7 +275,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
     return  0
   }
-  if { "" == ::STS(wbInpFile) }  { 
+  if { "" == $::STS(wbInpFile) }  { 
     set rawNamesToWbMults  [dict create]
   } else {
     ok_warn_msg "Reading WB multipliers not implemented yet"
@@ -298,6 +295,13 @@ proc _convert_all_raws_in_current_dir {rawExt} {
       ##if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
     }
   }
+  if { "" != $::STS(wbOutFile) }  { 
+    array unset _rawToWbArr;  array set _rawToWbArr $rawNamesToWbMults
+    set _rawToWbArr("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
+    ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
+                                     "RawName" ",";   # error, if any, printed
+  }
+
   puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
   return  [llength $rawPaths]
 }
@@ -328,6 +332,11 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
 
 # ============== Subroutines =======================
 
+# Converts RAW 'rawPath'; output image placed into 'outDir'.
+# If 'rawNameToRgbMultList' dict given and includes name of 'rawPath',
+#     uses RGB multipliers from this dict
+# If 'rawNameToRgbMultList' dict given but doesn't include name of 'rawPath',
+#     inserts RGB multipliers from the RAW into this dict
 proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   upvar $rawNameToRgbMultList rawNameToRgb
   set rawName [file tail $rawPath]
@@ -342,7 +351,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
       set rgbMultList [dict get $rawNameToRgb $rawName]
       set rgbInputted 1
     } else {                                        # provide output RGB
-      if { [::img_proc::get_image_attributes_by_dcraw $rawPath imgInfoArr] }  {
+      if { [get_image_attributes_by_dcraw $rawPath imgInfoArr] }  {
         set rgbMultList $imgInfoArr($::iMetaRGBG)
         dict set rawNameToRgb $rawName $rgbMultList
       } else {;  # read error - set init values
@@ -352,7 +361,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     }
     set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
     set mB [lindex $rgbMultList 2];
-    set colorSwitches [expr [($rgbInputted)? "-r $mR $mG $mB $mG" : ""}]
+    set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : ""}]
   } else {
     set mR "";   set mG "";   set mB "";    set colorSwitches "";  # init
   }
