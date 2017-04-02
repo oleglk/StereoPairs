@@ -278,7 +278,7 @@ proc _GUI_append_one_option_record {key val descr formatSpec} {
   ok_trace_msg "Processing option {$key} {$val} {$descr} {$formatSpec}"
   # build and insert into textbox the option line
   # TODO:verify
-  if { 0 == [_validate_string_by_given_format $formatSpec $val] }  {
+  if { 0 == [ok_validate_string_by_given_format $formatSpec $val] }  {
     ok_err_msg "Invalid initial value '$val' for option '$key'"
     return  0
   }
@@ -295,10 +295,10 @@ proc _GUI_append_one_option_record {key val descr formatSpec} {
     set res [$tBx  insert end "$strKey\t"];  # insert text-only line prefix
     set safeFmt [string map {% %%} $formatSpec]; # protect from std substitutions 
     set valEntry [ttk::entry $entryPath     \
-            -width [string length $VAL_HDR] \
-            -textvariable KEY_TO_VAL($key)  \
-            -validate key \
-            -validatecommand [list _validate_string_by_given_format $safeFmt %P] ]
+        -width [string length $VAL_HDR] \
+        -textvariable KEY_TO_VAL($key)  \
+        -validate key \
+        -validatecommand [list ok_validate_string_by_given_format $safeFmt %P] ]
     set res [$tBx  window create end -window $valEntry];  # insert value entry
     set res [$tBx  insert end "\t$strDescr"];  # insert text-only line suffix
     set res [$tBx  insert end "\n"]
@@ -345,17 +345,6 @@ proc _validate_string_by_format_todo {theStr} {
 }
 
 
-proc _validate_string_by_given_format {formatSpec str} {
-  ok_trace_msg "formatSpec='$formatSpec' str='$str'"
-  if { $formatSpec == "%s" }  { return  1 };   # any string allowed
-  if { $str == "" }  { return  1 }; # empty string allowed not to disturb edit-s
-  if { $str == "-" }  { return  1 }; # minus sign allowed for typing negatives
-  if { 1 == [scan [string trim $str] "$formatSpec%c" val leftover] }  {
-    return  1
-  } else  { return  0 }
-}
-
-
 #~ # Builds a set of per-format-spec string validation functions.
 #~ # Returns a dict of <key>::<proc>
 #~ ## 'keyToDescrAndFormat' is a dictionary of <key>::[list <descr> <scan-format>].
@@ -365,7 +354,7 @@ proc _validate_string_by_given_format {formatSpec str} {
   #~ dict for {key descrAndFormat} $keyToDescrAndFormat {
     #~ set fmt [lindex $descrAndFormat 1]
     #~ dict set keyToCmdPrefix $key \
-                    #~ [list _validate_string_by_given_format $fmt]
+                    #~ [list ok_validate_string_by_given_format $fmt]
   #~ }
   #~ ok_trace_msg "Validation commands: {$keyToCmdPrefix}"
   #~ return  $keyToCmdPrefix

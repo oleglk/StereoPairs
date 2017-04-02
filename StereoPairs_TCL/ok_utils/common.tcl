@@ -47,6 +47,7 @@ namespace eval ::ok_utils:: {
   ok_find_filepaths_common_prefix \
   ok_strip_prefix_from_filepath   \
   ok_truncate_text \
+  ok_validate_string_by_given_format \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
   ok_exec_under_catch \
@@ -723,6 +724,17 @@ proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
               [string replace $inpMultilineText $startCutFrom $stopCutAt $replText]  \
               : $inpMultilineText}]
   return  $res
+}
+
+
+proc ::ok_utils::ok_validate_string_by_given_format {formatSpec str} {
+  ok_trace_msg "formatSpec='$formatSpec' str='$str'"
+  if { $formatSpec == "%s" }  { return  1 };   # any string allowed
+  if { $str == "" }  { return  1 }; # empty string allowed not to disturb edit-s
+  if { $str == "-" }  { return  1 }; # minus sign allowed for typing negatives
+  if { 1 == [scan [string trim $str] "$formatSpec%c" val leftover] }  {
+    return  1
+  } else  { return  0 }
 }
 
 
