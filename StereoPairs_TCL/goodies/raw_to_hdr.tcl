@@ -267,7 +267,9 @@ proc _arrange_dirs_in_current_dir {} {
   return  1
 }
 
-# Makes RAW conversions; returns num of processed files, 0 if none, -1 on error
+# Makes RAW conversions; returns num of processed files, 0 if none, -1 on error.
+# If '$::STS(wbInpFile)' keeps a file-path, takes WB multipliers from it.
+# If '$::STS(wbOutFile)' keeps a file-path, prints WB multipliers into it.
 proc _convert_all_raws_in_current_dir {rawExt} {
   puts "====== Begin RAW conversions in '[pwd]' ========"
   set rawPaths [glob -nocomplain "*.$rawExt"]
@@ -278,8 +280,13 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   if { "" == $::STS(wbInpFile) }  { 
     set rawNamesToWbMults  [dict create]
   } else {
-    ok_warn_msg "Reading WB multipliers not implemented yet"
-    set rawNamesToWbMults  [dict create]
+    #ok_warn_msg "Reading WB multipliers not implemented yet"
+    array unset _rawToWbArr
+    if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                            $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] }  {
+      return  0;  # error already printed
+    }
+    set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
   }
   set brightValToAbsOutDir [dict create \
                             0.3 [file join [pwd] $::STS(dirLow)] \
@@ -296,10 +303,13 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     }
   }
   if { "" != $::STS(wbOutFile) }  { 
-    array unset _rawToWbArr;  array set _rawToWbArr $rawNamesToWbMults
-    set _rawToWbArr("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
-    ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
-                                     "RawName" ",";   # error, if any, printed
+    array unset _rawToWbArr
+    #(unsafe)  array set _rawToWbArr $rawNamesToWbMults
+    if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArr] } {
+      set _rawToWbArr("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
+      ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
+                                       "RawName" ",";   # error, if any, printed
+    }
   }
 
   puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
@@ -533,6 +543,22 @@ proc _raw_to_hdr_verify_external_tools {} {
     ok_err_msg "Some or all external tools are missing"
     return  0
   }
+}
+
+
+# Returns 1 if 'nameAndMultsAsList' obeys the following format:
+#     {<filename> <float> <float> <float> <float>}
+# Otherwise returns 0
+proc _ColorMultLineCheckCB {nameAndMultsAsList}  {
+  if { 5 != [llength $nameAndMultsAsList] }  {
+    return  0
+  }
+  foreach mult [lrange $nameAndMultsAsList 1 end] {
+    if { 0 == [ok_validate_string_by_given_format "%f" $mult] }  {
+      return  0
+    }
+  }
+  return  1
 }
 
 
