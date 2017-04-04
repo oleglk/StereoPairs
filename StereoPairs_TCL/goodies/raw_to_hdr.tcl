@@ -99,8 +99,8 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -out_subdir_name {val	"name of output directory (for HDR images); created under the input directory"} \
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
-  -wb_inp_file {val	"path of the CSV file with white-balance coefficients to be used for RAW images"} \
-  -wb_out_file {val	"path of the CSV file for white-balance coefficients that were used for RAW images"} \
+  -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
+  -wb_out_file {val	"name of the CSV file (under the working directory) for white-balance coefficients that were used for RAW images"} \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -204,16 +204,17 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     }
   } 
   if { [info exists cml(-wb_inp_file)] }  {
-    if { 0 == [ok_filepath_is_readable $cml(-wb_inp_file)] }  {
-      ok_err_msg "Inexistent or invalid file '$cml(-wb_inp_file)' specified as the input file with white-balance coefficients"
+    set iwbPath [file join [pwd] $cml(-wb_inp_file)]
+    if { 0 == [ok_filepath_is_readable $iwbPath] }  {
+      ok_err_msg "Inexistent or invalid file '$iwbPath' specified as the input file with white-balance coefficients"
       incr errCnt 1
     } else {
-      set ::STS(wbInpFile) $cml(-wb_inp_file)
+      set ::STS(wbInpFile) $iwbPath
     }
   }
   if { [info exists cml(-wb_out_file)] }  {
     # accept the name - cannot check writability before dir-s created
-    set ::STS(wbOutFile) $cml(-wb_out_file)
+    set ::STS(wbOutFile) [file join [pwd] $cml(-wb_out_file)]
   }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
@@ -551,14 +552,17 @@ proc _raw_to_hdr_verify_external_tools {} {
 # Otherwise returns 0
 proc _ColorMultLineCheckCB {nameAndMultsAsList}  {
   if { 5 != [llength $nameAndMultsAsList] }  {
-    return  0
+    return  "Wrong number of fields - should be 5"
   }
-  foreach mult [lrange $nameAndMultsAsList 1 end] {
+  set fieldNames {"file-name" "red" "green" "blue" "green-2"}
+  for {set i 1}  {$i < [llength $nameAndMultsAsList]}  {incr i}  {
+    set mult [lindex $nameAndMultsAsList $i]
+    set name [lindex $fieldNames $i]
     if { 0 == [ok_validate_string_by_given_format "%f" $mult] }  {
-      return  0
+      return  "Invalid value '$mult' for $name multiplier"
     }
   }
-  return  1
+  return  "";  # OK
 }
 
 

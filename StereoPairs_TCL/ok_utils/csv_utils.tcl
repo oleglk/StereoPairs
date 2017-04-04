@@ -133,6 +133,7 @@ proc ::ok_utils::ok_write_list_of_lists_into_csv_file {topList fullPath {sepChar
 # If 'requireEqualLength'==1, aborts if not all lines have equal num of fields
 # If 'LineCheckCB' callback supplied, it's called on each line except the header;
 #   if 'LineCheckCB' returns non-empty string, error reported and reading stopped.
+#   String returned by 'LineCheckCB' provides basis of error message.
 # Returns 1 on success, 0 on error.
 proc ::ok_utils::ok_read_csv_file_into_array_of_lists {arrName fullPath sepChar \
                                           requireEqualLength {LineCheckCB 0}} {
