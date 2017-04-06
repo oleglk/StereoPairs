@@ -288,6 +288,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
       return  0;  # error already printed
     }
     set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
+    ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
   }
   set brightValToAbsOutDir [dict create \
                             0.3 [file join [pwd] $::STS(dirLow)] \
@@ -304,10 +305,18 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     }
   }
   if { "" != $::STS(wbOutFile) }  { 
-    array unset _rawToWbArr
-    #(unsafe)  array set _rawToWbArr $rawNamesToWbMults
-    if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArr] } {
-      set _rawToWbArr("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
+    array unset _rawToWbArr;    array unset _rawToWbArrNew
+    #(unsafe)  array set _rawToWbArrNew $rawNamesToWbMults
+    if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArrNew] } {
+      set _rawToWbArrNew("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
+      if { [file exists $::STS(wbOutFile)] }  {; # merge new data with old data
+        if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                             $::STS(wbOutFile) "," 1 _ColorMultLineCheckCB] }  {
+          # TODO: print warning and make a copy of the old file
+        }
+      }
+      # merge if old data was read, otherwise preserve old values
+      array set _rawToWbArr [array get _rawToWbArrNew]
       ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
                                        "RawName" ",";   # error, if any, printed
     }
