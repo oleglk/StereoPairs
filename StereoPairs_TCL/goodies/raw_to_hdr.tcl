@@ -18,9 +18,9 @@ package require img_proc;   namespace import -force ::img_proc::*
 
 # g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
 ##### "Blend" approach looks the best for varied-exposure RAW conversions ######
-set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3 -6 -g 2.4 12.9"
+set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3 -6 -g 2.4 12.9";  # EXCLUDING WB
 set g_convertSaveParams "-depth 16 -compress LZW"
-# set g_dcrawParamsMain "-v -c -w -H 2 -o 1 -q 3"
+# set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3";  # EXCLUDING WB
 # set g_convertSaveParams "-depth 8 -compress LZW"
 
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
@@ -121,8 +121,14 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "========= Command line parameters (in random order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
-    ok_info_msg "========= Example (note TCL-style directory separators): ======="
+    ok_info_msg "========= Example 1 - camera-WB (note TCL-style directory separators): ======="
     ok_info_msg " raw_to_hdr_main \"-final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "================================================================"
+    ok_info_msg "========= Example 2 - overrides WB for the two directories: ======="
+    ok_info_msg " raw_to_hdr_main \"-final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv -wb_inp_file wb_inp.csv\""
+    ok_info_msg "================================================================"
+    ok_info_msg "========= Example 3 - use camera-WB from first directory on images in the second one: ======="
+    ok_info_msg " raw_to_hdr_main \"-final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -283,9 +289,16 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   } else {
     #ok_warn_msg "Reading WB multipliers not implemented yet"
     array unset _rawToWbArr
-    if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
-                            $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] }  {
-      return  0;  # error already printed
+    if { [file exists $::STS(wbInpFile)] }  {
+      if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                              $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
+        return  0;  # error already printed
+      }
+    } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
+      ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
+      return  0
+    } else {
+      ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
     }
     set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
     ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
@@ -300,7 +313,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
                                   rawNamesToWbMults] } {
         return  -1;  # error already printed
       }
-      ##$::_DCRAW  $::g_dcrawParamsMain -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
+      ##$::_DCRAW  $::g_dcrawParamsMain -w -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
       ##if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
     }
   }
@@ -374,16 +387,16 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
       if { [get_image_attributes_by_dcraw $rawPath imgInfoArr] }  {
         set rgbMultList $imgInfoArr($::iMetaRGBG)
         dict set rawNameToRgb $rawName $rgbMultList
-      } else {;  # read error - set init values
-        set mR "";   set mG "";   set mB "";   set colorSwitches ""
+      } else {;  # read error - set init values (camera-wb)
+        set mR ""; set mG ""; set mB "";  set colorSwitches "-w"; #init to cam-wb
       }
       set rgbInputted 0
     }
     set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
     set mB [lindex $rgbMultList 2];
-    set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : ""}]
+    set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : "-w"}]
   } else {
-    set mR "";   set mG "";   set mB "";    set colorSwitches "";  # init
+    set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
   }
   set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
