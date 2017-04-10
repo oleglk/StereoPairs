@@ -42,6 +42,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
   set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
+  set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
   set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
@@ -97,6 +98,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -raw_ext {val "extension of RAW images; example: arw"}                      \
   -inp_dirs {list "list of input directories' paths; absolute or relative to the current directory"} \
   -out_subdir_name {val	"name of output directory (for HDR images); created under the input directory"} \
+  -do_hdr      {val "1 means multiple RAW conversions then blending, 0 means single RAW conversion"}  \
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
   -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
@@ -107,8 +109,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # create dummy command line with the default parameters and copy it
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
-  ok_set_cmd_line_params defCml cmlD { \
-    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} {-wb_out_file "wb_out.csv"} }
+  ok_set_cmd_line_params defCml cmlD {                                  \
+    {-final_depth "8"} {-do_hdr "1"} {-do_raw_conv "1"} {-do_blend "1"} \
+    {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -193,6 +196,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
   } else {
     set ::STS(outDirName)      $cml(-out_subdir_name)
   }
+  if { [info exists cml(-do_hdr)] }  {
+    if { ($cml(-do_hdr) == 0) || ($cml(-do_hdr) == 1) }  {
+      set ::STS(doHDR) $cml(-do_hdr)
+    } else {
+      ok_err_msg "Parameter telling whether to make RAW-conversion (-do_hdr); should be 0 or 1"
+      incr errCnt 1
+    }
+  } 
   if { [info exists cml(-do_raw_conv)] }  {
     if { ($cml(-do_raw_conv) == 0) || ($cml(-do_raw_conv) == 1) }  {
       set ::STS(doRawConv) $cml(-do_raw_conv)
