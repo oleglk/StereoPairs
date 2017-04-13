@@ -716,8 +716,9 @@ proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
   } else {
     set lastI 0;  set stopCutAt 0
   }
-  set replText [format  "  ... ... ... ... ~ %d line(s) cut ... ... ... ...\n" \
-                        [expr $nLines - $nFirstToKeep - $nLastToKeep + 1]] 
+  set replText [format  \
+                    "\n  ... ... ... ... ~ %d line(s) cut ... ... ... ...\n\n" \
+                    [expr $nLines - $nFirstToKeep - $nLastToKeep + 1]] 
   ok_trace_msg "crIdxPairs={$crIdxPairs}; lastI=$lastI; stopCutAt=$stopCutAt"
   ok_trace_msg "Cutting: 0...($startCutFrom...$stopCutAt)...[expr {[string length $inpMultilineText]-1}]"
   set res [expr {($startCutFrom < $stopCutAt)?                                \
