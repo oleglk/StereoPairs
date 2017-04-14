@@ -1,3 +1,23 @@
+A stereo-photo processing workflow of an advanced user may involve steps that the author of DualCam Companion application never thought about. Such a possibility is addressed by providing custom-command buttons.
+
+DualCam Companion application enables the user to configure up to two arbitrary commands to be invoked through its GUI buttons. These buttons are "Cust1" and "Cust2".
+The commands should be those from the user computer's operating system, not TCL procedures. E.g. whatever you can run from the computer's command prompt.
+
+The intention is for custom command to run in a separate window, so that its possible failure cannot hurt the DualCam Companion from which it is launched.
+
+In brief:
+- the user provides OS-specific command line for the command
+- upon pressing the corresponding button, DualCam Companion runs the command line while ensuring the current directory (for the command) is set to the current workarea root (above L/ and R/ subdirectories)
+- the DualCam Companion GUI remains unresponsive until the command is finished; if the commnd has separate window, the latter should be closed for DualCam Companion GUI to become operational again
+
+Command lines for the two custom commands are configured under "-custom_cmd_1" and "-custom_cmd_2" switches in the Preferences window.
+The safest practice is to enter full path to a batch script in the Preferences, the one that doesn't need any command-line arguments. Any options are to be handled inside the script itself.
+
+Building and configuring proper wrappers for custom commands.
+------------------------------------------------------------
+TODO
+
+========================================================================
 A background on invoking DOS commands
 ========================================================================
 (from: http://stackoverflow.com/questions/9392874/bat-file-open-new-cmd-window-and-enter-code-in-there)
