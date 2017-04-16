@@ -840,6 +840,7 @@ proc ::ok_utils::ok_run_silent_os_cmd {cmdList}  {
 proc ::ok_utils::ok_run_loud_os_cmd {cmdList outputCheckCB}  {
 	#ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
   set tclExecResult1 [catch { set result [eval exec $cmdList] } cmdExecResult]
+  # $tclExecResult1 != 0 since the command is expected to print output
   set tclExecResult2 [catch {
     if { 0 == [$outputCheckCB $cmdExecResult] } {
       #cmdExecResult tells how cmd ended

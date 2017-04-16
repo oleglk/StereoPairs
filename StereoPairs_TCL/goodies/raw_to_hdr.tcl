@@ -270,7 +270,7 @@ proc _do_job_in_one_dir {dirPath}  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
       return  0
     }
-    if { 0 == [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
+    if { 0 > [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
     }
   }
@@ -421,13 +421,16 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
         set rgbMultList $imgInfoArr($::iMetaRGBG)
         dict set rawNameToRgb $rawName $rgbMultList
       } else {;  # read error - set init values (camera-wb)
+        set rgbMultList 0
         set mR ""; set mG ""; set mB "";  set colorSwitches "-w"; #init to cam-wb
       }
       set rgbInputted 0
     }
-    set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
-    set mB [lindex $rgbMultList 2];
-    set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : "-w"}]
+    if { $rgbMultList != 0 }  { ;   # overriden or read from the RAW
+      set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
+      set mB [lindex $rgbMultList 2];
+      set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : "-w"}]
+    }
   } else {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
   }
@@ -511,7 +514,7 @@ proc _is_dcraw_result_ok {execResultText} {
     # 'execResultText' tells how dcraw-based command ended
     # - OK if noone of 'errKeys' appears
     set result 1;    # as if it ended OK
-    set errKeys [list {Improper} {No such file} {missing} {unable} {unrecognized} {Non-numeric}]
+    set errKeys [list {Improper} {No such file} {no such file} {missing} {unable} {unrecognized} {Non-numeric}]
 #     puts ">>> Check for error keys '$errKeys' the following string:"
 #     puts "--------------------------------------------"
 #     puts "'$execResultText'"
@@ -568,6 +571,7 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
     set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
   } else {
     ok_info_msg "Custom dcraw path specified by '$csvPath'"
+    set ::_DCRAW      [format "{%s}"  $::_DCRAW]
   }
 
   set ::_ENFUSE     [format "{%s}"  [file join $::_ENFUSE_DIR "enfuse.exe"]]
