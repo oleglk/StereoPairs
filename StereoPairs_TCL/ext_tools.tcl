@@ -45,8 +45,12 @@ proc set_ext_tool_paths_from_csv {csvPath}  {
   set ::_IMIDENTIFY [format "{%s}"  [file join $::_IM_DIR "identify.exe"]]
   set ::_IMMONTAGE  [format "{%s}"  [file join $::_IM_DIR "montage.exe"]]
   # - DCRAW:
-  #set _DCRAW "dcraw.exe"
-  set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
+  # unless ::_DCRAW points to some custom execuable, point at the default
+  if { 0 == [info exists ::_DCRAW] }  {
+    set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
+  } else {
+    ok_info_msg "Custom dcraw path specified by '$csvPath'"
+  }
   # - ExifTool:
   set ::_EXIFTOOL "exiftool.exe" ; #TODO: path
   return  1

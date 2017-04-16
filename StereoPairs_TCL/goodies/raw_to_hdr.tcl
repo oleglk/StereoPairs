@@ -563,8 +563,13 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
   set ::_IMMOGRIFY  [format "{%s}"  [file join $::_IM_DIR "mogrify.exe"]]
   # - DCRAW:
   #set _DCRAW "dcraw.exe"
-  # TMP: use custom-build OK_dcraw.exe
-  set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "OK_dcraw.exe"]]
+  # assume ::_DCRAW points at custom-build OK_dcraw.exe; the below is backup
+  if { 0 == [info exists ::_DCRAW] }  {
+    set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
+  } else {
+    ok_info_msg "Custom dcraw path specified by '$csvPath'"
+  }
+
   set ::_ENFUSE     [format "{%s}"  [file join $::_ENFUSE_DIR "enfuse.exe"]]
   return  1
 }
