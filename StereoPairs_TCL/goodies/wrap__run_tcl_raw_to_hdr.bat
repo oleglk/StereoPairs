@@ -2,6 +2,9 @@
 
 @echo off
 
+set TCL_INTERP=%1
+
+
 VER>NUL
 call :Assign_SCRIPT_DIR %0
 if ERRORLEVEL 1 (
@@ -16,7 +19,10 @@ if ERRORLEVEL 1 (
 
 @REM If the command preceded by "start", the DOS and wish windows aren't closed when finished
 @REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl""
+@REM ====Best working option so far===========================
 "C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl"
+@REM =========================================================
+
 
 @REM The below attempt truncates long script path into 8.3 before passing to TCL
 @REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\..\..\Libs_TCL\tkcon.tcl" -eval "source ""%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl"""
