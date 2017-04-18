@@ -1,20 +1,50 @@
-A stereo-photo processing workflow of an advanced user may involve steps that the author of DualCam Companion application never thought about. Such a possibility is addressed by providing custom-command buttons.
+A stereo-photo processing workflow of an advanced user may involve steps that the author of DualCam-Companion application never thought about. Such a possibility is addressed by providing custom-command buttons.
 
-DualCam Companion application enables the user to configure up to two arbitrary commands to be invoked through its GUI buttons. These buttons are "Cust1" and "Cust2".
+DualCam-Companion application enables the user to configure up to two arbitrary commands to be invoked through its GUI buttons. These buttons are "Cust1" and "Cust2".
 The commands should be those from the user computer's operating system, not TCL procedures. E.g. whatever you can run from the computer's command prompt.
 
-The intention is for custom command to run in a separate window, so that its possible failure cannot hurt the DualCam Companion from which it is launched.
+The intention is for custom command to run in a separate window, so that its possible failure cannot hurt the DualCam-Companion from which it is launched.
 
 In brief:
 - the user provides OS-specific command line for the command
-- upon pressing the corresponding button, DualCam Companion runs the command line while ensuring the current directory (for the command) is set to the current workarea root (above L/ and R/ subdirectories)
-- the DualCam Companion GUI remains unresponsive until the command is finished; if the commnd has separate window, the latter should be closed for DualCam Companion GUI to become operational again
+- upon pressing the corresponding button, DualCam-Companion runs the command line while ensuring the current directory (for the command) is set to the current workarea root (above L/ and R/ subdirectories)
+- the DualCam-Companion GUI remains unresponsive until the command is finished; if the commnad has separate window, the latter should be closed for DualCam-Companion GUI to become operational again
+- the DualCam-Companion GUI does not recognize whether the command succeeded or failed
+-- if the commnad has separate window, the latter contains the indication of the command's status
+-- if the commnad doesn't have separate window, all or part of the command's text output is copied into the log box of DualCam-Companion GUI when the command's execution is finished or aborted
 
 Command lines for the two custom commands are configured under "-custom_cmd_1" and "-custom_cmd_2" switches in the Preferences window.
-The safest practice is to enter full path to a batch script in the Preferences, the one that doesn't need any command-line arguments. Any options are to be handled inside the script itself.
+The safest practice is to enter only full path to an executable file in the Preferences. In case this executable needs any command-line arguments, wrap it in a shell script (DOS batch on Windows); handle the argumennts inside this script.
+The path stored in the Preferences should follow TCL syntax convention where slash (/) is used as a directory separator.
 
 Building and configuring proper wrappers for custom commands.
 ------------------------------------------------------------
+
+This section explains arrangements for supplement utilities supplied with Dualcam-Companion.
+
+RAW conversion
+
+Dualcam-Companion doesn't enforce any particular method of RAW conversion. But its author developed one that automatically does very good job producing images perfectly suited for stereopairs. Specifically, it converts normally exposed images so that highlight details are mostly preserved, and shadow details are considerably improved compared to default conversions. Sometimes it's possible to do better with manually controled conversion, but one should work hard to achieve even equal results. Moreover, the resulting images are normalized brightness-wise, so that small exposure differences between left and right images are automatically eliminated.
+This flow won't handle that well low-key and high-key photos, but frankly speaking stereophotography is mostly about normal exposures.
+
+For each image this RAW processing flow does three dcraw conversions with different brightness values, then merges them together while choosing the "best" of three options for each and every pixel. It takes time and a lot of disk space, but the quality of results and fully automatic operation are worth it.
+
+The following external utilities are being used:
+- dcraw               - www.cybercom.net/~dcoffin/dcraw
+- Imagemagick suite   - www.imagemagick.org
+- enfuse              - enblend.sourceforge.net
+
+RAW conversion by DOS batch
+It was historically the first implementation of the RAW conversion flow; newer TCL version is better; this one is brought as a practical example of a native custom command.
+Files involved:
+- StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.bat
+-- the standalone RAW conversion script with no relation to Dualcam-Companion
+-- all external tool paths are hardcoded inside the script
+-- only a single RAW-file extension is supported, and it's hardcoded inside the script
+-- converts all RAWs found in the current directory
+
+
+
 TODO
 
 ========================================================================
