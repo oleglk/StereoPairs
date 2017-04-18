@@ -203,7 +203,7 @@ proc GUI_UsrCmd1 {}  {
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
-    set truncText [ok_truncate_text $resultText 30 30]
+    set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-1 output:\n==========\n$truncText\n==========\n"
   }
   #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
@@ -224,7 +224,7 @@ proc GUI_UsrCmd2 {}  {
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
-    set truncText [ok_truncate_text $resultText 30 30]
+    set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-2 output:\n==========\n$truncText\n==========\n"
   }
   #tk_messageBox -message "User-command-2 not implemented" -title $APP_TITLE
