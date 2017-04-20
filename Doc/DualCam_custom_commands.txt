@@ -20,7 +20,7 @@ The path stored in the Preferences should follow TCL syntax convention where sla
 Building and configuring proper wrappers for custom commands.
 ------------------------------------------------------------
 
-This section explains arrangements for supplement utilities supplied with Dualcam-Companion.
+This section explains arrangements for supplement utilities supplied with Dualcam-Companion. It should help the users to configure most other commands by following a similar methodology.
 
 RAW conversion
 
@@ -37,26 +37,43 @@ The following external utilities are being used:
 RAW conversion by DOS batch
 It was historically the first implementation of the RAW conversion flow; newer TCL version is better; this one is brought as a practical example of a native custom command.
 Files involved:
-- StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.bat
+* StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.bat
 -- the standalone RAW conversion script with no relation to Dualcam-Companion
 -- all external tool paths are hardcoded inside the script
+--- thus require adjustment by each individual user
 -- only a single RAW-file extension is supported, and it's hardcoded inside the script
 --- it ships with RAW extension of .arw - as produced by Sony Alpha cameras
 -- converts all RAWs found in the current directory
 -- the resulting images are placed under OUT\ subdirectory under the current directory
-- StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_on_l_r.bat
+* StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_on_l_r.bat
 -- invokes raw_to_hdr.bat (raw conversion) in subdirectories L\ and R\ of the current directory
 --- thus it concentrates the logic of running RAW conversions for a DualCam session working directory by means of raw_to_hdr.bat
 -- when finished, restores the working directory to the one where it started
 -- assumes that raw_to_hdr.bat resides in the same directory as run__raw_to_hdr_on_l_r.bat itself
 --- includes batch utility "Assign_SCRIPT_DIR" to detect the directory of itself
-- StereoPairs\StereoPairs_TCL\goodies\wrap__run__raw_to_hdr.bat
+---- the essense of run__raw_to_hdr_on_l_r.bat is in the following lines: ------
+  cd L
+  call %SCRIPT_DIR%\raw_to_hdr.bat
+  cd ..\R
+  call %SCRIPT_DIR%\raw_to_hdr.bat
+  cd ..\
+--------------------------------------------------------------------------------
+* StereoPairs\StereoPairs_TCL\goodies\wrap__run__raw_to_hdr.bat
+-- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
 -- invokes run__raw_to_hdr_on_l_r.bat in a new DOS command window
 -- assumes that run__raw_to_hdr_on_l_r.bat resides in the same directory as wrap__run__raw_to_hdr.bat itself
 --- includes batch utility "Assign_SCRIPT_DIR" to detect the directory of itself
 -- doesn't contain any logic of RAW conversion
+---- the essense of wrap__run__raw_to_hdr.bat is in the following lines: -------
+  start cmd /k %SCRIPT_DIR%\run__raw_to_hdr_on_l_r.bat
+--------------------------------------------------------------------------------
 
 
+RAW conversion by TCL script
+Involves invocation of a new instance of TCL interpreter while providing it with the script to execute.
+
+Files involved:
+TODO
 
 
 
