@@ -14,7 +14,7 @@ In brief:
 -- if the commnad doesn't have separate window, all or part of the command's text output is copied into the log box of DualCam-Companion GUI when the command's execution is finished or aborted
 
 Command lines for the two custom commands are configured under "-custom_cmd_1" and "-custom_cmd_2" switches in the Preferences window.
-The safest practice is to enter only full path to an executable file in the Preferences. In case this executable needs any command-line arguments, wrap it in a shell script (DOS batch on Windows); handle the argumennts inside this script.
+The safest practice is to enter only full path to an executable file in the Preferences. The executable could be either a real executable binary (.exe on Windows) or a shell script (batch file on Windows). In case this executable needs any command-line arguments, wrap it in a shell script (DOS batch on Windows); handle the argumennts inside this script.
 The path stored in the Preferences should follow TCL syntax convention where slash (/) is used as a directory separator.
 
 Building and configuring proper wrappers for custom commands.
@@ -38,7 +38,7 @@ RAW conversion by DOS batch
 It was historically the first implementation of the RAW conversion flow; newer TCL version is better; this one is brought as a practical example of a native custom command.
 Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.bat
--- the standalone RAW conversion script with no relation to Dualcam-Companion
+-- the standalone RAW conversion DOS-batch script with no relation to Dualcam-Companion
 -- all external tool paths are hardcoded inside the script
 --- thus require adjustment by each individual user
 -- only a single RAW-file extension is supported, and it's hardcoded inside the script
@@ -73,6 +73,19 @@ RAW conversion by TCL script
 Involves invocation of a new instance of TCL interpreter while providing it with the script to execute.
 
 Files involved:
+* StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.tcl
+-- the standalone RAW conversion TCL script with no logical relation to Dualcam-Companion, even though they share some generic code
+--- e.g. raw_to_hdr.tcl cannot exist outside of the full Dualcam-Companion package
+--- but you can run raw_to_hdr.tcl from TCL console independently of Dualcam-Companion GUI; it converts any RAW images, not necessarily stereopairs
+-- raw_to_hdr.tcl has numerous command-line options to adjust for various usage scenarious
+--- in the context of Dualcam-Companion one prearranged set of arguments is supplied through a wrapper script (run__raw_to_hdr_on_l_r.tcl)
+-- all external tool paths are taken from a special CSV file whose path is provided through the "-tools_paths_file" command-line argument
+--- format-wise it is the same as "ext_tool_dirs.csv" from Dualcam-Companion, so sharing is recommended 
+-- list with names of directories with RAWs for the conversion is accepted in "-inp_dirs" command-line argument
+--- one can process any number of directories in one invocation
+TODO
+* StereoPairs\ext_tool_dirs.csv
+
 TODO
 
 
