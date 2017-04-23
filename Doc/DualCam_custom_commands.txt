@@ -21,6 +21,8 @@ Building and configuring proper wrappers for custom commands.
 ------------------------------------------------------------
 
 This section explains arrangements for supplement utilities supplied with Dualcam-Companion. It should help the users to configure most other commands by following a similar methodology.
+The main idea is that the application to be run as a custom command is considered a "black box". The user shouldn't bother with how it works or how it is implemented. Instead the user only knows what the application does and how to control it through the command line. The user should supply wrapper scripts that adapt the application's command line to the single executable path entered in DualCam-Companion Preferences.
+
 
 RAW conversion
 
@@ -83,9 +85,13 @@ Files involved:
 --- format-wise it is the same as "ext_tool_dirs.csv" from Dualcam-Companion, so sharing is recommended 
 -- list with names of directories with RAWs for the conversion is accepted in "-inp_dirs" command-line argument
 --- one can process any number of directories in one invocation
+* StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_on_l_r.tcl
 TODO
 * StereoPairs\ext_tool_dirs.csv
-
+-- tells DualCam-Companion the paths of external tools
+-- raw_to_hdr.tcl needs all the tools that DualCam-Companion does, with addition of "enfuse"
+--- thus it's recommended to add a line for "enfuse" into ext_tool_dirs.csv, and use the later in both DualCam-Companion and raw_to_hdr.tcl
+-- see the format of ext_tool_dirs.csv in DualCam-Companion user-guide
 TODO
 
 
