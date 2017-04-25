@@ -36,6 +36,8 @@ The following external utilities are being used:
 - Imagemagick suite   - www.imagemagick.org
 - enfuse              - enblend.sourceforge.net
 
+In the context of stereopair processing for Dualcam-Companion, RAW conversion should be run _after_ the RAW images are renamed (to reflect their roles in stereopairs).
+
 RAW conversion by DOS batch
 It was historically the first implementation of the RAW conversion flow; newer TCL version is better; this one is brought as a practical example of a native custom command.
 Files involved:
@@ -86,12 +88,29 @@ Files involved:
 -- list with names of directories with RAWs for the conversion is accepted in "-inp_dirs" command-line argument
 --- one can process any number of directories in one invocation
 * StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_on_l_r.tcl
+-- a tiny TCL script that adapts the rather generic raw_to_hdr.tcl to the context of Dualcam-Companion
+-- loads the code from raw_to_hdr.tcl script and runs it with prearranged arguments
+--- here is the raw_to_hdr.tcl invocation line
+--------------------------------------------------------------------------------
+raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+--------------------------------------------------------------------------------
+--- argument <-inp_dirs {L R}> tells to run RAW conversion in subdirectories L/ and R/ of the current workarea directory - in this order
+--- argument <-out_subdir_name OUT> tells to put ultimate images in subdirectories L/OUT/ and R/OUT/ of the current workarea directory
+--- argument 
+--- argument 
+--- argument 
+--- argument 
+--- argument 
+--- argument 
+
+
 TODO
 * StereoPairs\ext_tool_dirs.csv
 -- tells DualCam-Companion the paths of external tools
 -- raw_to_hdr.tcl needs all the tools that DualCam-Companion does, with addition of "enfuse"
 --- thus it's recommended to add a line for "enfuse" into ext_tool_dirs.csv, and use the later in both DualCam-Companion and raw_to_hdr.tcl
 -- see the format of ext_tool_dirs.csv in DualCam-Companion user-guide
+-- you can use supplied "EXAMPLE__ext_tool_dirs.csv" file as the starting point
 TODO
 
 

@@ -16,8 +16,11 @@
 ##  
 ################################################################################
 
+
+## The below line is a standard header that explains the file's format
 Environment-variable-name,Path
 _IM_DIR,C:/Program Files (x86)/ImageMagick-6.8.7-3
 #(custom path for dcraw isn't essential unless real image conversion is intended)
 _DCRAW,C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe
+# enfuse (image blending tool) is needed only for RAW conversion
 _ENFUSE_DIR,C:/Program Files/enblend-enfuse-4.1.4/bin
