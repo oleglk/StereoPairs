@@ -1,0 +1,12 @@
+## Lines starting with "#" included here for clarity; they should not appear in the file
+## Empty lines are ignored
+
+## A sample white-balance override file for raw2hdr.tcl
+
+## The below line is a standard header that explains the file's format
+"RawName",Rmult,Gmult,Bmult,G2mult,
+
+## RawName should match the input file - including _l/_r suffix
+## Note the "," in the end - it's mandatory
+DSC02827-00012_l.ARW,2072.000000,1024.000000,2152.000000,1024.000000,
+DSC02834-00016_l.ARW,2280.000000,1024.000000,1792.000000,1024.000000,

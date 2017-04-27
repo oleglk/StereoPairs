@@ -87,6 +87,7 @@ Files involved:
 --- format-wise it is the same as "ext_tool_dirs.csv" from Dualcam-Companion, so sharing is recommended 
 -- list with names of directories with RAWs for the conversion is accepted in "-inp_dirs" command-line argument
 --- one can process any number of directories in one invocation
+--- the syntax is that of TCL list: {NAME1 NAME2 ... }
 * StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_on_l_r.tcl
 -- a tiny TCL script that adapts the rather generic raw_to_hdr.tcl to the context of Dualcam-Companion
 -- loads the code from raw_to_hdr.tcl script and runs it with prearranged arguments
@@ -94,14 +95,17 @@ Files involved:
 --------------------------------------------------------------------------------
 raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 --------------------------------------------------------------------------------
---- argument <-inp_dirs {L R}> tells to run RAW conversion in subdirectories L/ and R/ of the current workarea directory - in this order
---- argument <-out_subdir_name OUT> tells to put ultimate images in subdirectories L/OUT/ and R/OUT/ of the current workarea directory
---- argument 
---- argument 
---- argument 
---- argument 
---- argument 
---- argument 
+--- argument '-inp_dirs {L R}' tells to run RAW conversion in subdirectories L/ and R/ of the current workarea directory - in this order
+--- argument '-out_subdir_name OUT' tells to put ultimate images in subdirectories L/OUT/ and R/OUT/ of the current workarea directory
+--- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16 8-bit-per-channel TIFF-s
+--- argument '-raw_ext ARW' tells the extension of input RAW images; ARW is Sony-Alpha RAW
+--- the combination of arguments '-wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv' tells that RAW-conversion in each directory should both  read white-balance parameters (RGB multipliers per an image for dcraw) from file "wb_dir1.csv" in the current workarea directory, and write the white-balance parameters it used for each image into the same file
+------ this always guarantees that left- and right images of one stereopair obtain the same white-balance processing
+------ !!! doesn't work since L-R filenames differ !!! TODO: pre/post-process CSV between per-dir conversion runs
+------ format of "wb_dir1.csv" could be learned from "Doc/EXAMPLE__wb_dir1.csv" provided with DualCam-Companion
+------ TODO
+--- argument '-tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]' tells to take external tools paths from the same file that's provided for the main DualCam-Companion application
+------ the syntax is simply '-tools_paths_file FILEPATH'; the prearranged example uses OS-independent TCL approach of building file paths
 
 
 TODO
@@ -110,7 +114,7 @@ TODO
 -- raw_to_hdr.tcl needs all the tools that DualCam-Companion does, with addition of "enfuse"
 --- thus it's recommended to add a line for "enfuse" into ext_tool_dirs.csv, and use the later in both DualCam-Companion and raw_to_hdr.tcl
 -- see the format of ext_tool_dirs.csv in DualCam-Companion user-guide
--- you can use supplied "EXAMPLE__ext_tool_dirs.csv" file as the starting point
+-- you can use supplied "Doc/EXAMPLE__ext_tool_dirs.csv" file as the starting point
 TODO
 
 
