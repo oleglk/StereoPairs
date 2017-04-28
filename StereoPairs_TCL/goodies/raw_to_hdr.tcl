@@ -319,11 +319,11 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     if { [file exists $::STS(wbInpFile)] }  {
       if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
                               $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
-        return  0;  # error already printed
+        return  -1;  # error already printed
       }
     } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
       ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
-      return  0
+      return  -1
     } else {
       ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
     }
