@@ -8,8 +8,11 @@ if ERRORLEVEL 1 (
 )
 
 
-set ENFUSE="C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
-set IM_DIR="C:\Program Files (x86)\ImageMagick-6.8.7-3"
+set ENFUSE="C:\Program Files\enblend-enfuse-4.1.4-win64\bin\enfuse.exe"
+@REM set ENFUSE="C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
+set IM_DIR="C:\Program Files\ImageMagick-7.0.3-0"
+@REM set IM_DIR="C:\Program Files (x86)\ImageMagick-6.8.7-3"
+
 @REM set ENFUSE="%SCRIPT_DIR%\enblend-enfuse-4.1.4-win32\bin\enfuse.exe"
 @REM set IM_DIR="%SCRIPT_DIR%\ImageMagick"
 set DCRAW=%IM_DIR%\OK_dcraw.exe

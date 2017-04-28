@@ -4,12 +4,39 @@
 # (1) Detect "raw_to_hdr.tcl" script location (use surely unique variable name)
 set SCRIPT_DIR__raw_to_hdr [file dirname [info script]]
 
-# (2) Load the code from "raw_to_hdr.tcl" script
+# (2) Load the code from "raw_to_hdr.tcl" script;  imports library utilities too
 source [file join $SCRIPT_DIR__raw_to_hdr "raw_to_hdr.tcl"]
+source [file join $SCRIPT_DIR__raw_to_hdr ".." "stereopair_naming.tcl"]
 
-# (3) Execute the main procedure of "raw_to_hdr.tcl" script
+# (3)
+if { 0 == [array exists NAMING] }  {  ; # unless defined by environment
+  _set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
+}
+
+#~ # (3) Execute the main procedure of "raw_to_hdr.tcl" script
+#~ # (location of tool-path file reflects Dualcam-Companion software structure)
+#~ raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+
+# TODO: add left suffix in ovrd file unless it's there
+
+# (4) Execute the main procedure of "raw_to_hdr.tcl" script in L/ subdirectory
+#     "wb_ovrd_left.csv", if exists, provides external override for white-balance
+#     white-balance parameters used for all images are printed into "wb_left.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+##raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_left.csv  -wb_inp_file wb_ovrd_left.csv   -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+
+
+# (5)
+if { 0 == [_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 \
+                                                    "white-balance-sync"] }   {
+  return  0;  # error already printed
+}
+
+# (6) Execute the main procedure of "raw_to_hdr.tcl" script in R/ subdirectory
+#     "wb_ovrd_right.csv", if exists, provides external override for white-balance
+#     white-balance parameters used for all images are printed into "wb_right.csv"
+# (location of tool-path file reflects Dualcam-Companion software structure)
+##raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 ################################################################################
 
 
