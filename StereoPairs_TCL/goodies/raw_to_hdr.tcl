@@ -315,7 +315,6 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   if { "" == $::STS(wbInpFile) }  { 
     set rawNamesToWbMults  [dict create]
   } else {
-    #ok_warn_msg "Reading WB multipliers not implemented yet"
     array unset _rawToWbArr
     if { [file exists $::STS(wbInpFile)] }  {
       if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
