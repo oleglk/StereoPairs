@@ -89,21 +89,31 @@ Files involved:
 --- one can process any number of directories in one invocation
 --- the syntax is that of TCL list: {NAME1 NAME2 ... }
 * StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_on_l_r.tcl
--- a tiny TCL script that adapts the rather generic raw_to_hdr.tcl to the context of Dualcam-Companion
+-- a small TCL script that adapts the rather generic raw_to_hdr.tcl to the context of Dualcam-Companion
 -- loads the code from raw_to_hdr.tcl script and runs it with prearranged arguments
---- here is the raw_to_hdr.tcl invocation line
+--- here is the outline of raw_to_hdr.tcl invocation lines
 --------------------------------------------------------------------------------
-raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+## If file "wb_ovrd_left.csv" exists, it provides external override for white-balance;
+##   if so, build input-white-balance argument for L/ subdirectory:
+##     set INP_WB_OVRD "-wb_inp_file wb_ovrd_left.csv"
+#### Execute the main procedure of "raw_to_hdr.tcl" script in L/ subdirectory
+raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+## Change image-file names in WB file created while pocessing left directory
+##     into names of their right peers; save in "wb_ovrd_right.csv"
+_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 "white-balance-sync"]
+#### Execute the main procedure of "raw_to_hdr.tcl" script in R/ subdirectory
+raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 --------------------------------------------------------------------------------
---- argument '-inp_dirs {L R}' tells to run RAW conversion in subdirectories L/ and R/ of the current workarea directory - in this order
+--- arguments '-inp_dirs {L}', '-inp_dirs {R}' tell to run RAW conversion in subdirectories L/ or R/ of the current workarea directory respectively
 --- argument '-out_subdir_name OUT' tells to put ultimate images in subdirectories L/OUT/ and R/OUT/ of the current workarea directory
 --- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16 8-bit-per-channel TIFF-s
 --- argument '-raw_ext ARW' tells the extension of input RAW images; ARW is Sony-Alpha RAW
---- the combination of arguments '-wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv' tells that RAW-conversion in each directory should both  read white-balance parameters (RGB multipliers per an image for dcraw) from file "wb_dir1.csv" in the current workarea directory, and write the white-balance parameters it used for each image into the same file
+--- the combination of arguments '-wb_out_file NAME2.csv -wb_inp_file NAME1.csv' tells that RAW-conversion should read white-balance parameters (RGB multipliers per an image for dcraw) from file "NAME1.csv" in the current workarea directory, and write the white-balance parameters it used for each image into file "NAME2.csv" in the same directory
+--- the script feeds white-balance parameters used on left images to the conversion of their right peers
 ------ this always guarantees that left- and right images of one stereopair obtain the same white-balance processing
------- !!! doesn't work since L-R filenames differ !!! TODO: pre/post-process CSV between per-dir conversion runs
------- format of "wb_dir1.csv" could be learned from "Doc/EXAMPLE__wb_dir1.csv" provided with DualCam-Companion
------- TODO
+------ achieved by means of -wb_inp_file/-wb_out_file arguments and adaptation of white-balance output from directory L/ into white-balance input for directory R/
+------ format of white-balance input/output file could be learned from "Doc/EXAMPLE__wb_dir1.csv" provided with DualCam-Companion
+------------ white-balance input- and output files share the same syntax
 --- argument '-tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]' tells to take external tools paths from the same file that's provided for the main DualCam-Companion application
 ------ the syntax is simply '-tools_paths_file FILEPATH'; the prearranged example uses OS-independent TCL approach of building file paths
 
