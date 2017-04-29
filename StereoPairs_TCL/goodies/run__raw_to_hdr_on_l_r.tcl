@@ -37,7 +37,8 @@ proc _swap_lr_names_in_csv_file {inPath outPath namePos descr}  {
       }
     }
     set pureName2 [spm_purename_to_peer_purename $pureName1]
-    set newRec [lreplace $fileRec $namePos $namePos $pureName2]
+    set name2 "$pureName2$ext"
+    set newRec [lreplace $fileRec $namePos $namePos $name2]
     lappend newLinesList $newRec
     incr cntSwapped 1
   }
@@ -79,11 +80,21 @@ if { 0 == [array exists NAMING] }  {  ; # unless defined by environment
 
 # TODO: add left suffix in ovrd file unless it's there
 
+# (4) If input white-balance override file exists, tell to use it for L/ directory
+#     File names in "wb_ovrd_left.csv" should be those of the left images
+if { [file exists "wb_ovrd_left.csv"] }  {
+  set INP_WB_OVRD "-wb_inp_file wb_ovrd_left.csv"
+  ok_info_msg "Input white-balance override provided in file 'wb_ovrd_left.csv'"
+} else {
+  set INP_WB_OVRD ""
+  ok_info_msg "No input white-balance override provided"
+}
+
 # (4) Execute the main procedure of "raw_to_hdr.tcl" script in L/ subdirectory
 #     "wb_ovrd_left.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_left.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_left.csv  -wb_inp_file wb_ovrd_left.csv   -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 
 
 # (5) Change image-file names in WB file created while pocessing left directory
@@ -97,7 +108,7 @@ if { 0 == [_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 \
 #     "wb_ovrd_right.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_right.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
+raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 ################################################################################
 
 

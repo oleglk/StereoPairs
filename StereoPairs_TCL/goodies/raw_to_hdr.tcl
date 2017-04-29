@@ -339,6 +339,9 @@ proc _convert_all_raws_in_current_dir {rawExt} {
                             1.0 [file join [pwd] $::STS(dirNorm)] \
                             1.7 [file join [pwd] $::STS(dirHigh)]]
   }
+  # note: source of WB params is picked when converting 1st directory;
+  #       in consequent directories it appears like override,
+  #       but it's just carried out from the 1st directory
   dict for {brightVal outDir} $brightValToAbsOutDir {
     foreach rawPath $rawPaths {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
