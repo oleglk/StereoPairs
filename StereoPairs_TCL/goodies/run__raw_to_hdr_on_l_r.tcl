@@ -55,30 +55,30 @@ proc _load_some_preferences {} {
   array unset ::STS ;   # array for global settings ;  unset once per a project
   preferences_set_initial_values  ; # initializing the settings is mandatory
   # load default settings if possible
-  set allLoaded 1;  # as if all succeeded
+  set allApplied 1;  # as if all succeeded
   if { 0 == [preferences_read_and_apply] }  {
     ok_warn_msg "Preferences were not loaded; will use hardcoded values"
-    return  0
   } else {
-    # perform initializations dependent on the saved preferences
-    if { 0 == [preferences_get_val -name_format_left specLeft]} {
-      ok_err_msg "Missing preference for left image name-format"
-      set allLoaded 0
-    }
-    if { 0 == [preferences_get_val -name_format_right specRight]} {
-      ok_err_msg "Missing preference for right image name-format"
-      set allLoaded 0
-    }
-    if { 0 == [set_naming_parameters_from_left_right_specs \
-                                          $specLeft $specRight] } {
-      set allLoaded 0;  # error already printed
-    }
+    ok_info_msg "Preferences successfully loaded"
   }
-  if { $allLoaded == 1 }  {
+  # perform initializations dependent on the saved or hardcoded preferences
+  if { 0 == [preferences_get_val -name_format_left specLeft]} {
+    ok_err_msg "Missing preference for left image name-format"
+    set allApplied 0
+  }
+  if { 0 == [preferences_get_val -name_format_right specRight]} {
+    ok_err_msg "Missing preference for right image name-format"
+    set allApplied 0
+  }
+  if { 0 == [set_naming_parameters_from_left_right_specs \
+                                        $specLeft $specRight] } {
+    set allApplied 0;  # error already printed
+  }
+  if { $allApplied == 1 }  {
     ok_info_msg "Preferences successfully loaded and applied"
     return  1
   } else {
-    ok_warn_msg "Preferences were not applied; will use hardcoded values"
+    ok_warn_msg "Preferences were not applied; should use hardcoded values"
     return  0
   }
 }
