@@ -120,9 +120,16 @@ grid rowconfigure .top 5 -weight 1
 
 
 grid [ttk::frame .top.userCmds -relief sunken] -column 1 -row 1 -sticky we
+
 # usr buttons get explicit min-width to override that of the style
-pack [ttk::button .top.userCmds.usr1 -text "Cust1" -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
-pack [ttk::button .top.userCmds.usr2 -text "Cust2" -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
+if { 1 == [preferences_get_val -custom_btn_1 cust1Txt] } {
+  set cust1Txt [string range $cust1Txt 0 4] } else { set cust1Txt QQ111
+}
+if { 1 == [preferences_get_val -custom_btn_2 cust2Txt] } {
+  set cust2Txt [string range $cust2Txt 0 4] } else { set cust2Txt QQ222
+}
+pack [ttk::button .top.userCmds.usr1 -text $cust1Txt -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
+pack [ttk::button .top.userCmds.usr2 -text $cust2Txt -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
 
 grid [ttk::button .top.preferences -text "Preferences..." -command GUI_ChangePreferences] -column 3 -row 1 -sticky we
 

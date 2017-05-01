@@ -90,9 +90,11 @@ proc preferences_get_initial_values {arrayName}  {
 
   # user command #1
   set _prefs(-custom_cmd_1)  "" ; # custom user command #1 - full cmd line
+  set _prefs(-custom_btn_1)  "Cust1" ; # custom user command #1 - button text
 
   # user command #2
   set _prefs(-custom_cmd_2)  "" ; # custom user command #2 - full cmd line
+  set _prefs(-custom_btn_2)  "Cust2" ; # custom user command #2 - button text
   
 #  set _prefs(-)  ""
 
@@ -101,8 +103,12 @@ proc preferences_get_initial_values {arrayName}  {
 ## Common option list to be used ONLY in GUI frontend                         ##
 ################################################################################
   set _prefs(COMMON__keyToDescrAndFormat) [dict create \
-    -INITIAL_WORK_DIR {"workarea root directory assumed at startup" "%s"}]
-  set _prefs(COMMON__keysInOrder) [list -INITIAL_WORK_DIR]
+    -INITIAL_WORK_DIR {"workarea root directory assumed at startup" "%s"} \
+    -custom_btn_1 {"button label of custom command 1; up to 5 characters" "%s"} \
+    -custom_btn_2 {"button label of custom command 2; up to 5 characters" "%s"}
+    ]
+  set _prefs(COMMON__keysInOrder) [list -INITIAL_WORK_DIR \
+                                        -custom_btn_1 -custom_btn_2]
   set _prefs(COMMON__keyOnlyArgsList) [list]
   set _prefs(COMMON__hardcodedArgsStr) ""
 ################################################################################
@@ -250,11 +256,15 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   # grouping shared options may have created empty sections; eliminate such ones
   set keysUsedByUtils [preferences_strip_empty_sections_from_list \
                                                               $keysUsedByUtils]
-  set _prefs(ALL_PREFERENCES__keysInOrder) [                  \
-              linsert $keysUsedByUtils 0                      \
-              "HEADER: ==== Common/shared options ===="       \
-              "-INITIAL_WORK_DIR"]
-  
+  #~ set _prefs(ALL_PREFERENCES__keysInOrder) [                  \
+              #~ linsert $keysUsedByUtils 0                      \
+              #~ "HEADER: ==== Common/shared options ===="       \
+              #~ "-INITIAL_WORK_DIR"                             ]
+  set _prefs(ALL_PREFERENCES__keysInOrder) [concat                  \
+              [list "HEADER: ==== Common/shared options ===="]      \
+              $_prefs(COMMON__keysInOrder)                          \
+              $keysUsedByUtils                                      \
+              ]
 ################################################################################
   
   
