@@ -106,6 +106,7 @@ source [file join $SCRIPT_DIR__raw_to_hdr ".." "preferences_mgr.tcl"]
 
 # (3)
 if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
+  ok_warn_msg "Setting stereopair naming parameters to StereoPhotoMaker-compatible defaults"
   _set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
 }
 
