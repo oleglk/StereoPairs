@@ -1,6 +1,6 @@
 A stereo-photo processing workflow of an advanced user may involve steps that the author of DualCam-Companion application never thought about. Such a possibility is addressed by providing custom-command buttons.
 
-DualCam-Companion application enables the user to configure up to two arbitrary commands to be invoked through its GUI buttons. These buttons are "Cust1" and "Cust2".
+DualCam-Companion application enables the user to configure up to two arbitrary commands to be invoked through its GUI buttons. These buttons are initially named "Cust1" and "Cust2", but could be customized through Preferences.
 The commands should be those from the user computer's operating system, not TCL procedures. E.g. whatever you can run from the computer's command prompt.
 
 The intention is for custom command to run in a separate window, so that its possible failure cannot hurt the DualCam-Companion from which it is launched.
@@ -116,17 +116,27 @@ raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW 
 ------------ white-balance input- and output files share the same syntax
 --- argument '-tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]' tells to take external tools paths from the same file that's provided for the main DualCam-Companion application
 ------ the syntax is simply '-tools_paths_file FILEPATH'; the prearranged example uses OS-independent TCL approach of building file paths
-
-
-TODO
+* StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_raw_to_hdr.bat
+-- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
+-- invokes new instance of TCL interpreter and tells it to execute run__raw_to_hdr_on_l_r.tcl
+--- one can use any TCL interpreter, not necessarilly the one that runs Dualcam-Companion GUI
+-- assumes that run_tcl_raw_to_hdr_on_l_r.bat resides in the same directory as wrap__run_tcl_raw_to_hdr.bat itself
+--- includes batch utility "Assign_SCRIPT_DIR" to detect the directory of itself
+-- doesn't contain any logic of RAW conversion
+---- the essense of wrap__run_tcl_raw_to_hdr.bat is in the following line: -----
+  "C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl"
+--------------------------------------------------------------------------------
 * StereoPairs\ext_tool_dirs.csv
 -- tells DualCam-Companion the paths of external tools
 -- raw_to_hdr.tcl needs all the tools that DualCam-Companion does, with addition of "enfuse"
 --- thus it's recommended to add a line for "enfuse" into ext_tool_dirs.csv, and use the later in both DualCam-Companion and raw_to_hdr.tcl
+-- then, raw_to_hdr.tcl is more likely to require explicit path to dcraw
+--- the author continuously ran across dcraw included in Imagemagick that didn't handle conversion of RAWs from Sony Alpha 5000, while it did read their EXIF timestamps
+---- only the latter is essential for the main functionality of DualCam-Companion
 -- see the format of ext_tool_dirs.csv in DualCam-Companion user-guide
 -- you can use supplied "Doc/EXAMPLE__ext_tool_dirs.csv" file as the starting point
 TODO
-
+--------------------------------------------------------------------------------
 
 
 TODO
