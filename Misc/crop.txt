@@ -1,0 +1,30 @@
+(from: https://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=31877&p=145805#p145805)
+... 
+an automatic (e.g. without external calculation) way to accomplish the following:
+
+=> crop a square from the centre of an image whose side = 1.1*min(image_width, image_height); with black border needed wherever required.
+
+Semantically it would be equivalent to the following not-so-optimal operations:
+(1) add black border on both sides at the smaller dimension; border sickness >= 0.1*min(image_width, image_height)
+(2) crop the square from the image with border; size = 1.1*min(image_width, image_height)
+
+convert ^
+  in.png ^
+  -virtual-pixel Black ^
+  -set option:distort:viewport ^
+    %%[fx:1.1*min(w,h)]x%%[fx:1.1*min(w,h)]+%%[fx:(w-1.1*min(w,h))/2]+%%[fx:(h-1.1*min(w,h))/2] ^
+  -filter Point -distort SRT 1,0 ^
+  +repage ^
+  out.png
+
+The above code is Windows BAT syntax. For Windows CMD, change each double %% to single %.
+
+set CONVERT="C:\Program Files (x86)\ImageMagick-7.0.5-5-portable-Q16-x86\convert.exe"
+
+for %f in (*.TIF) DO %CONVERT% %f ^
+ -virtual-pixel Black ^
+ -set option:distort:viewport ^
+ %[fx:1.1*min(w,h)]x%[fx:1.1*min(w,h)]+%[fx:(w-1.1*min(w,h))/2]+%[fx:(h-1.1*min(w,h))/2] ^
+ -filter Point -distort SRT 1,0 ^
+ +repage ^
+ -compress LZW SQUARE\%~nf.TIF
