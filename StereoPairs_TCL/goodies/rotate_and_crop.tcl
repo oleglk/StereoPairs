@@ -175,34 +175,25 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
       set ::STS(buDirName)      $cml(-bu_subdir_name)
     }
   }
-  if { [info exists cml(-rot_angle)] }  {
+  if { 0 != $cml(-rot_angle)] }  { ;  # =0 (default) if not given
     if { [ok_isnumeric ($cml(-rot_angle)] }  {
       set ::STS(rotAngle) $cml(-rot_angle)
     } else {
       ok_err_msg "Parameter telling rotation angle (-rot_angle); should be numeric"
       incr errCnt 1
     }
-  } 
-  if { [info exists cml(-do_blend)] }  {
-    if { ($cml(-do_blend) == 0) || ($cml(-do_blend) == 1) }  {
-      set ::STS(doBlend) $cml(-do_blend)
+  } else {  ok_info_msg "Rotation not requested"  }
+  if { 0 != $cml(-crop_ratio)] }  { ;  # =0 (default) if not given
+    if { [ok_isnumeric ($cml(-crop_ratio)] }  {
+      set ::STS(cropRatio) $cml(-crop_ratio)
     } else {
-      ok_err_msg "Parameter telling whether to perform blending (fusing) step (-do_blend); should be 0 or 1"
+      ok_err_msg "Parameter telling crop ratio (-crop_ratio); should be numeric"
       incr errCnt 1
     }
-  } 
-  if { [info exists cml(-wb_inp_file)] }  {
-    set iwbPath [file join [pwd] $cml(-wb_inp_file)]
-    if { 0 == [ok_filepath_is_readable $iwbPath] }  {
-      ok_err_msg "Inexistent or invalid file '$iwbPath' specified as the input file with white-balance coefficients"
-      incr errCnt 1
-    } else {
-      set ::STS(wbInpFile) $iwbPath
-    }
-  }
-  if { [info exists cml(-wb_out_file)] }  {
-    # accept the name - cannot check writability before dir-s created
-    set ::STS(wbOutFile) [file join [pwd] $cml(-wb_out_file)]
+  }  else {  ok_info_msg "Cropping not requested"  }
+  if { (0 == $cml(-rot_angle)]) && (0 == $cml(-crop_ratio)]) } 
+    ok_info_msg "Please specify rotation angle and/or crop ratio; example: -rot_angle 270 -crop_ratio 1"
+    incr errCnt 1
   }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
@@ -223,21 +214,15 @@ proc _do_job_in_one_dir {dirPath}  {
     return  0
   }
   ok_info_msg "Success changing work directory to '$dirPath'"
-  if { $::STS(doRawConv) } {
-    if { 0 == [_arrange_dirs_in_current_dir] }  {
-      ok_err_msg "Aborting because of failure to create a temporary output directory"
-      return  0
-    }
-    if { 0 == [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
-      return  0;  # errors already printed
-    }
+
+  if { 0 == [_arrange_dirs_in_current_dir] }  {
+    ok_err_msg "Aborting because of failure to create a temporary output directory"
+    return  0
   }
-  if { $::STS(doBlend) } {
-    # assume that RAW conversions are done and thus the directories prepared
-    if { 0 == [_fuse_converted_images_in_current_dir $::STS(rawExt)] }  {
-      return  0;  # errors already printed
-    }
+  if { 0 == [_rotate_crop_all_in_current_dir $::STS(rawExt)] }  {
+    return  0;  # errors already printed
   }
+ 
   set tclResult [catch { set res [cd $oldWD] } execResult]
   if { $tclResult != 0 } {
     ok_err_msg "Failed restoring work directory to '$oldWD': $execResult!"
@@ -248,148 +233,62 @@ proc _do_job_in_one_dir {dirPath}  {
 
 proc _arrange_dirs_in_current_dir {} {
   if { 0 == [ok_create_absdirs_in_list \
-          [list $::STS(dirLow) $::STS(dirNorm) $::STS(dirHigh) $::STS(outDirName)] \
-          {"folder-for-darker-images" "folder-for-normal-images" \
-           "folder-for-brighter-images" "folder-for-final-HDR-images"}] }  {
+          [list $::STS(buDirName)] \
+          {"backup-folder-for-original-images"}] }  {
     return  0
   }
   return  1
 }
 
-# Makes RAW conversions; returns num of processed files, 0 if none, -1 on error.
-# If '$::STS(wbInpFile)' keeps a file-path, takes WB multipliers from it.
-# If '$::STS(wbOutFile)' keeps a file-path, prints WB multipliers into it.
-proc _convert_all_raws_in_current_dir {rawExt} {
-  puts "====== Begin RAW conversions in '[pwd]' ========"
-  set rawPaths [glob -nocomplain "*.$rawExt"]
-  if { 0 == [llength $rawPaths] }  {
-    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+# Performs rotations and croppings; returns num of processed files, 0 if none, -1 on error.
+proc _rotate_crop_all_in_current_dir {imgExt} {
+  puts "====== Begin rotations and croppings in '[pwd]' ========"
+  set imgPaths [glob -nocomplain "*.$imgExt"]
+  if { 0 == [llength $imgPaths] }  {
+    ok_warn_msg "No images (*.$imgExt) found in '[pwd]'"
     return  0
   }
-  if { "" == $::STS(wbInpFile) }  { 
-    set rawNamesToWbMults  [dict create]
-  } else {
-    #ok_warn_msg "Reading WB multipliers not implemented yet"
-    array unset _rawToWbArr
-    if { [file exists $::STS(wbInpFile)] }  {
-      if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
-                              $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
-        return  0;  # error already printed
-      }
-    } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
-      ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
-      return  0
-    } else {
-      ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
-    }
-    set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
-    ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
-  }
-  set brightValToAbsOutDir [dict create \
-                            0.3 [file join [pwd] $::STS(dirLow)] \
-                            1.0 [file join [pwd] $::STS(dirNorm)] \
-                            1.7 [file join [pwd] $::STS(dirHigh)]]
-  dict for {brightVal outDir} $brightValToAbsOutDir {
-    foreach rawPath $rawPaths {
-      if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
-                                  rawNamesToWbMults] } {
-        return  -1;  # error already printed
-      }
-      ##$::_DCRAW  $::g_dcrawParamsMain -w -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
-      ##if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
+  foreach imgPath $imgPaths {
+    if { 0 == [_rotate_crop_one_img $imgPath $::STS(buDirName)] } {
+      return  -1;  # error already printed
     }
   }
-  if { "" != $::STS(wbOutFile) }  { 
-    array unset _rawToWbArr;    array unset _rawToWbArrNew
-    #(unsafe)  array set _rawToWbArrNew $rawNamesToWbMults
-    if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArrNew] } {
-      set _rawToWbArrNew("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
-      if { [file exists $::STS(wbOutFile)] }  {; # merge new data with old data
-        if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
-                             $::STS(wbOutFile) "," 1 _ColorMultLineCheckCB] }  {
-          # TODO: print warning and make a copy of the old file
-        }
-      }
-      # merge if old data was read, otherwise preserve old values
-      array set _rawToWbArr [array get _rawToWbArrNew]
-      ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
-                                       "RawName" ",";   # error, if any, printed
-    }
-  }
-
-  puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
-  return  [llength $rawPaths]
-}
-
-
-# ######### Enfuse ###########
-# Makes HDR fusings; returns num of processed files, 0 if none, -1 on error
-proc _fuse_converted_images_in_current_dir {rawExt}  {
-  # assume that directories are prepared by RAW-conversion sage
-  set rawPaths [glob -nocomplain "*.$rawExt"];  # browse by original names
-  if { 0 == [llength $rawPaths] }  {
-    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'; required by blend stage"
-    return  0
-  }
-  set outDir [file join [pwd] $::STS(outDirName)];  # abs path for msg clarity
-
-  puts "====== Begin fusing [llength $rawPaths] HDR versions in '[pwd]' ========"
-  foreach rawPath $rawPaths {
-    set rawName [file rootname [file tail $rawPath]]
-    if { 0 == [_fuse_one_hdr $rawName $outDir $::g_fuseOpt] }  {
-      return  -1
-    }
-  }
-  puts "====== Finished HDR fusing in '[pwd]'; [llength $rawPaths] image(s) processed ========"
-  return  [llength $rawPaths]
+  puts "====== Finished rotations and croppings in '[pwd]'; [llength $imgPaths] image(s) processed ========"
+  return  [llength $imgPaths]
 }
 
 
 # ============== Subroutines =======================
 
-# Converts RAW 'rawPath'; output image placed into 'outDir'.
-# If 'rawNameToRgbMultList' dict given and includes name of 'rawPath',
-#     uses RGB multipliers from this dict
-# If 'rawNameToRgbMultList' dict given but doesn't include name of 'rawPath',
-#     inserts RGB multipliers from the RAW into this dict
-proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
-  upvar $rawNameToRgbMultList rawNameToRgb
-  set rawName [file tail $rawPath]
-  if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
-  set outPath  [file join $outDir "[file rootname $rawName].TIF"]
-  if { 0 == [ok_filepath_is_writable $outPath] }  {
-    ok_err_msg "Cannot write into '$outPath'";    return 0
-  }
-
-  if { $rawNameToRgb != 0 }  {
-    if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
-      set rgbMultList [dict get $rawNameToRgb $rawName]
-      set rgbInputted 1
-    } else {                                        # provide output RGB
-      if { [get_image_attributes_by_dcraw $rawPath imgInfoArr] }  {
-        set rgbMultList $imgInfoArr($::iMetaRGBG)
-        dict set rawNameToRgb $rawName $rgbMultList
-      } else {;  # read error - set init values (camera-wb)
-        set mR ""; set mG ""; set mB "";  set colorSwitches "-w"; #init to cam-wb
-      }
-      set rgbInputted 0
+# Rotates and/or crops image 'imgPath'; if 'buDir' given, the original image placed into it.
+proc _rotate_crop_one_img {imgPath buDir} {
+  set imgName [file tail $imgPath]
+  if { $buDir != "" } {
+    if { 0 == [file exists $buDir]  }  {  file mkdir $buDir  }
+    set buPath  [file join $buDir "[file rootname $imgName].TIF"]
+    if { 0 == [ok_filepath_is_writable $buPath] }  {
+      ok_err_msg "Cannot write into '$buPath'";    return 0
     }
-    set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
-    set mB [lindex $rgbMultList 2];
-    set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : "-w"}]
-  } else {
-    set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
+    if { 0 == [ok_safe_copy_file $imgPath $buDir] }  {
+      return 0;   # error already printed
+    }
   }
-  set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
-  ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
-
-  #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
-  set cmdListRawConv [concat $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath]
-  if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
+  if { 0 == [get_image_dimensions_by_imagemagick $imgPath width height] }  {
+    return  0;  # error already printed
+  }
+  set w [expr TODO]
+  set h [expr TODO]
+  set rotateSwitches "-rotate ::STS(rotAngle)"
+  set cropSwitches "-gravity center ::STS(rotAngle)"
+  ok_info_msg "Start rotating and/or cropping '$imgPath' ..."
+  set cmdListRotCrop [concat $::_IMMOGRIFY  $rotateSwitches  +repage \
+                                            $cropSwitches    +repage \
+                                            $::g_convertSaveParams  $imgPath]
+  if { 0 == [ok_run_silent_os_cmd $cmdListRotCrop] }  {
     return  0; # error already printed
   }
 
-	ok_info_msg "Done RAW conversion of '$rawPath' into '$outPath'"
+	ok_info_msg "Done rotating and/or cropping '$imgPath'"
   return  1
 }
 

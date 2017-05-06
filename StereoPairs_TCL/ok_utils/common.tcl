@@ -34,6 +34,7 @@ namespace eval ::ok_utils:: {
 	ok_get_purenames_list_from_pathlist \
 	ok_override_list \
 	ok_rename_file_add_suffix \
+  ok_safe_copy_file \
 	ok_copy_file_if_target_inexistent \
 	ok_move_file_if_target_inexistent \
 	ok_filepath_is_writable \
@@ -463,7 +464,20 @@ proc ::ok_utils::ok_rename_file_add_suffix {inpFileName suffix} {
     return  1
 }
 
-# Safely copies 'inpFileName' into 'destDir' unless it already exists there
+
+# Safely copies 'inpFilePath' into 'destDir'
+proc ::ok_utils::ok_safe_copy_file {inpFilePath destDir} {
+  set tclExecResult [catch {
+    file copy -force -- $inpFilePath $destDir } execResult]
+  if { $tclExecResult != 0 } {
+    ok_err_msg "Failed copying image '$inpFilePath' into '$destDir'."
+    return  0
+  }
+  return  1
+}
+
+
+# Safely copies 'inpFilePath' into 'destDir' unless it already exists there
 proc ::ok_utils::ok_copy_file_if_target_inexistent {inpFilePath destDir\
                                                  {complainIfTargetExists 1}} {
   if { $complainIfTargetExists == 0 } {
