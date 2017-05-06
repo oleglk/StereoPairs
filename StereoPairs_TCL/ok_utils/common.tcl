@@ -48,6 +48,7 @@ namespace eval ::ok_utils:: {
   ok_strip_prefix_from_filepath   \
   ok_truncate_text \
   ok_validate_string_by_given_format \
+  ok_isnumeric \
 	ok_arrange_proc_args \
 	ok_make_argspec_for_proc \
   ok_exec_under_catch \
@@ -737,6 +738,20 @@ proc ::ok_utils::ok_validate_string_by_given_format {formatSpec str} {
   } else  { return  0 }
 }
 
+
+# Determins whether 'value' is numeric,
+# including integers expressed in decimal or hexadecimal, and real numbers
+# (from: http://wiki.tcl.tk/10166#pagetoc2f716841)
+proc ::ok_utils::ok_isnumeric {value} {
+    if {![catch {expr {abs($value)}}]} {
+        return 1
+    }
+    set value [string trimleft $value 0]
+    if {![catch {expr {abs($value)}}]} {
+        return 1
+    }
+    return 0
+}
 
 # Builds and returns an ordered list of run-time arguments
 # for (existing!) procedure 'procName'
