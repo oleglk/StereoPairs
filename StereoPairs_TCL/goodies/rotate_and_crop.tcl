@@ -249,7 +249,8 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
     return  0
   }
   foreach imgPath $imgPaths {
-    if { 0 == [_rotate_crop_one_img $imgPath $::STS(buDirName)] } {
+    if { 0 == [_rotate_crop_one_img $imgPath \
+                      $::STS(rotAngle) $::STS(cropRatio) $::STS(buDirName)] } {
       return  -1;  # error already printed
     }
   }
@@ -259,38 +260,6 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
 
 
 # ============== Subroutines =======================
-
-# Rotates and/or crops image 'imgPath'; if 'buDir' given, the original image placed into it.
-proc _rotate_crop_one_img {imgPath buDir} {
-  set imgName [file tail $imgPath]
-  if { $buDir != "" } {
-    if { 0 == [file exists $buDir]  }  {  file mkdir $buDir  }
-    set buPath  [file join $buDir "[file rootname $imgName].TIF"]
-    if { 0 == [ok_filepath_is_writable $buPath] }  {
-      ok_err_msg "Cannot write into '$buPath'";    return 0
-    }
-    if { 0 == [ok_safe_copy_file $imgPath $buDir] }  {
-      return 0;   # error already printed
-    }
-  }
-  if { 0 == [get_image_dimensions_by_imagemagick $imgPath width height] }  {
-    return  0;  # error already printed
-  }
-  set w [expr TODO]
-  set h [expr TODO]
-  set rotateSwitches "-rotate ::STS(rotAngle)"
-  set cropSwitches "-gravity center ::STS(rotAngle)"
-  ok_info_msg "Start rotating and/or cropping '$imgPath' ..."
-  set cmdListRotCrop [concat $::_IMMOGRIFY  $rotateSwitches  +repage \
-                                            $cropSwitches    +repage \
-                                            $::g_convertSaveParams  $imgPath]
-  if { 0 == [ok_run_silent_os_cmd $cmdListRotCrop] }  {
-    return  0; # error already printed
-  }
-
-	ok_info_msg "Done rotating and/or cropping '$imgPath'"
-  return  1
-}
 
 
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
