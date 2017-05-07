@@ -22,7 +22,7 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 
 
 # Rotates and/or crops image 'imgPath'; if 'buDir' given, the original image placed into it.
-proc _::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio buDir} {
+proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio buDir} {
   set imgName [file tail $imgPath]
   if { $buDir != "" } {
     if { 0 == [file exists $buDir]  }  {  file mkdir $buDir  }
