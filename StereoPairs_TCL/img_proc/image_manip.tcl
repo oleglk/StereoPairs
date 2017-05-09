@@ -24,7 +24,9 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 # Rotates and/or crops image 'imgPath';
 #   if 'buDir' given, the original image placed into it.
 # 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
-proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio buDir} {
+# 'imSaveParams' tells output compression and quality; should match input type.
+proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
+                                      imSaveParams buDir} {
   set imgName [file tail $imgPath]
   if { ($rotAngle != 0) && ($rotAngle != 90) && \
        ($rotAngle != 180) && ($rotAngle != 270) }  {
@@ -63,7 +65,7 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio buDir} {
   ok_info_msg "Start rotating and/or cropping '$imgPath' (new-width=$cropWd, new-height=$cropHt) ..."
   set cmdListRotCrop [concat $::_IMMOGRIFY  $rotateSwitches  +repage \
                                             $cropSwitches    +repage \
-                                            $::g_convertSaveParams  $imgPath]
+                                            $imSaveParams  $imgPath]
   if { 0 == [ok_run_silent_os_cmd $cmdListRotCrop] }  {
     return  0; # error already printed
   }

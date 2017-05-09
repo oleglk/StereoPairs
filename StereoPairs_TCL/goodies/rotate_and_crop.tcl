@@ -29,7 +29,7 @@ proc _rotate_and_crop_set_defaults {}  {
   set ::STS(buDirName)        "" ;  # backup dir - relative to the input directory - to be created under it
   set ::STS(rotAngle)         0  ;  # rotation angle - clockwise
   set ::STS(cropRatio)        0  ;  # 0 == no crop; otherwise width/height AFTER rotation
-
+  set ::STS(imSaveParams)     "" ;  # compression and quality; should match type
 }
 ################################################################################
 _rotate_and_crop_set_defaults ;  # load only;  do call it in a function for repeated invocations
@@ -110,6 +110,11 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
     return  0
   }
   set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
+  if { "-ERROR-" == [set ::STS(imSaveParams) [choose_im_img_save_params \
+                                      $::STS(imgExt) $::STS(finalDepth)]] }  {
+    return  0;  # error already printed
+  }
+
   ok_info_msg "==== Now run rotate-and-crop by the following spec: ===="
   ok_info_msg "==== \n$cmdStrNoHelp\n===="
   return  1
@@ -249,8 +254,9 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
     return  0
   }
   foreach imgPath $imgPaths {
-    if { 0 == [_rotate_crop_one_img $imgPath \
-                      $::STS(rotAngle) $::STS(cropRatio) $::STS(buDirName)] } {
+    if { 0 == [_rotate_crop_one_img \
+                                  $imgPath $::STS(rotAngle) $::STS(cropRatio) \
+                                  $imSaveParams $::STS(buDirName)] } {
       return  -1;  # error already printed
     }
   }
@@ -260,6 +266,12 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
 
 
 # ============== Subroutines =======================
+
+# Returns ImageMagick file-save compression and quality parameters.
+# On error returns "-ERROR-".
+proc choose_im_img_save_params {imgExt finalDepth }  {
+  TODO
+}
 
 
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
