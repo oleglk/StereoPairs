@@ -21,9 +21,16 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 
 
 
-# Rotates and/or crops image 'imgPath'; if 'buDir' given, the original image placed into it.
+# Rotates and/or crops image 'imgPath';
+#   if 'buDir' given, the original image placed into it.
+# 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
 proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio buDir} {
   set imgName [file tail $imgPath]
+  if { ($rotAngle != 0) && ($rotAngle != 90) && \
+       ($rotAngle != 180) && ($rotAngle != 270) }  {
+    ok_err_msg "Permitted rotation angles are 0, 90, 180, 270 (clockwise)"
+    return 0
+  }
   if { $buDir != "" } {
     if { 0 == [file exists $buDir]  }  {  file mkdir $buDir  }
     set buPath  [file join $buDir "[file rootname $imgName].TIF"]
@@ -37,15 +44,19 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio buDir} {
   if { 0 == [get_image_dimensions_by_imagemagick $imgPath width height] }  {
     return  0;  # error already printed
   }
-  set minSide [expr min($width, $height)]
-  if {       ($cropRatio >= 1) && ($width >= [expr $height * $cropRatio]) }  {
-    set cropWd [expr $height * $cropRatio];    set cropHt $height
-  } elseif { ($cropRatio >= 1) && ($width <  [expr $height * $cropRatio]) }  {
-    set cropWd $width;    set cropHt [expr 1.0* $width / $cropRatio]
-  } elseif { ($cropRatio < 1) && ($height >= [expr 1.0* $width / $cropRatio])} {
-    set cropWd $width;    set cropHt [expr 1.0* $width / $cropRatio]
-  } elseif { ($cropRatio < 1) && ($height <  [expr 1.0* $width / $cropRatio])} {
-    set cropWd [expr $height * $cropRatio];    set cropHt $height
+  if { ($rotAngle == 0) || ($rotAngle == 180) }  {
+            set rWd $width; set rHt $height
+  } else {  set rWd $height; set rHt $width
+  }
+  set minSide [expr min($rWd, $rHt)]
+  if {       ($cropRatio >= 1) && ($rWd >= [expr $rHt * $cropRatio]) }  {
+    set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
+  } elseif { ($cropRatio >= 1) && ($rWd <  [expr $rHt * $cropRatio]) }  {
+    set cropWd $rWd;    set cropHt [expr 1.0* $rWd / $cropRatio]
+  } elseif { ($cropRatio < 1) && ($rHt >= [expr 1.0* $rWd / $cropRatio])} {
+    set cropWd $rWd;    set cropHt [expr 1.0* $rWd / $cropRatio]
+  } elseif { ($cropRatio < 1) && ($rHt <  [expr 1.0* $rWd / $cropRatio])} {
+    set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
   }
   set rotateSwitches "-rotate $rotAngle"
   set cropSwitches [format "-gravity center -crop %dx%d" $cropWd $cropHt]
