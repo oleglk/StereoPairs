@@ -141,18 +141,6 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
       incr errCnt 1
     }
   } 
-##   -img_ext {val "extension of image files; example: jpg"}                      \
- #   -inp_dir {val "input directory path; absolute or relative to the current directory"} \
- #   -bu_subdir_name {val	"name of backup directory (for original images); created under the input directory; empty string means no backup"} \
- #   -rot_angle   {val "rotation angle - clockwise"}  \
- #   -crop_ratio  {val "width-to-height ratio AFTER rotation; 0 means do not crop"} \
- ##
-##   set ::STS(imgExt)           "" ;  # extension of input images (output is always TIF)
- #   set ::STS(inpDirPath)       "" ;  # input dir path - absolute or relative to the current directory
- #   set ::STS(buDirName)        "" ;  # backup dir - relative to the input directory - to be created under it
- #   set ::STS(rotAngle)         0  ;  # rotation angle - clockwise
- #   set ::STS(cropRatio)        0  ;  # 0 == no crop; otherwise width/height AFTER rotation
- ##
   if { [info exists cml(-img_ext)] }  {
     set ::STS(imgExt) $cml(-img_ext)
   } else {
@@ -174,8 +162,8 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
   if { 1 == [info exists cml(-bu_subdir_name)] }  {
     if { (1 == [file exists $cml(-bu_subdir_name)]) && \
              (0 == [file isdirectory $cml(-bu_subdir_name)]) }  {
-    ok_err_msg "Non-directory '$cml(-bu_subdir_name)' specified as backup directory"
-    incr errCnt 1
+      ok_err_msg "Non-directory '$cml(-bu_subdir_name)' specified as backup directory"
+      incr errCnt 1
     } else {
       set ::STS(buDirName)      $cml(-bu_subdir_name)
     }
@@ -196,7 +184,7 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
       incr errCnt 1
     }
   }  else {  ok_info_msg "Cropping not requested"  }
-  if { (0 == $cml(-rot_angle)]) && (0 == $cml(-crop_ratio)]) } 
+  if { (0 == $cml(-rot_angle)]) && (0 == $cml(-crop_ratio)]) }  { 
     ok_info_msg "Please specify rotation angle and/or crop ratio; example: -rot_angle 270 -crop_ratio 1"
     incr errCnt 1
   }
@@ -247,6 +235,11 @@ proc _arrange_dirs_in_current_dir {} {
 
 # Performs rotations and croppings; returns num of processed files, 0 if none, -1 on error.
 proc _rotate_crop_all_in_current_dir {imgExt} {
+  if { "-ERROR-" == [set imSaveParams [choose_im_img_save_params \
+                                              $imgExt $::STS(finalDepth)]] }  {
+    ok_err_msg "Format '*.$imgExt not supported for saving images"
+    return  0
+  }
   puts "====== Begin rotations and croppings in '[pwd]' ========"
   set imgPaths [glob -nocomplain "*.$imgExt"]
   if { 0 == [llength $imgPaths] }  {
@@ -269,108 +262,13 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
 
 # Returns ImageMagick file-save compression and quality parameters.
 # On error returns "-ERROR-".
-proc choose_im_img_save_params {imgExt finalDepth }  {
-  TODO
-}
-
-
-proc _fuse_one_hdr {rawName outDir fuseOpt} {
-  if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
-  set outPath  [file join $outDir "$rawName.TIF"]
-  if { 0 == [ok_filepath_is_writable $outPath] }  {
-    ok_err_msg "Cannot write into '$outPath'";    return 0
+proc choose_im_img_save_params {imgExt finalDepth}  {
+  if { ($finalDepth != 8) && ($finalDepth != 16) }  {  return  "-ERROR-"  }
+  switch -nocase -- $imgExt  {
+    "tif"   {  return "-compress LZW -depth $finalDepth"  }
+    "jpg"   {  return "-depth $finalDepth"                }
+    default {  return  "-ERROR-"                          }
   }
-  set inPathLow  [file join $::STS(dirLow)  "$rawName.TIF"]
-  set inPathNorm [file join $::STS(dirNorm) "$rawName.TIF"]
-  set inPathHigh [file join $::STS(dirHigh) "$rawName.TIF"]
-  foreach p [list $inPathLow $inPathNorm $inPathHigh]  {
-    if { ![ok_filepath_is_readable $p] }  {
-      ok_err_msg "Inexistent or unreadable intermediate image '$p'";    return 0
-    }
-  }
-  set cmdListFuse [concat $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) \
-                          --compression=lzw "--output=$outPath"  \
-                          "$inPathLow" "$inPathNorm" "$inPathHigh"]
-  ok_info_msg "enfuse cmd-line (rawName='$rawName', outDir='$outDir'):  {$cmdListFuse}"
-  if { 0 == [ok_run_loud_os_cmd $cmdListFuse _is_enfuse_result_ok] }  {
-    return  0; # error already printed
-  }
-
-  if { ![file exists $outPath] }  {
-    ok_err_msg "Missing output HDR image '$outPath'";     return 0
-  }
-##   %ENFUSE%  %g_fuseOpt%  --depth=%::STS(finalDepth)% --compression=lzw --output=$::g_dirHDR\%%~nf.TIF  $::g_dirLow\%%~nf.TIF $::g_dirNorm\%%~nf.TIF $::g_dirHigh\%%~nf.TIF
- #   if NOT EXIST "$::g_dirHDR\%%~nf.TIF" (echo * Missing "$::g_dirHDR\%%~nf.TIF". Aborting... & exit /B -1)
- ##
-  # TODO
-  # remove alpha channel
-  eval exec $::_IMMOGRIFY -alpha off -depth $::STS(finalDepth) -compress LZW $outPath
-##  $::_IMMOGRIFY -alpha off -depth %::STS(finalDepth)% -compress LZW $::g_dirHDR\%%~nf.TIF
- ok_info_msg "Success fusing HDR image '$outPath'"
- return  1
-}
-
-
-## # Raw-converts 'inpPath' into temp dir
- # # and returns path of the output or 0 on error.
- # proc _raw_conv_only {inpPath} {
- #   #  _ext1 is lossless extension for intermediate files and maybe for output;
- # 	set fnameNoExt [file rootname [file tail $inpPath]]
- # 	ok_info_msg "Converting RAW file '$inpPath'; output into folder '[pwd]'"
- #   set outName "$fnameNoExt.$::_ext1"
- #   set outPath [file join $::_temp_dir $outName]
- #   set nv_inpPath [format "{%s}" [file nativename $inpPath]]
- #   set nv_outPath [format "{%s}" [file nativename $outPath]]
- #   set cmdListRawConv [concat $::_DCRAW $::_def_rawconv -o $::_raw_colorspace \
- #                       -O $nv_outPath $nv_inpPath]
- #   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
- #     return  0; # error already printed
- #   }
- # 
- # 	ok_info_msg "Done RAW conversion of '$inpPath' into '$outPath'"
- # 	return  $outPath
- # }
- ##
-
-
-# Copy-pasted from Lazyconv "::dcraw::is_dcraw_result_ok"
-# Verifies whether dcraw command line ended OK through the test it printed.
-# Returns 1 if it was good, 0 otherwise.
-proc _is_dcraw_result_ok {execResultText} {
-    # 'execResultText' tells how dcraw-based command ended
-    # - OK if noone of 'errKeys' appears
-    set result 1;    # as if it ended OK
-    set errKeys [list {Improper} {No such file} {missing} {unable} {unrecognized} {Non-numeric}]
-#     puts ">>> Check for error keys '$errKeys' the following string:"
-#     puts "--------------------------------------------"
-#     puts "'$execResultText'"
-#     puts "--------------------------------------------"
-    foreach key $errKeys {
-	if { [string first "$key" $execResultText] >= 0 } {    set result 0  }
-    }
-    return  $result
-}
-
-
-# Verifies whether enfuse command line ended OK through the test it printed.
-# Returns 1 if it was good, 0 otherwise.
-proc _is_enfuse_result_ok {execResultText} {
-    # 'execResultText' tells how enfuse-based command ended
-    # - OK if noone of 'errKeys' appears
-    set result 1;    # as if it ended OK
-    set errKeys [list {enfuse: no input files specified} {require arguments} {enfuse: unrecognized} {enfuse: error opening output file}]
-#     puts ">>> Check for error keys '$errKeys' the following string:"
-#     puts "--------------------------------------------"
-#     puts "'$execResultText'"
-#     puts "--------------------------------------------"
-    foreach key $errKeys {
-      ok_trace_msg "Look for '$key' in command output"
-      if { [string first "$key" $execResultText] >= 0 } {
-        ok_err_msg "Error indicator detected in command output: '$key'"
-        set result 0
-      }
-    }
-    return  $result
 }
 
 
@@ -429,36 +327,3 @@ proc _rotate_and_crop_verify_external_tools {} {
     return  0
   }
 }
-
-
-# Returns 1 if 'nameAndMultsAsList' obeys the following format:
-#     {<filename> <float> <float> <float> <float>}
-# Otherwise returns 0
-proc _ColorMultLineCheckCB {nameAndMultsAsList}  {
-  if { 5 != [llength $nameAndMultsAsList] }  {
-    return  "Wrong number of fields - should be 5"
-  }
-  set fieldNames {"file-name" "red" "green" "blue" "green-2"}
-  for {set i 1}  {$i < [llength $nameAndMultsAsList]}  {incr i}  {
-    set mult [lindex $nameAndMultsAsList $i]
-    set name [lindex $fieldNames $i]
-    if { 0 == [ok_validate_string_by_given_format "%f" $mult] }  {
-      return  "Invalid value '$mult' for $name multiplier"
-    }
-  }
-  return  "";  # OK
-}
-
-
-# Bad attempt at DCRAW with redirection:
-#~ TMP> set DCRAW "C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe"
-#~ C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe
-#~ TMP> set CONVERT "C:/Program Files (x86)/ImageMagick-6.8.7-3/convert.exe"
-#~ C:/Program Files (x86)/ImageMagick-6.8.7-3/convert.exe
-#~ dict dir dump
-#~ TMP> set inF "./Img/DSC01745.ARW"
-#~ ./Img/DSC01745.ARW
-#~ TMP> set cmdList [list $DCRAW -v -c -w -H 2 -o 1 -q 3 -6 $inF |$CONVERT ppm:- -quality 90 outfile.jpg]
-#~ {C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe} -v -c -w -H 2 -o 1 -q 3 -6 ./Img/DSC01745.ARW {|C:/Program Files (x86)/ImageMagick-6.8.7-3/convert.exe} ppm:- -quality 90 outfile.jpg
-#~ TMP> set tclExecResult1 [catch { set result [eval exec $cmdList] } cmdExecResult]
-#~ 1

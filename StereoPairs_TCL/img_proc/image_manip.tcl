@@ -24,6 +24,7 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 # Rotates and/or crops image 'imgPath';
 #   if 'buDir' given, the original image placed into it.
 # 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
+# 'cropRatio' == width/height
 # 'imSaveParams' tells output compression and quality; should match input type.
 proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
                                       imSaveParams buDir} {
@@ -34,7 +35,10 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
     return 0
   }
   if { $buDir != "" } {
-    if { 0 == [file exists $buDir]  }  {  file mkdir $buDir  }
+    if { 0 == [ok_create_absdirs_in_list [list $buDir]] }  {
+      ok_err msg "Failed creating backup directory '$buDir'"
+      return  0
+    }
     set buPath  [file join $buDir "[file rootname $imgName].TIF"]
     if { 0 == [ok_filepath_is_writable $buPath] }  {
       ok_err_msg "Cannot write into '$buPath'";    return 0
@@ -47,17 +51,20 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
     return  0;  # error already printed
   }
   if { ($rotAngle == 0) || ($rotAngle == 180) }  {
-            set rWd $width; set rHt $height
-  } else {  set rWd $height; set rHt $width
+            set rWd $width; set rHt $height ;   # orientation preserved
+  } else {  set rWd $height; set rHt $width ;   # orientation changed
   }
-  set minSide [expr min($rWd, $rHt)]
   if {       ($cropRatio >= 1) && ($rWd >= [expr $rHt * $cropRatio]) }  {
+    # horizontal; limited by height
     set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
   } elseif { ($cropRatio >= 1) && ($rWd <  [expr $rHt * $cropRatio]) }  {
+    # horizontal; limited by width
     set cropWd $rWd;    set cropHt [expr 1.0* $rWd / $cropRatio]
   } elseif { ($cropRatio < 1) && ($rHt >= [expr 1.0* $rWd / $cropRatio])} {
+    # vertical; limited by width
     set cropWd $rWd;    set cropHt [expr 1.0* $rWd / $cropRatio]
   } elseif { ($cropRatio < 1) && ($rHt <  [expr 1.0* $rWd / $cropRatio])} {
+    # vertical; limited by height
     set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
   }
   set rotateSwitches "-rotate $rotAngle"
