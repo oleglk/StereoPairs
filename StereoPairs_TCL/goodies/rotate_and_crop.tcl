@@ -14,10 +14,6 @@ package require img_proc;   namespace import -force ::img_proc::*
 # set IM_DIR "$::SCRIPT_DIR\ImageMagick"
 
 
-set g_convertSaveParams "-depth 16 -compress LZW"
-# set g_convertSaveParams "-depth 8 -compress LZW"
-
-
 
 ################################################################################
 
@@ -67,6 +63,7 @@ proc rotate_and_crop_main {cmdLineAsStr}  {
 proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   upvar $cmlArrName      cml
   # create the command-line description
+  set descrList \
 [list \
   -help {"" "print help"}                                                      \
   -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
@@ -98,10 +95,10 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 1 - rotation only (note TCL-style directory separators): ======="
-    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 0 -final_depth 8 -inp_dir L -bu_subdir_name "" -img_ext TIF -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 0 -final_depth 8 -inp_dir L -bu_subdir_name {} -img_ext TIF -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 2 - rotate and crop: ======="
-    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name "BU" -img_ext JPG -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name {BU} -img_ext JPG -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -168,23 +165,24 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
       set ::STS(buDirName)      $cml(-bu_subdir_name)
     }
   }
-  if { 0 != $cml(-rot_angle)] }  { ;  # =0 (default) if not given
-    if { [ok_isnumeric ($cml(-rot_angle)] }  {
+  if { 0 != $cml(-rot_angle) }  { ;  # =0 (default) if not given
+    if { ($cml(-rot_angle) == 0)   || ($cml(-rot_angle) == 90) || \
+         ($cml(-rot_angle) == 180) || ($cml(-rot_angle) == 270) }  {
       set ::STS(rotAngle) $cml(-rot_angle)
     } else {
-      ok_err_msg "Parameter telling rotation angle (-rot_angle); should be numeric"
+      ok_err_msg "Parameter telling clock-wise rotation angle (-rot_angle); should 0, 90, 180 or 270"
       incr errCnt 1
     }
   } else {  ok_info_msg "Rotation not requested"  }
-  if { 0 != $cml(-crop_ratio)] }  { ;  # =0 (default) if not given
-    if { [ok_isnumeric ($cml(-crop_ratio)] }  {
+  if { 0 != $cml(-crop_ratio) }  { ;  # =0 (default) if not given
+    if { [ok_isnumeric $cml(-crop_ratio)] }  {
       set ::STS(cropRatio) $cml(-crop_ratio)
     } else {
       ok_err_msg "Parameter telling crop ratio (-crop_ratio); should be numeric"
       incr errCnt 1
     }
   }  else {  ok_info_msg "Cropping not requested"  }
-  if { (0 == $cml(-rot_angle)]) && (0 == $cml(-crop_ratio)]) }  { 
+  if { (0 == $cml(-rot_angle)) && (0 == $cml(-crop_ratio)) }  { 
     ok_info_msg "Please specify rotation angle and/or crop ratio; example: -rot_angle 270 -crop_ratio 1"
     incr errCnt 1
   }

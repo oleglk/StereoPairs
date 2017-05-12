@@ -192,7 +192,7 @@ proc ::ok_utils::ok_help_on_cmd_line {defaultCmlArrName cmlDescrArrName \
 	lappend helpParamList [list $paramName $cmlD($paramName) \
 				    "default:" $defVal]
     }
-    return [join $helpParamList $separator]
+    return [format "%s%s" $separator [join $helpParamList $separator]]
 }
 
 
