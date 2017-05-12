@@ -41,21 +41,14 @@ proc rotate_and_crop_main {cmdLineAsStr}  {
   if { 0 == [_rotate_and_crop_set_ext_tool_paths_from_csv $::STS(toolsPathsFile)] } {
     return  0;  # error already printed
   }
-  # TODO: custom _verify_external_tools
   if { 0 == [_rotate_and_crop_verify_external_tools] }  { return  0  };  # error already printed
 
-  set nInpDirs [llength $::STS(inpDirPaths)]
-  ok_info_msg "Start processing image file(s) under $nInpDirs input directory(ies)"
-  set cntDone 0
-  foreach inDir $::STS(inpDirPaths) {
-    incr cntDone 1
-    if { 0 == [_do_job_in_one_dir $inDir] }  {
-      ok_err_msg "Rotate-and-crop aborted at directory #$cntDone out of $nInpDirs"
-      return  0
-    }
-    ok_info_msg "Done rotate-and-crop in directory #$cntDone out of $nInpDirs"
+  ok_info_msg "Start processing image file(s) in input directory '$::STS(inpDirPath)'"
+  if { 0 == [_do_job_in_one_dir $::STS(inpDirPath)] }  {
+    ok_err_msg "Rotate-and-crop aborted in directory '$::STS(inpDirPath)'"
+    return  0
   }
-  ok_info_msg "Done rotate-and-crop image file(s) under $cntDone out of $nInpDirs input directory(ies)"
+  ok_info_msg "Done rotate-and-crop image file(s) in directory '$::STS(inpDirPath)'"
   return  1
 }
 
@@ -280,17 +273,8 @@ proc _rotate_and_crop_set_ext_tool_paths_from_csv {csvPath}  {
     ok_err_msg "Imagemagick directory path not assigned to variable _IM_DIR by '$csvPath'"
     return  0
   }
-  if { 0 == [info exists ::_ENFUSE_DIR] }  {
-    ok_err_msg "Enfuse directory path not assigned to variable _ENFUSE_DIR by '$csvPath'"
-    return  0
-  }
   set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
   set ::_IMMOGRIFY  [format "{%s}"  [file join $::_IM_DIR "mogrify.exe"]]
-  # - DCRAW:
-  #set _DCRAW "dcraw.exe"
-  # TMP: use custom-build OK_dcraw.exe
-  set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "OK_dcraw.exe"]]
-  set ::_ENFUSE     [format "{%s}"  [file join $::_ENFUSE_DIR "enfuse.exe"]]
   return  1
 }
 
@@ -307,14 +291,6 @@ proc _rotate_and_crop_verify_external_tools {} {
   }
   if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
     ok_err_msg "Inexistent ImageMagick 'montage' tool '$::_IMMONTAGE'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
-    ok_err_msg "Inexistent 'dcraw' tool '$::_DCRAW'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_ENFUSE " {}"]] }  {
-    ok_err_msg "Inexistent 'enfuse' tool '$::_ENFUSE'"
     incr errCnt 1
   }
   if { $errCnt == 0 }  {
