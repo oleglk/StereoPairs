@@ -1,0 +1,29 @@
+## Lines starting with "#" included here for clarity; they should not appear in the file
+## Empty lines are ignored
+
+# ext_tool_dirs.csv
+################################################################################
+## Tells Dualcam-Companion where to find the external tools (executables).
+##
+#### Format of one line:
+## <varible-name>,<variable-value; may contain spaces but no commas
+## 
+#### The following mandatory environment variables should be set here:
+## _IM_DIR - full path of Imagemagick installation directory - in TCL convention
+#
+#### The following optional environment variables could be set here:
+##    - those aren't needed for mainstream Dualcam-Companion utilities
+## _ENFUSE_DIR - full path of enblend-enfuse installation bin/ subdirectory - in TCL convention
+## _DCRAW - full path of dcraw executable - in TCL convention
+## (if _DCRAW isn't specified, "dcraw.exe" under Imagemagick directory is taken)
+##  
+################################################################################
+
+
+## The below line is a standard header that explains the file's format
+Environment-variable-name,Path
+_IM_DIR,C:/Program Files (x86)/ImageMagick-6.8.7-3
+#(custom path for dcraw isn't essential unless real image conversion is intended)
+_DCRAW,C:/Program Files (x86)/ImageMagick-6.8.7-3/OK_dcraw.exe
+# enfuse (image blending tool) is needed only for RAW conversion
+_ENFUSE_DIR,C:/Program Files/enblend-enfuse-4.1.4/bin

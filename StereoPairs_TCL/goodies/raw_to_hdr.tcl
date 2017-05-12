@@ -42,6 +42,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
   set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
+  set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
   set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
@@ -57,9 +58,12 @@ proc _raw_to_hdr_set_defaults {}  {
 _raw_to_hdr_set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
-proc raw_to_hdr_main {cmdLineAsStr}  {
+
+# User command for multiple RAW conversions and HDR blending
+proc raw_to_hdr_main {cmdLineAsStr {doHDR 1}}  {
   global SCRIPT_DIR
   _raw_to_hdr_set_defaults ;  # calling it in a function for repeated invocations
+  set ::STS(doHDR) $doHDR
   
   if { 0 == [raw_to_hdr_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
@@ -86,6 +90,13 @@ proc raw_to_hdr_main {cmdLineAsStr}  {
 }
 
 
+# User command for simple RAW conversion
+proc raw_to_img_main {cmdLineAsStr}  {
+  set ::STS(doHDR) 0
+  return  [raw_to_hdr_main $cmdLineAsStr $::STS(doHDR)]
+}
+
+
 proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   upvar $cmlArrName      cml
   # create the command-line description
@@ -107,8 +118,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # create dummy command line with the default parameters and copy it
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
-  ok_set_cmd_line_params defCml cmlD { \
-    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} {-wb_out_file "wb_out.csv"} }
+  ok_set_cmd_line_params defCml cmlD {                                  \
+    {-final_depth "8"} {-do_raw_conv "1"} {-do_blend "1"} \
+    {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -118,6 +130,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
     ok_info_msg "================================================================"
     ok_info_msg "    RAW-to-HDR converter makes RAW image conversions with accent of preserving maximal color-brightness range."
+    ok_info_msg "========================"
+    ok_info_msg "      (use raw_to_img_main \"<arguments>\" for simple RAW conversion instead)"
+    ok_info_msg "========================"
     ok_info_msg "========= Command line parameters (in random order): =============="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
@@ -194,19 +209,27 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     set ::STS(outDirName)      $cml(-out_subdir_name)
   }
   if { [info exists cml(-do_raw_conv)] }  {
-    if { ($cml(-do_raw_conv) == 0) || ($cml(-do_raw_conv) == 1) }  {
-      set ::STS(doRawConv) $cml(-do_raw_conv)
+    if { $::STS(doHDR) == 0 }  {
+      ok_warn_msg "Argument '-do_raw_conv' ignored in simple RAW conversion mode"
     } else {
-      ok_err_msg "Parameter telling whether to perform RAW-conversion step (-do_raw_conv); should be 0 or 1"
-      incr errCnt 1
+      if { ($cml(-do_raw_conv) == 0) || ($cml(-do_raw_conv) == 1) }  {
+        set ::STS(doRawConv) $cml(-do_raw_conv)
+      } else {
+        ok_err_msg "Parameter telling whether to perform RAW-conversion step (-do_raw_conv); should be 0 or 1"
+        incr errCnt 1
+      }
     }
   } 
   if { [info exists cml(-do_blend)] }  {
-    if { ($cml(-do_blend) == 0) || ($cml(-do_blend) == 1) }  {
-      set ::STS(doBlend) $cml(-do_blend)
+    if { $::STS(doHDR) == 0 }  {
+      ok_warn_msg "Argument '-do_blend' ignored in simple RAW conversion mode"
     } else {
-      ok_err_msg "Parameter telling whether to perform blending (fusing) step (-do_blend); should be 0 or 1"
-      incr errCnt 1
+      if { ($cml(-do_blend) == 0) || ($cml(-do_blend) == 1) }  {
+        set ::STS(doBlend) $cml(-do_blend)
+      } else {
+        ok_err_msg "Parameter telling whether to perform blending (fusing) step (-do_blend); should be 0 or 1"
+        incr errCnt 1
+      }
     }
   } 
   if { [info exists cml(-wb_inp_file)] }  {
@@ -231,7 +254,8 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 }
 
 
-# Does conversion and blending for all inputs in 'dirPath'
+# Does conversion and blending for all inputs in 'dirPath' - if ::STS(doHDR)==1
+# Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
 # Assumes 'dirPath' is a valid directory
 proc _do_job_in_one_dir {dirPath}  {
   set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
@@ -241,16 +265,16 @@ proc _do_job_in_one_dir {dirPath}  {
     return  0
   }
   ok_info_msg "Success changing work directory to '$dirPath'"
-  if { $::STS(doRawConv) } {
+  if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
     if { 0 == [_arrange_dirs_in_current_dir] }  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
       return  0
     }
-    if { 0 == [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
+    if { 0 > [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
     }
   }
-  if { $::STS(doBlend) } {
+  if { ($::STS(doBlend)) && ($::STS(doHDR) == 1) } {
     # assume that RAW conversions are done and thus the directories prepared
     if { 0 == [_fuse_converted_images_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
@@ -265,10 +289,14 @@ proc _do_job_in_one_dir {dirPath}  {
 }
 
 proc _arrange_dirs_in_current_dir {} {
-  if { 0 == [ok_create_absdirs_in_list \
-          [list $::STS(dirLow) $::STS(dirNorm) $::STS(dirHigh) $::STS(outDirName)] \
-          {"folder-for-darker-images" "folder-for-normal-images" \
-           "folder-for-brighter-images" "folder-for-final-HDR-images"}] }  {
+  set dirList [list $::STS(outDirName) $::STS(dirNorm) $::STS(dirLow) $::STS(dirHigh)]
+  set descrList  {"folder-for-final-HDR-images" "folder-for-normal-images" \
+                  "folder-for-darker-images" "folder-for-brighter-images" }
+  if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
+    set dirList   [list [lindex $dirList 0]]
+    set descrList [list [lindex $descrList 0]]
+  }
+  if { 0 == [ok_create_absdirs_in_list $dirList $descrList] }  {
     return  0
   }
   return  1
@@ -287,26 +315,33 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   if { "" == $::STS(wbInpFile) }  { 
     set rawNamesToWbMults  [dict create]
   } else {
-    #ok_warn_msg "Reading WB multipliers not implemented yet"
     array unset _rawToWbArr
     if { [file exists $::STS(wbInpFile)] }  {
       if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
                               $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
-        return  0;  # error already printed
+        return  -1;  # error already printed
       }
     } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
       ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
-      return  0
+      return  -1
     } else {
       ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
     }
     set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
     ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
   }
-  set brightValToAbsOutDir [dict create \
+  if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
+    set brightValToAbsOutDir [dict create \
+                            1.0 [file join [pwd] $::STS(outDirName)]]
+  } else {                     ;  # per-brightness temporary directories needed
+    set brightValToAbsOutDir [dict create \
                             0.3 [file join [pwd] $::STS(dirLow)] \
                             1.0 [file join [pwd] $::STS(dirNorm)] \
                             1.7 [file join [pwd] $::STS(dirHigh)]]
+  }
+  # note: source of WB params is picked when converting 1st directory;
+  #       in consequent directories it appears like override,
+  #       but it's just carried out from the 1st directory
   dict for {brightVal outDir} $brightValToAbsOutDir {
     foreach rawPath $rawPaths {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
@@ -388,13 +423,16 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
         set rgbMultList $imgInfoArr($::iMetaRGBG)
         dict set rawNameToRgb $rawName $rgbMultList
       } else {;  # read error - set init values (camera-wb)
+        set rgbMultList 0
         set mR ""; set mG ""; set mB "";  set colorSwitches "-w"; #init to cam-wb
       }
       set rgbInputted 0
     }
-    set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
-    set mB [lindex $rgbMultList 2];
-    set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : "-w"}]
+    if { $rgbMultList != 0 }  { ;   # overriden or read from the RAW
+      set mR [lindex $rgbMultList 0];    set mG [lindex $rgbMultList 1];
+      set mB [lindex $rgbMultList 2];
+      set colorSwitches [expr {($rgbInputted)? "-r $mR $mG $mB $mG" : "-w"}]
+    }
   } else {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
   }
@@ -478,7 +516,7 @@ proc _is_dcraw_result_ok {execResultText} {
     # 'execResultText' tells how dcraw-based command ended
     # - OK if noone of 'errKeys' appears
     set result 1;    # as if it ended OK
-    set errKeys [list {Improper} {No such file} {missing} {unable} {unrecognized} {Non-numeric}]
+    set errKeys [list {Improper} {No such file} {no such file} {missing} {unable} {unrecognized} {Non-numeric}]
 #     puts ">>> Check for error keys '$errKeys' the following string:"
 #     puts "--------------------------------------------"
 #     puts "'$execResultText'"
@@ -530,8 +568,14 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
   set ::_IMMOGRIFY  [format "{%s}"  [file join $::_IM_DIR "mogrify.exe"]]
   # - DCRAW:
   #set _DCRAW "dcraw.exe"
-  # TMP: use custom-build OK_dcraw.exe
-  set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "OK_dcraw.exe"]]
+  # assume ::_DCRAW points at custom-build OK_dcraw.exe; the below is backup
+  if { 0 == [info exists ::_DCRAW] }  {
+    set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
+  } else {
+    ok_info_msg "Custom dcraw path specified by '$csvPath'"
+    set ::_DCRAW      [format "{%s}"  $::_DCRAW]
+  }
+
   set ::_ENFUSE     [format "{%s}"  [file join $::_ENFUSE_DIR "enfuse.exe"]]
   return  1
 }

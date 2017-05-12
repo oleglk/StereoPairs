@@ -120,9 +120,16 @@ grid rowconfigure .top 5 -weight 1
 
 
 grid [ttk::frame .top.userCmds -relief sunken] -column 1 -row 1 -sticky we
+
 # usr buttons get explicit min-width to override that of the style
-pack [ttk::button .top.userCmds.usr1 -text "Cust1" -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
-pack [ttk::button .top.userCmds.usr2 -text "Cust2" -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
+if { 1 == [preferences_get_val -custom_btn_1 cust1Txt] } {
+  set cust1Txt [string range $cust1Txt 0 4] } else { set cust1Txt QQ111
+}
+if { 1 == [preferences_get_val -custom_btn_2 cust2Txt] } {
+  set cust2Txt [string range $cust2Txt 0 4] } else { set cust2Txt QQ222
+}
+pack [ttk::button .top.userCmds.usr1 -text $cust1Txt -command GUI_UsrCmd1 -width -5] -side left -fill both -expand 1
+pack [ttk::button .top.userCmds.usr2 -text $cust2Txt -command GUI_UsrCmd2 -width -5] -side left -fill both -expand 1
 
 grid [ttk::button .top.preferences -text "Preferences..." -command GUI_ChangePreferences] -column 3 -row 1 -sticky we
 
@@ -203,7 +210,7 @@ proc GUI_UsrCmd1 {}  {
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
-    set truncText [ok_truncate_text $resultText 30 30]
+    set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-1 output:\n==========\n$truncText\n==========\n"
   }
   #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
@@ -224,7 +231,7 @@ proc GUI_UsrCmd2 {}  {
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
-    set truncText [ok_truncate_text $resultText 30 30]
+    set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-2 output:\n==========\n$truncText\n==========\n"
   }
   #tk_messageBox -message "User-command-2 not implemented" -title $APP_TITLE

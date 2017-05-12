@@ -361,7 +361,7 @@ proc ::img_proc::get_image_attributes_by_dcraw {fullPath imgInfoArr} {
     }
   } execResult]
   if { $tclExecResult != 0 } {
-    ok_err_msg "$execResult!";	return  0
+    ok_err_msg "Error while trying to read attributes of '$fullPath': $execResult!";	return  0
   }
   set tclExecResult [catch {
     close $io;  # generates error; separate "catch" to suppress it

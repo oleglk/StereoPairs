@@ -192,6 +192,7 @@ proc ::ok_utils::ok_read_csv_file_into_list_of_lists {fullPath sepChar \
   	while { [gets $inF line] >= 0 } {
       if { $commentStart == [string index $line 0] }   { continue }
       set oneLineList [ok_discard_empty_list_elements [ok_csv2list $line $sepChar]]
+      if { [llength $oneLineList] == 0 }  { continue } ;  # skip empty lines
       if { ($requireEqualLength != 0) && ($prevLst != {}) && ($goodCnt > 1) && \
            ([llength $oneLineList] != [llength $prevLst]) }  {
         ok_err_msg "Line length mismatch in $descr: {$prevLst} vs {$oneLineList}" 

@@ -731,8 +731,9 @@ proc ::ok_utils::ok_truncate_text {inpMultilineText nFirstToKeep nLastToKeep} {
   } else {
     set lastI 0;  set stopCutAt 0
   }
-  set replText [format  "  ... ... ... ... ~ %d line(s) cut ... ... ... ...\n" \
-                        [expr $nLines - $nFirstToKeep - $nLastToKeep + 1]] 
+  set replText [format  \
+                    "\n  ... ... ... ... ~ %d line(s) cut ... ... ... ...\n\n" \
+                    [expr $nLines - $nFirstToKeep - $nLastToKeep + 1]] 
   ok_trace_msg "crIdxPairs={$crIdxPairs}; lastI=$lastI; stopCutAt=$stopCutAt"
   ok_trace_msg "Cutting: 0...($startCutFrom...$stopCutAt)...[expr {[string length $inpMultilineText]-1}]"
   set res [expr {($startCutFrom < $stopCutAt)?                                \
@@ -868,6 +869,7 @@ proc ::ok_utils::ok_run_silent_os_cmd {cmdList}  {
 proc ::ok_utils::ok_run_loud_os_cmd {cmdList outputCheckCB}  {
 	#ok_pri_list_as_list [concat "(TMP--next-cmd-to-exec==)" $cmdList]
   set tclExecResult1 [catch { set result [eval exec $cmdList] } cmdExecResult]
+  # $tclExecResult1 != 0 since the command is expected to print output
   set tclExecResult2 [catch {
     if { 0 == [$outputCheckCB $cmdExecResult] } {
       #cmdExecResult tells how cmd ended

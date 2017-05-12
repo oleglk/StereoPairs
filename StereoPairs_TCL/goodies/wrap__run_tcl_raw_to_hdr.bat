@@ -2,6 +2,9 @@
 
 @echo off
 
+set TCL_INTERP=%1
+
+
 VER>NUL
 call :Assign_SCRIPT_DIR %0
 if ERRORLEVEL 1 (
@@ -15,9 +18,21 @@ if ERRORLEVEL 1 (
 @REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\trial_tcl.tcl""
 
 @REM If the command preceded by "start", the DOS and wish windows aren't closed when finished
-cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl""
+@REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl""
+@REM ====Best working option so far===========================
+"C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl"
+@REM =========================================================
+
+
 @REM The below attempt truncates long script path into 8.3 before passing to TCL
 @REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\..\..\Libs_TCL\tkcon.tcl" -eval "source ""%SCRIPT_DIR%\run__raw_to_hdr_on_l_r.tcl"""
+
+@REM Detect the long path of the wrapper-script directory - still gives short path...
+@REM  pushd "%SCRIPT_DIR%"
+@REM  set LONG_SCRIPT_DIR=%SCRIPT_DIR%
+@REM  popd
+@REM  "C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\..\..\Libs_TCL\tkcon.tcl" -eval "source [file join %LONG_SCRIPT_DIR%  run__raw_to_hdr_on_l_r.tcl]"
+
 @REM The below attempt works, but requires explicit script path
 @REM cmd /K ""C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\..\..\Libs_TCL\tkcon.tcl" -eval "source ""D:/Work/StereoPairs/StereoPairs_TCL/goodies/run__raw_to_hdr_on_l_r.tcl"""
 
