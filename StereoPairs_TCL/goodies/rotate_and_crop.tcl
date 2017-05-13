@@ -20,7 +20,7 @@ package require img_proc;   namespace import -force ::img_proc::*
 proc _rotate_and_crop_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
   set ::STS(finalDepth)       8  ;  # color depth of final images; 8 or 16
-  set ::STS(imgExt)           "" ;  # extension of input images (output is always TIF)
+  set ::STS(imgExts)          [list] ;  # list of extensions of input images (?output is always TIF?)
   set ::STS(inpDirPath)       "" ;  # input dir path - absolute or relative to the current directory
   set ::STS(buDirName)        "" ;  # backup dir - relative to the input directory - to be created under it
   set ::STS(rotAngle)         0  ;  # rotation angle - clockwise
@@ -61,7 +61,7 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   -help {"" "print help"}                                                      \
   -tools_paths_file {val	"path of the CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
   -final_depth {val	"color-depth of the final images (bit); 8 or 16"}         \
-  -img_ext {val "extension of image files; example: jpg"}                      \
+  -img_extensions {list "list of extensions of image files; example: {jpg bmp}"}                      \
   -inp_dir {val "input directory path; absolute or relative to the current directory"} \
   -bu_subdir_name {val	"name of backup directory (for original images); created under the input directory; empty string means no backup"} \
   -rot_angle   {val "rotation angle - clockwise"}  \
@@ -88,10 +88,10 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 1 - rotation only (note TCL-style directory separators): ======="
-    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 0 -final_depth 8 -inp_dir L -bu_subdir_name {} -img_ext TIF -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 0 -final_depth 8 -inp_dir L -bu_subdir_name {} -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 2 - rotate and crop: ======="
-    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name {BU} -img_ext JPG -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name {BU} -img_extensions {JPG TIF} -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -100,9 +100,13 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
     return  0
   }
   set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
-  if { "-ERROR-" == [set ::STS(imSaveParams) [choose_im_img_save_params \
-                                      $::STS(imgExt) $::STS(finalDepth)]] }  {
-    return  0;  # error already printed
+  set ::STS(imSaveParams) [dict create];  # early check of image types
+  foreach ext $::STS(imgExts)  {
+    if { "-ERROR-" == [set saveParamsForType [choose_im_img_save_params \
+                                                  $ext $::STS(finalDepth)]] }  {
+      return  0;  # error already printed
+    }
+    dict set ::STS(imSaveParams) $ext $saveParamsForType
   }
 
   ok_info_msg "==== Now run rotate-and-crop by the following spec: ===="
@@ -131,10 +135,10 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
       incr errCnt 1
     }
   } 
-  if { [info exists cml(-img_ext)] }  {
-    set ::STS(imgExt) $cml(-img_ext)
+  if { [info exists cml(-img_extensions)] }  {
+    set ::STS(imgExts) $cml(-img_extensions)
   } else {
-    ok_err_msg "Please specify extension for image files; example: -img_ext TIF"
+    ok_err_msg "Please specify extensions for image files; example: -img_extensions {TIF jpg}"
     incr errCnt 1
   } 
   if { 0 == [info exists cml(-inp_dir)] }  {
@@ -203,8 +207,10 @@ proc _do_job_in_one_dir {dirPath}  {
     ok_err_msg "Aborting because of failure to create a temporary output directory"
     return  0
   }
-  if { 0 == [_rotate_crop_all_in_current_dir $::STS(imgExt)] }  {
-    return  0;  # errors already printed
+  foreach ext $::STS(imgExts) {
+    if { -1 == [_rotate_crop_all_in_current_dir $ext] }  {
+      return  0;  # errors already printed
+    }
   }
  
   set tclResult [catch { set res [cd $oldWD] } execResult]
@@ -229,9 +235,9 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
   if { "-ERROR-" == [set imSaveParams [choose_im_img_save_params \
                                               $imgExt $::STS(finalDepth)]] }  {
     ok_err_msg "Format '*.$imgExt not supported for saving images"
-    return  0
+    return  -1
   }
-  puts "====== Begin rotations and croppings in '[pwd]' ========"
+  puts "====== Begin rotations and croppings in '[pwd]'; extension: '$imgExt' ========"
   set imgPaths [glob -nocomplain "*.$imgExt"]
   if { 0 == [llength $imgPaths] }  {
     ok_warn_msg "No images (*.$imgExt) found in '[pwd]'"
@@ -244,7 +250,7 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
       return  -1;  # error already printed
     }
   }
-  puts "====== Finished rotations and croppings in '[pwd]'; [llength $imgPaths] image(s) processed ========"
+  puts "====== Finished rotations and croppings in '[pwd]'; extension: '$imgExt'; [llength $imgPaths] image(s) processed ========"
   return  [llength $imgPaths]
 }
 
