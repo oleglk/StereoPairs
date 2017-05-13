@@ -203,7 +203,7 @@ proc _do_job_in_one_dir {dirPath}  {
     ok_err_msg "Aborting because of failure to create a temporary output directory"
     return  0
   }
-  if { 0 == [_rotate_crop_all_in_current_dir $::STS(rawExt)] }  {
+  if { 0 == [_rotate_crop_all_in_current_dir $::STS(imgExt)] }  {
     return  0;  # errors already printed
   }
  
@@ -238,7 +238,7 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
     return  0
   }
   foreach imgPath $imgPaths {
-    if { 0 == [_rotate_crop_one_img \
+    if { 0 == [rotate_crop_one_img \
                                   $imgPath $::STS(rotAngle) $::STS(cropRatio) \
                                   $imSaveParams $::STS(buDirName)] } {
       return  -1;  # error already printed
@@ -275,6 +275,7 @@ proc _rotate_and_crop_set_ext_tool_paths_from_csv {csvPath}  {
   }
   set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
   set ::_IMMOGRIFY  [format "{%s}"  [file join $::_IM_DIR "mogrify.exe"]]
+  set ::_IMIDENTIFY [format "{%s}"  [file join $::_IM_DIR "identify.exe"]]
   return  1
 }
 
@@ -290,7 +291,11 @@ proc _rotate_and_crop_verify_external_tools {} {
     incr errCnt 1
   }
   if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'montage' tool '$::_IMMONTAGE'"
+    ok_err_msg "Inexistent ImageMagick 'mogrify' tool '$::_IMMOGRIFY'"
+    incr errCnt 1
+  }
+  if { 0 == [file exists [string trim $::_IMIDENTIFY " {}"]] }  {
+    ok_err_msg "Inexistent ImageMagick 'identify' tool '$::_IMIDENTIFY'"
     incr errCnt 1
   }
   if { $errCnt == 0 }  {

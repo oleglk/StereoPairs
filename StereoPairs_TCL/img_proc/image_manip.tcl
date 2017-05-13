@@ -22,7 +22,7 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 
 
 # Rotates and/or crops image 'imgPath';
-#   if 'buDir' given, the original image placed into it.
+#   if 'buDir' given, the original image placed into it (unless already there).
 # 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
 # 'cropRatio' == width/height
 # 'imSaveParams' tells output compression and quality; should match input type.
@@ -39,11 +39,7 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
       ok_err msg "Failed creating backup directory '$buDir'"
       return  0
     }
-    set buPath  [file join $buDir "[file rootname $imgName].TIF"]
-    if { 0 == [ok_filepath_is_writable $buPath] }  {
-      ok_err_msg "Cannot write into '$buPath'";    return 0
-    }
-    if { 0 == [ok_safe_copy_file $imgPath $buDir] }  {
+    if { 0 == [ok_copy_file_if_target_inexistent $imgPath $buDir 0] }  {
       return 0;   # error already printed
     }
   }
@@ -59,16 +55,16 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
     set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
   } elseif { ($cropRatio >= 1) && ($rWd <  [expr $rHt * $cropRatio]) }  {
     # horizontal; limited by width
-    set cropWd $rWd;    set cropHt [expr 1.0* $rWd / $cropRatio]
-  } elseif { ($cropRatio < 1) && ($rHt >= [expr 1.0* $rWd / $cropRatio])} {
+    set cropWd $rWd;    set cropHt [expr $rWd / $cropRatio]
+  } elseif { ($cropRatio < 1) && ($rHt >= [expr $rWd / $cropRatio])} {
     # vertical; limited by width
-    set cropWd $rWd;    set cropHt [expr 1.0* $rWd / $cropRatio]
-  } elseif { ($cropRatio < 1) && ($rHt <  [expr 1.0* $rWd / $cropRatio])} {
+    set cropWd $rWd;    set cropHt [expr $rWd / $cropRatio]
+  } elseif { ($cropRatio < 1) && ($rHt <  [expr $rWd / $cropRatio])} {
     # vertical; limited by height
     set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
   }
   set rotateSwitches "-rotate $rotAngle"
-  set cropSwitches [format "-gravity center -crop %dx%d" $cropWd $cropHt]
+  set cropSwitches [format "-gravity center -crop %dx%d+0+0" $cropWd $cropHt]
   ok_info_msg "Start rotating and/or cropping '$imgPath' (new-width=$cropWd, new-height=$cropHt) ..."
   set cmdListRotCrop [concat $::_IMMOGRIFY  $rotateSwitches  +repage \
                                             $cropSwitches    +repage \
