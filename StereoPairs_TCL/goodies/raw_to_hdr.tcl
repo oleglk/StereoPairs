@@ -42,7 +42,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
   set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
-  set ::STS(doAutoRot)        1  ;  # 1 == do perform rotation according to EXIF;  0 == do not rotate
+  set ::STS(rotAngle)         -1 ;  # -1 == rotate according to EXIF;  0|90|180|270 - rotation angle clockwise
   set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
@@ -110,7 +110,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -inp_dirs {list "list of input directories' paths; absolute or relative to the current directory"} \
   -out_subdir_name {val	"name of output directory (for HDR images); created under the input directory"} \
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
-  -do_autorotate {val "1 means do perform rotation according to EXIF;  0 == do not"} \
+  -rotate {val "1 means rotate according to EXIF (default);  0|90|180|270 - rotation angle clockwise"} \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
   -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
   -wb_out_file {val	"name of the CSV file (under the working directory) for white-balance coefficients that were used for RAW images"} \
@@ -121,7 +121,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD {                                  \
-    {-final_depth "8"} {-do_raw_conv "1"} {-do_autorotate "1"} {-do_blend "1"} \
+    {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"} \
     {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
@@ -222,11 +222,12 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
       }
     }
   } 
-  if { [info exists cml(-do_autorotate)] }  {
-    if { ($cml(-do_autorotate) == 0) || ($cml(-do_autorotate) == 1) }  {
-      set ::STS(doAutorot) $cml(-do_autorotate)
+  if { [info exists cml(-rotate)] }  {
+    set permRotAngle [list -1 0 90 180 270]
+    if { 0 <= [lsearch -exact $permRotAngle $cml(-rotate)] }  {
+      set ::STS(rotAngle) $cml(-rotate)
     } else {
-      ok_err_msg "Parameter telling whether to rotate images by EXIF orientation (-do_autorotate); should be 0 or 1"
+      ok_err_msg "Parameter telling how to rotate images (-rotate); should be one of {$permRotAngle}; -1 means use EXIF orientation"
       incr errCnt 1
     }
   }
@@ -447,7 +448,14 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
   }
   set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
-  set rotSwitch [expr {($::STS(doAutorot)==0)? "-t 0" : ""}]
+  switch -exact $::STS(rotAngle)  {
+    -1      { set rotSwitch ""      }
+     0      { set rotSwitch "-t 0"  }
+    90      { set rotSwitch "-t 6"  }
+    180     { set rotSwitch "-t 3"  }
+    270     { set rotSwitch "-t 5"  }
+    default { set rotSwitch ""      }
+  }
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
   #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
