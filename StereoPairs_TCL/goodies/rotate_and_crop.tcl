@@ -24,6 +24,8 @@ proc _rotate_and_crop_set_defaults {}  {
   set ::STS(inpDirPath)       "" ;  # input dir path - absolute or relative to the current directory
   set ::STS(buDirName)        "" ;  # backup dir - relative to the input directory - to be created under it
   set ::STS(rotAngle)         0  ;  # rotation angle - clockwise
+  set ::STS(padX)             0  ;  # horizontal padding in % - after rotate
+  set ::STS(padY)             0  ;  # vertical   padding in % - after rotate
   set ::STS(cropRatio)        0  ;  # 0 == no crop; otherwise width/height AFTER rotation
   set ::STS(imSaveParams)     "" ;  # compression and quality; should match type
 }
@@ -65,6 +67,8 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   -inp_dir {val "input directory path; absolute or relative to the current directory"} \
   -bu_subdir_name {val	"name of backup directory (for original images); created under the input directory; empty string means no backup"} \
   -rot_angle   {val "rotation angle - clockwise"}  \
+  -pad_x   {val "horizontal padding in % - after rotate"}  \
+  -pad_y   {val "vertical   padding in % - after rotate"}  \
   -crop_ratio  {val "width-to-height ratio AFTER rotation; 0 means do not crop"} \
  ]
   array unset cmlD
@@ -73,8 +77,8 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-    {-final_depth "8"} {-rot_angle "0"} {-crop_ratio "0"} \
-    {-bu_subdir_name "Orig"} }
+    {-final_depth "8"} {-rot_angle "0"} {-pad_x "0"} {-pad_y "0"} \
+    {-crop_ratio "0"}  {-bu_subdir_name "Orig"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -171,6 +175,22 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
       incr errCnt 1
     }
   } else {  ok_info_msg "Rotation not requested"  }
+  if { 0 != $cml(-pad_x) }  { ;  # =0 (default) if not given
+    if { ([ok_isnumeric $cml(-pad_x)]) && ($cml(-pad_x) >= 0) }  {
+      set ::STS(padX) $cml(-pad_x)
+    } else {
+      ok_err_msg "Parameter telling horizontal padding (-pad_x); should be non-negative number"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Horizontal padding not requested"  }
+  if { 0 != $cml(-pad_y) }  { ;  # =0 (default) if not given
+    if { ([ok_isnumeric $cml(-pad_y)]) && ($cml(-pad_y) >= 0) }  {
+      set ::STS(padY) $cml(-pad_y)
+    } else {
+      ok_err_msg "Parameter telling vertical padding (-pad_y); should be non-negative number"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Vertical padding not requested"  }
   if { 0 != $cml(-crop_ratio) }  { ;  # =0 (default) if not given
     if { [ok_isnumeric $cml(-crop_ratio)] }  {
       set ::STS(cropRatio) $cml(-crop_ratio)
@@ -245,8 +265,9 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
   }
   foreach imgPath $imgPaths {
     if { 0 == [rotate_crop_one_img \
-                                  $imgPath $::STS(rotAngle) $::STS(cropRatio) \
-                                  $imSaveParams $::STS(buDirName)] } {
+                          $imgPath $::STS(rotAngle) $::STS(padX)  $::STS(padY) \
+                          $::STS(cropRatio) \
+                          $imSaveParams $::STS(buDirName)] } {
       return  -1;  # error already printed
     }
   }

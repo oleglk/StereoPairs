@@ -24,9 +24,10 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 # Rotates and/or crops image 'imgPath';
 #   if 'buDir' given, the original image placed into it (unless already there).
 # 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
+# 'padX'/'padY' == horizontal/vertical padding in % - after rotate
 # 'cropRatio' == width/height
 # 'imSaveParams' tells output compression and quality; should match input type.
-proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
+proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
                                       imSaveParams buDir} {
   set imgName [file tail $imgPath]
   if { ($rotAngle != 0) && ($rotAngle != 90) && \
@@ -50,23 +51,28 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle cropRatio \
             set rWd $width; set rHt $height ;   # orientation preserved
   } else {  set rWd $height; set rHt $width ;   # orientation changed
   }
-  if {       ($cropRatio >= 1) && ($rWd >= [expr $rHt * $cropRatio]) }  {
+  set rpWd [expr {round((100+$padX) * $rWd / 100.0)}]; # width  with pad
+  set rpHt [expr {round((100+$padY) * $rHt / 100.0)}]; # height with pad
+  if {       ($cropRatio >= 1) && ($rpWd >= [expr $rpHt * $cropRatio]) }  {
     # horizontal; limited by height
-    set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
-  } elseif { ($cropRatio >= 1) && ($rWd <  [expr $rHt * $cropRatio]) }  {
+    set cropWd [expr $rpHt * $cropRatio];    set cropHt $rpHt
+  } elseif { ($cropRatio >= 1) && ($rpWd <  [expr $rpHt * $cropRatio]) }  {
     # horizontal; limited by width
-    set cropWd $rWd;    set cropHt [expr $rWd / $cropRatio]
-  } elseif { ($cropRatio < 1) && ($rHt >= [expr $rWd / $cropRatio])} {
+    set cropWd $rpWd;    set cropHt [expr $rpWd / $cropRatio]
+  } elseif { ($cropRatio < 1) && ($rpHt >= [expr $rpWd / $cropRatio])} {
     # vertical; limited by width
-    set cropWd $rWd;    set cropHt [expr $rWd / $cropRatio]
-  } elseif { ($cropRatio < 1) && ($rHt <  [expr $rWd / $cropRatio])} {
+    set cropWd $rpWd;    set cropHt [expr $rpWd / $cropRatio]
+  } elseif { ($cropRatio < 1) && ($rpHt <  [expr $rpWd / $cropRatio])} {
     # vertical; limited by height
-    set cropWd [expr $rHt * $cropRatio];    set cropHt $rHt
+    set cropWd [expr $rpHt * $cropRatio];    set cropHt $rpHt
   }
   set rotateSwitches "-rotate $rotAngle"
+  set extentSwitches [expr {(($padX==0) && ($padY==0))? "" \
+                                  : [format "-extent %dx%d" $rpWd $rpHt]}]
   set cropSwitches [format "-gravity center -crop %dx%d+0+0" $cropWd $cropHt]
-  ok_info_msg "Start rotating and/or cropping '$imgPath' (new-width=$cropWd, new-height=$cropHt) ..."
+  ok_info_msg "Start rotating and/or cropping '$imgPath' (rotation=$rotAngle, new-width=$cropWd, new-height=$cropHt) ..."
   set cmdListRotCrop [concat $::_IMMOGRIFY  $rotateSwitches  +repage \
+                                            $extentSwitches  +repage \
                                             $cropSwitches    +repage \
                                             $imSaveParams  $imgPath]
   if { 0 == [ok_run_silent_os_cmd $cmdListRotCrop] }  {
