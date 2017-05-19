@@ -26,9 +26,10 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 # 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
 # 'padX'/'padY' == horizontal/vertical padding in % - after rotate
 # 'cropRatio' == width/height
+# 'bgColor' tells background color - in IM covention
 # 'imSaveParams' tells output compression and quality; should match input type.
 proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
-                                      imSaveParams buDir} {
+                                      bgColor imSaveParams buDir} {
   set imgName [file tail $imgPath]
   if { ($rotAngle != 0) && ($rotAngle != 90) && \
        ($rotAngle != 180) && ($rotAngle != 270) }  {
@@ -66,15 +67,14 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
     # vertical; limited by height
     set cropWd [expr $rpHt * $cropRatio];    set cropHt $rpHt
   }
-  set rotateSwitches "-rotate $rotAngle"
+  set rotateSwitches "-orient undefined -rotate $rotAngle"
   set extentSwitches [expr {(($padX==0) && ($padY==0))? "" \
                                   : [format "-extent %dx%d" $rpWd $rpHt]}]
   set cropSwitches [format "-gravity center -crop %dx%d+0+0" $cropWd $cropHt]
   ok_info_msg "Start rotating and/or cropping '$imgPath' (rotation=$rotAngle, new-width=$cropWd, new-height=$cropHt) ..."
-  set cmdListRotCrop [concat $::_IMMOGRIFY  $rotateSwitches  +repage \
-                                            $extentSwitches  +repage \
-                                            $cropSwitches    +repage \
-                                            $imSaveParams  $imgPath]
+  set cmdListRotCrop [concat $::_IMMOGRIFY  -background $bgColor            \
+                        $rotateSwitches  +repage  $extentSwitches  +repage  \
+                        $cropSwitches    +repage  $imSaveParams  $imgPath]
   if { 0 == [ok_run_silent_os_cmd $cmdListRotCrop] }  {
     return  0; # error already printed
   }

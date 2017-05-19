@@ -264,10 +264,10 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
     return  0
   }
   foreach imgPath $imgPaths {
-    if { 0 == [rotate_crop_one_img \
-                          $imgPath $::STS(rotAngle) $::STS(padX)  $::STS(padY) \
+    if { 0 == [rotate_crop_one_img $imgPath \
+                          $::STS(rotAngle) $::STS(padX)  $::STS(padY) \
                           $::STS(cropRatio) \
-                          $imSaveParams $::STS(buDirName)] } {
+                          "white" $imSaveParams $::STS(buDirName)] } {
       return  -1;  # error already printed
     }
   }
