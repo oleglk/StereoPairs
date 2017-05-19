@@ -24,6 +24,7 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 # Rotates and/or crops image 'imgPath';
 #   if 'buDir' given, the original image placed into it (unless already there).
 # 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
+# EXIF orientation tag is ignored!
 # 'padX'/'padY' == horizontal/vertical padding in % - after rotate
 # 'cropRatio' == width/height
 # 'bgColor' tells background color - in IM covention
@@ -52,20 +53,20 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
             set rWd $width; set rHt $height ;   # orientation preserved
   } else {  set rWd $height; set rHt $width ;   # orientation changed
   }
-  set rpWd [expr {round((100+$padX) * $rWd / 100.0)}]; # width  with pad
-  set rpHt [expr {round((100+$padY) * $rHt / 100.0)}]; # height with pad
+  set rpWd [expr {int((100+$padX) * $rWd / 100.0)}]; # width  with pad
+  set rpHt [expr {int((100+$padY) * $rHt / 100.0)}]; # height with pad
   if {       ($cropRatio >= 1) && ($rpWd >= [expr $rpHt * $cropRatio]) }  {
     # horizontal; limited by height
-    set cropWd [expr $rpHt * $cropRatio];    set cropHt $rpHt
+    set cropWd [expr int($rpHt * $cropRatio)];    set cropHt $rpHt
   } elseif { ($cropRatio >= 1) && ($rpWd <  [expr $rpHt * $cropRatio]) }  {
     # horizontal; limited by width
-    set cropWd $rpWd;    set cropHt [expr $rpWd / $cropRatio]
+    set cropWd $rpWd;    set cropHt [expr int($rpWd / $cropRatio)]
   } elseif { ($cropRatio < 1) && ($rpHt >= [expr $rpWd / $cropRatio])} {
     # vertical; limited by width
-    set cropWd $rpWd;    set cropHt [expr $rpWd / $cropRatio]
+    set cropWd $rpWd;    set cropHt [expr int($rpWd / $cropRatio)]
   } elseif { ($cropRatio < 1) && ($rpHt <  [expr $rpWd / $cropRatio])} {
     # vertical; limited by height
-    set cropWd [expr $rpHt * $cropRatio];    set cropHt $rpHt
+    set cropWd [expr int($rpHt * $cropRatio)];    set cropHt $rpHt
   }
   set rotateSwitches "-orient undefined -rotate $rotAngle"
   set extentSwitches [expr {(($padX==0) && ($padY==0))? "" \
