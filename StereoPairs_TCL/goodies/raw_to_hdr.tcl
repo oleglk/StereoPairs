@@ -574,6 +574,7 @@ proc _is_enfuse_result_ok {execResultText} {
 # Reads the system-dependent paths from 'csvPath',
 # then assigns ultimate tool paths
 proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
+  unset -nocomplain ::_IMCONVERT ::_IMIDENTIFY ::_IMMONTAGE ::_DCRAW ::_EXIFTOOL
   if { 0 ==[ok_read_variable_values_from_csv $csvPath "external tool path(s)"]} {
     return  0;  # error already printed
   }

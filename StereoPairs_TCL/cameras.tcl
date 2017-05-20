@@ -29,3 +29,26 @@ set KNOWN_RAW_EXTENSIONS_DICT [dict create \
   "srf"   Sony        \
   "sr2"   Sony        \
                       ]
+
+# Identificator of Dualcam cameras' arrangement
+set ::DUALCAM_DESIGN_HORIZ  1
+set ::DUALCAM_DESIGN_VERT   2
+set ::DUALCAM_DESIGN_ANGLE  3
+
+
+# Tells rotation angles for left/right images depending on the rig arrangement
+proc get_lr_postproc_rotation_angles {arrangeID angleL angleR} {
+  upvar $angleL anL
+  upvar $angleR anR
+  set angles [dict create]
+  dict set angles $::DUALCAM_DESIGN_HORIZ {0    0}
+  dict set angles $::DUALCAM_DESIGN_VERT  {270  90}
+  dict set angles $::DUALCAM_DESIGN_ANGLE {270  0}
+  if { [dict exists $angles $arrangeID] }  {
+    set anLR [dict get $angles $arrangeID]
+    set anL [lindex $anLR 0];   set anR [lindex $anLR 1]
+    return  1
+  }
+  return  0;  # error
+}
+
