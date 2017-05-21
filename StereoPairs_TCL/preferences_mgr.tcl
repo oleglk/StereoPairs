@@ -56,6 +56,7 @@ proc preferences_get_initial_values {arrayName}  {
   set _prefs(-global_img_settings_dir)  "" ;  # global settings dir; relevant for some converters
   set _prefs(-backup_dir)  "Backup"
   set _prefs(-simulate_only)       NO
+  set _prefs(-lr_cam_orient)       "bd-bd";  # L-R cameras' orientations: b(ottom)/d(own)|u(p)|l(eft)|r(ight)
   
   # pair matcher:
   set _prefs(-time_diff)           0
@@ -104,10 +105,11 @@ proc preferences_get_initial_values {arrayName}  {
 ################################################################################
   set _prefs(COMMON__keyToDescrAndFormat) [dict create \
     -INITIAL_WORK_DIR {"workarea root directory assumed at startup" "%s"} \
+    -lr_cam_orient {"L-R camera orientations: bd-bd = all bottom-down; br-bl = left bottom-right, right bottom-left; br-bd = left bottom-right, right bottom-down" "%s"} \
     -custom_btn_1 {"button label of custom command 1; up to 5 characters" "%s"} \
     -custom_btn_2 {"button label of custom command 2; up to 5 characters" "%s"}
     ]
-  set _prefs(COMMON__keysInOrder) [list -INITIAL_WORK_DIR \
+  set _prefs(COMMON__keysInOrder) [list -INITIAL_WORK_DIR -lr_cam_orient \
                                         -custom_btn_1 -custom_btn_2]
   set _prefs(COMMON__keyOnlyArgsList) [list]
   set _prefs(COMMON__hardcodedArgsStr) ""
@@ -125,7 +127,8 @@ proc preferences_get_initial_values {arrayName}  {
     -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
     -min_success_rate {"min percentage of successfull matches to permit image-file operations" "%d"} \
     -out_dir {"output directory" "%s"} \
-    -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
+    -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"} \
+    -lr_cam_orient {"L-R camera orientations: bd-bd = all bottom-down; br-bl = left bottom-right, right bottom-left; br-bd = left bottom-right, right bottom-down" "%s"}
   ]
   set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir \
         -std_img_dir -name_format_left -name_format_right \

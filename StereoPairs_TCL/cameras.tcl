@@ -30,25 +30,26 @@ set KNOWN_RAW_EXTENSIONS_DICT [dict create \
   "sr2"   Sony        \
                       ]
 
-# Identificator of Dualcam cameras' arrangement
-set ::DUALCAM_DESIGN_HORIZ  1
-set ::DUALCAM_DESIGN_VERT   2
-set ::DUALCAM_DESIGN_ANGLE  3
-
-
 # Tells rotation angles for left/right images depending on the rig arrangement
-proc get_lr_postproc_rotation_angles {arrangeID angleL angleR} {
+# lrOrientSpec tells  L-R cameras' orientations:
+#                                       b(ottom)/d(own)|u(p)|l(eft)|r(ight)
+proc get_lr_postproc_rotation_angles {lrOrientSpec angleL angleR} {
   upvar $angleL anL
   upvar $angleR anR
   set angles [dict create]
-  dict set angles $::DUALCAM_DESIGN_HORIZ {0    0}
-  dict set angles $::DUALCAM_DESIGN_VERT  {270  90}
-  dict set angles $::DUALCAM_DESIGN_ANGLE {270  0}
-  if { [dict exists $angles $arrangeID] }  {
-    set anLR [dict get $angles $arrangeID]
-    set anL [lindex $anLR 0];   set anR [lindex $anLR 1]
-    return  1
+  dict set angles "bd" 0  ;   # bottom-down
+  dict set angles "br" 270;   # bottom-right
+  dict set angles "bl" 90 ;   # bottom-left
+  dict set angles "bu" 180;   # bottom-up
+  if { 0 == [regexp -nocase {(b[drlu])-(b[drlu])} \
+                              [string tolower $lrOrientSpec] full osL osR] } {
+    return  0;  # error
   }
-  return  0;  # error
+  if { [dict exists $angles $osL] }  {
+    set anL [dict get $angles $osL] } else {  return  0 }
+  if { [dict exists $angles $osR] }  {
+    set anR [dict get $angles $osR] } else {  return  0 }
+  set angleL $anL;  set angleR $anR
+  return  1;  # success
 }
 
