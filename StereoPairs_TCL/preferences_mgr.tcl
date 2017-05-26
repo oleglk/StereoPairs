@@ -128,7 +128,6 @@ proc preferences_get_initial_values {arrayName}  {
     -min_success_rate {"min percentage of successfull matches to permit image-file operations" "%d"} \
     -out_dir {"output directory" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"} \
-    -lr_cam_orient {"L-R camera orientations: bd-bd = all bottom-down; br-bl = left bottom-right, right bottom-left; br-bd = left bottom-right, right bottom-down" "%s"}
   ]
   set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir \
         -std_img_dir -name_format_left -name_format_right \

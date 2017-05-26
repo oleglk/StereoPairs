@@ -68,6 +68,8 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
     # vertical; limited by height
     set cropWd [expr int($rpHt * $cropRatio)];    set cropHt $rpHt
   }
+  ok_info_msg "Crop size computation horizotal: $width (rotate) $rWd (pad) $rpWd (crop) $cropWd"
+  ok_info_msg "Crop size computation vertical: $height (rotate) $rHt (pad) $rpHt (crop) $cropHt"
   set rotateSwitches "-orient undefined -rotate $rotAngle"
   set extentSwitches [expr {(($padX==0) && ($padY==0))? "" \
                                   : [format "-extent %dx%d" $rpWd $rpHt]}]

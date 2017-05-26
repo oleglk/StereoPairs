@@ -64,19 +64,20 @@ proc _set_rotcrop_params_from_preferences {angleL angleR xyRatio padX padY} {
     ok_info_msg "DualCam orientation: $lrOrientSpec; rotation needed: left->$angL, right->$angR"
   }
   # decide on crop ratio and pads
-  if { (($angL == 0)||($angL == 180)) && (($angR == 0)||($angR == 180)) }   {
+  if       { (($angL ==0)||($angL ==180)) && (($angR ==0)||($angR ==180)) }   {
     ok_info_msg "Requested horizontal DualCam orientation"
     _get_rotcrop_params_for_cam_arrangement "Horizontal" xyRat pdX pdY
-  }
-  if { (($angL == 90)||($angL == 270)) && (($angR == 90)||($angR == 270)) }   {
+  } elseif { (($angL ==90)||($angL ==270)) && (($angR ==90)||($angR ==270)) }  {
     ok_info_msg "Requested vertical DualCam orientation"
     _get_rotcrop_params_for_cam_arrangement "Vertical" xyRat pdX pdY
-  }
-  if { ( (($angL == 0)||($angL == 180)) && (($angR == 90)||($angR == 270)) ) \
-      || \
-       ( (($angR == 0)||($angR == 180)) && (($angL == 90)||($angL == 270)) ) } {
+  } elseif { ( (($angL ==0)||($angL ==180)) && (($angR ==90)||($angR ==270)) ) \
+              || \
+             ( (($angR ==0)||($angR ==180)) && (($angL ==90)||($angL ==270)) )} {
     ok_info_msg "Requested angled DualCam orientation"
     _get_rotcrop_params_for_cam_arrangement "Angled" xyRat pdX pdY
+  } else {
+    ok_err_msg "Requested unknown DualCam rotations: L->$angL R->$angR"
+    return  0
   }
   if { $allApplied == 1 }  {
     ok_info_msg "Orientation preferences successfully loaded and applied"
