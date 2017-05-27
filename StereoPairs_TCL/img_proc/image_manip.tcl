@@ -10,6 +10,7 @@ if { [info exists OK_TCLSRC_ROOT] } {;   # assume running as a part of LazyConv
 namespace eval ::img_proc:: {
     namespace export                          \
       rotate_crop_one_img                     \
+      compute_max_crop_for_width_height       \
 }
 
 set SCRIPT_DIR [file dirname [info script]]
@@ -53,35 +54,46 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
             set rWd $width; set rHt $height ;   # orientation preserved
   } else {  set rWd $height; set rHt $width ;   # orientation changed
   }
-  set rpWd [expr {int((100+$padX) * $rWd / 100.0)}]; # width  with pad
-  set rpHt [expr {int((100+$padY) * $rHt / 100.0)}]; # height with pad
-  if {       ($cropRatio >= 1) && ($rpWd >= [expr $rpHt * $cropRatio]) }  {
-    # horizontal; limited by height
-    set cropWd [expr int($rpHt * $cropRatio)];    set cropHt $rpHt
-  } elseif { ($cropRatio >= 1) && ($rpWd <  [expr $rpHt * $cropRatio]) }  {
-    # horizontal; limited by width
-    set cropWd $rpWd;    set cropHt [expr int($rpWd / $cropRatio)]
-  } elseif { ($cropRatio < 1) && ($rpHt >= [expr $rpWd / $cropRatio])} {
-    # vertical; limited by width
-    set cropWd $rpWd;    set cropHt [expr int($rpWd / $cropRatio)]
-  } elseif { ($cropRatio < 1) && ($rpHt <  [expr $rpWd / $cropRatio])} {
-    # vertical; limited by height
-    set cropWd [expr int($rpHt * $cropRatio)];    set cropHt $rpHt
-  }
-  ok_info_msg "Crop size computation horizotal: $width ->rotate-> $rWd ->pad-> $rpWd ->crop-> $cropWd"
-  ok_info_msg "Crop size computation vertical: $height ->rotate-> $rHt ->pad-> $rpHt ->crop-> $cropHt"
+  compute_max_crop_for_width_height $rWd $rHt $cropRatio cropWd cropHt
+  set rcpWd [expr {int((100+$padX) * $cropWd /100.0)}]; # ultimate padded width
+  set rcpHt [expr {int((100+$padY) * $cropHt /100.0)}]; # ultimate padded height
+  ok_info_msg "Crop size computation horizotal: $width ->rotate-> $rWd ->crop-> $cropWd ->pad-> $rcpWd"
+  ok_info_msg "Crop size computation vertical: $height ->rotate-> $rHt ->crop-> $cropHt ->pad-> $rcpHt"
   set rotateSwitches "-orient undefined -rotate $rotAngle"
-  set extentSwitches [expr {(($padX==0) && ($padY==0))? "" \
-                                  : [format "-extent %dx%d" $rpWd $rpHt]}]
-  set cropSwitches [format "-gravity center -crop %dx%d+0+0" $cropWd $cropHt]
-  ok_info_msg "Start rotating and/or cropping '$imgPath' (rotation=$rotAngle, new-width=$cropWd, new-height=$cropHt) ..."
+  # extension with background color needed when a dimension lacks size
+  # -extent replaces -crop; see http://www.imagemagick.org/Usage/crop/ :
+  ##    "... the Extent Operator is simply a straight forward Crop
+  ##         with background padded fill, regardless of position. ... "
+  set cropSwitches [format "-gravity center -extent %dx%d+0+0" $rcpWd $rcpHt]
+  ok_info_msg "Start rotating and/or cropping '$imgPath' (rotation=$rotAngle, new-width=$rcpWd, new-height=$rcpHt) ..."
   set cmdListRotCrop [concat $::_IMMOGRIFY  -background $bgColor            \
-                        $rotateSwitches  +repage  $extentSwitches  +repage  \
-                        $cropSwitches    +repage  $imSaveParams  $imgPath]
+                        $rotateSwitches  +repage  $cropSwitches    +repage  \
+                        $imSaveParams  $imgPath]
   if { 0 == [ok_run_silent_os_cmd $cmdListRotCrop] }  {
     return  0; # error already printed
   }
 
 	ok_info_msg "Done rotating and/or cropping '$imgPath'"
   return  1
+}
+
+
+# Computes max possible crop dimensions for 'wd':'ht' image with given crop ratio
+# Puts width/height into 'newWd'/'newHt'
+proc ::img_proc::compute_max_crop_for_width_height {wd ht cropRatio \
+                                                    newWd newHt}  {
+  upvar $newWd cropWd;  upvar $newHt cropHt
+  if {       ($cropRatio >= 1) && ($wd >= [expr $ht * $cropRatio]) }  {
+    # horizontal; limited by height
+    set cropWd [expr int($ht * $cropRatio)];    set cropHt $ht
+  } elseif { ($cropRatio >= 1) && ($wd <  [expr $ht * $cropRatio]) }  {
+    # horizontal; limited by width
+    set cropWd $wd;    set cropHt [expr int($wd / $cropRatio)]
+  } elseif { ($cropRatio < 1) && ($ht >= [expr $wd / $cropRatio])} {
+    # vertical; limited by width
+    set cropWd $wd;    set cropHt [expr int($wd / $cropRatio)]
+  } elseif { ($cropRatio < 1) && ($ht <  [expr $wd / $cropRatio])} {
+    # vertical; limited by height
+    set cropWd [expr int($ht * $cropRatio)];    set cropHt $ht
+  }
 }
