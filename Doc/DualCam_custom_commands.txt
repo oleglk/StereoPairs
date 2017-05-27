@@ -24,6 +24,34 @@ This section explains arrangements for supplement utilities supplied with Dualca
 The main idea is that the application to be run as a custom command is considered a "black box". The user shouldn't bother with how it works or how it is implemented. Instead the user only knows what the application does and how to control it through the command line. The user should supply wrapper scripts that adapt the application's command line to the single executable path entered in DualCam-Companion Preferences.
 
 
+The utilities are writen either in DOS or TCL language, mostly the latter.
+A TCL-based utility involves invocation of a new instance of TCL interpreter while providing it with the script to execute.
+
+Common points for most TCL-based custom utilities supplied with Dualcam-Companion:
+-- at the core stays some standalone TCL script with no logical relation to Dualcam-Companion, even though they share some generic code
+--- e.g. such a script cannot exist outside of the full Dualcam-Companion package
+--- but you can run this script from TCL console independently of Dualcam-Companion GUI
+-- the script has numerous command-line options to adjust for various usage scenarious
+--- in the context of Dualcam-Companion one prearranged set of arguments is supplied through a wrapper script - a separate one per each particular utility
+-- all external tool paths are taken from a special CSV file whose path is provided through the "-tools_paths_file" command-line argument
+--- format-wise it is the same as "ext_tool_dirs.csv" from Dualcam-Companion, so sharing is recommended
+
+
+
+
+
+Rotation and cropping
+
+In most cases the images from the two cameras need rotation and/or crop before being fed to StereoPhotoMaker or alike.
+Rotation is unambiguously defined by the cameras' arrangement, and there is no need to even consider such an unreliable factor as camera orientation sensor. E.g. if a camera stays bottom-down, its images need no rotation, while images from bottom-right camera require 90-degree clockwise rotation.
+Cropping decision is mostly up to the user, though cameras' arrangement do dictate certain limitations. For instance, if the cameras stay perpendicular to each other, the intersection is a quadrant; StereoPhotoMaker won't cut it by itself, since it requires that the two images have equal orientation.
+
+The supplied rotation utility is TCL-based; there is a file with core functionality and wrappers that adapt it for Dualcam-Companion.
+
+
+
+
+
 RAW conversion
 
 Dualcam-Companion doesn't enforce any particular method of RAW conversion. But its author developed one that automatically does very good job producing images perfectly suited for stereopairs. Specifically, it converts normally exposed images so that highlight details are mostly preserved, and shadow details are considerably improved compared to default conversions. Sometimes it's possible to do better with manually controled conversion, but one should work hard to achieve even equal results. Moreover, the resulting images are normalized brightness-wise, so that small exposure differences between left and right images are automatically eliminated.
@@ -78,13 +106,9 @@ Involves invocation of a new instance of TCL interpreter while providing it with
 
 Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.tcl
--- the standalone RAW conversion TCL script with no logical relation to Dualcam-Companion, even though they share some generic code
---- e.g. raw_to_hdr.tcl cannot exist outside of the full Dualcam-Companion package
---- but you can run raw_to_hdr.tcl from TCL console independently of Dualcam-Companion GUI; it converts any RAW images, not necessarily stereopairs
--- raw_to_hdr.tcl has numerous command-line options to adjust for various usage scenarious
+-- the core standalone RAW conversion TCL script
+--- converts any RAW images, not necessarily stereopairs
 --- in the context of Dualcam-Companion one prearranged set of arguments is supplied through a wrapper script (run__raw_to_hdr_on_l_r.tcl)
--- all external tool paths are taken from a special CSV file whose path is provided through the "-tools_paths_file" command-line argument
---- format-wise it is the same as "ext_tool_dirs.csv" from Dualcam-Companion, so sharing is recommended 
 -- list with names of directories with RAWs for the conversion is accepted in "-inp_dirs" command-line argument
 --- one can process any number of directories in one invocation
 --- the syntax is that of TCL list: {NAME1 NAME2 ... }
