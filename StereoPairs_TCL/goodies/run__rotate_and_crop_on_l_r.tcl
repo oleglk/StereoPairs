@@ -112,15 +112,24 @@ if { 0 == [_set_rotcrop_params_from_preferences \
   return  0;  # error already printed
 }
 
-# (4) Execute the main procedure of "rotate_and_crop.tcl" script in L/ subdirectory
+# (4) Assign input directories depending on $SUBDIR_NAME_FOR_CONVERTED_IMAGES
+if { [info exists SUBDIR_NAME_FOR_CONVERTED_IMAGES] }  {
+  set INDIR_L [file join "L" $SUBDIR_NAME_FOR_CONVERTED_IMAGES]
+  set INDIR_R [file join "R" $SUBDIR_NAME_FOR_CONVERTED_IMAGES]
+} else {
+  set INDIR_L "L"
+  set INDIR_R "R"
+}
+
+# (5) Execute the main procedure of "rotate_and_crop.tcl" script in L/ subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir {L} -bu_subdir_name {BU} -img_extensions {JPG TIF}   -tools_paths_file [file join $SCRIPT_DIR__rotate_and_crop ".." ".." ext_tool_dirs.csv]"]}   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF}   -tools_paths_file [file join $SCRIPT_DIR__rotate_and_crop ".." ".." ext_tool_dirs.csv]"]}   {
   return  0;  # error already printed
 }
 
-# (5) Execute the main procedure of "rotate_and_crop.tcl" script in R/ subdirectory
+# (6) Execute the main procedure of "rotate_and_crop.tcl" script in R/ subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir {R} -bu_subdir_name {BU} -img_extensions {JPG TIF}  -tools_paths_file [file join $SCRIPT_DIR__rotate_and_crop ".." ".." ext_tool_dirs.csv]"] }   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF}  -tools_paths_file [file join $SCRIPT_DIR__rotate_and_crop ".." ".." ext_tool_dirs.csv]"] }   {
   return  0;  # error already printed
 }
 ################################################################################
