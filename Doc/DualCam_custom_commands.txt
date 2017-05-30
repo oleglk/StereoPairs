@@ -56,7 +56,15 @@ Files involved:
 -- 4 rotation angles permitted: 0, 90, 80, 270 degrees
 -- crop performed around the image center to achieve specified width-to-length ratio with maximum image area
 -- supports padding images (horizontally and vertically) on top of the cropped area; pads specified in percents
-
+* StereoPairs\StereoPairs_TCL\goodies\run__rotate_and_crop_on_l_r.tcl
+-- a small TCL script that adapts the rather generic rotate_and_crop.tcl to the context of Dualcam-Companion
+-- loads the code from rotate_and_crop.tcl script and runs it with prearranged arguments
+--- here is the outline of rotate_and_crop.tcl invocation lines
+--------------------------------------------------------------------------------
+## Load orientation spec from Dualcam-Companion preferences file and decide on rotation and crop parameters
+## Choose subdirectories with left/right images - depending on invocation scenario - provided by upper wrapper script through environment variable SUBDIR_NAME_FOR_CONVERTED_IMAGES
+### Specifically camera JPEG-s expected under L/ and R/, while results of supplied RAW-conversion script - under L/OUT/ and R/OUT/
+## 
 
 
 
