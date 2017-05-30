@@ -1,6 +1,5 @@
-# run__rotate_and_crop_on_l_r__horiz.tcl - a "sourceable" file that runs rotate_and_crop.tcl on L/ and R/ subdirectories
-### This version assumes the two cameras are horizontal, bottom-down
-### Rotation angles (CW): left and right camera  - 0 degrees
+# run__rotate_and_crop_on_l_r.tcl - a "sourceable" file that runs rotate_and_crop.tcl on L/ and R/ subdirectories
+### Rotation angles derived from cameras' arrangement in DualCam-Companion preferences file
 
 set g_cropPreferences [dict create]; # per-arrangement cropping parameters
 dict set g_cropPreferences Horizontal  xyRat [expr 4.0 / 3]

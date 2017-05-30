@@ -47,6 +47,15 @@ Rotation is unambiguously defined by the cameras' arrangement, and there is no n
 Cropping decision is mostly up to the user, though cameras' arrangement do dictate certain limitations. For instance, if the cameras stay perpendicular to each other, the intersection is a quadrant; StereoPhotoMaker won't cut it by itself, since it requires that the two images have equal orientation.
 
 The supplied rotation utility is TCL-based; there is a file with core functionality and wrappers that adapt it for Dualcam-Companion.
+In order to run rotate-and-crop utility from Dualcam-Companion GUI, open Preferences window and type full path to 'StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_rotate_and_crop.bat' in the entry for one of the custom commands.
+
+Files involved:
+* StereoPairs\StereoPairs_TCL\goodies\rotate_and_crop.tcl
+-- the core standalone rotation and cropping TCL script
+-- rotates and/or crops all images of specified type(s) under a given directory
+-- 4 rotation angles permitted: 0, 90, 80, 270 degrees
+-- crop performed around the image center to achieve specified width-to-length ratio with maximum image area
+-- supports padding images (horizontally and vertically) on top of the cropped area; pads specified in percents
 
 
 
@@ -68,6 +77,10 @@ In the context of stereopair processing for Dualcam-Companion, RAW conversion sh
 
 RAW conversion by DOS batch
 It was historically the first implementation of the RAW conversion flow; newer TCL version is better; this one is brought as a practical example of a native custom command.
+In order to run DOS_batch based raw-conversion utility from Dualcam-Companion GUI:
+- open Preferences window and type full path to 'StereoPairs\StereoPairs_TCL\goodies\wrap__run_raw_to_hdr.bat' in the entry for one of the custom commands
+- open the 'StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.bat' script code itself and change tools' paths to fit your computer.
+
 Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.bat
 -- the standalone RAW conversion DOS-batch script with no relation to Dualcam-Companion
@@ -103,6 +116,9 @@ Files involved:
 
 RAW conversion by TCL script
 Involves invocation of a new instance of TCL interpreter while providing it with the script to execute.
+In order to run TCL based raw-conversion utility from Dualcam-Companion GUI:
+- open Preferences window and type full path to 'StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_raw_to_hdr.bat' in the entry for one of the custom commands
+- add path to "enfuse" in 'StereoPairs\ext_tool_dirs.csv'
 
 Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.tcl

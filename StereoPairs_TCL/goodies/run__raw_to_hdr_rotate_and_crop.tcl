@@ -19,6 +19,11 @@
 set SCRIPT_DIR__raw_to_hdr_rotate_and_crop [file dirname [info script]]
 
 # (2) Tell to look for left images under "L/OUT", right images under "R/OUT"
+if { [info exists SUBDIR_NAME_FOR_CONVERTED_IMAGES] }  {
+  set OLD__SUBDIR_NAME_FOR_CONVERTED_IMAGES $SUBDIR_NAME_FOR_CONVERTED_IMAGES
+} else {
+  set OLD__SUBDIR_NAME_FOR_CONVERTED_IMAGES "INEXISTENT-VARIABLE"
+}
 set SUBDIR_NAME_FOR_CONVERTED_IMAGES "OUT"
 
 # (3) Run the code from "run__raw_to_hdr_on_l_r.tcl" script
@@ -26,6 +31,13 @@ source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__raw_to_hdr_on_l_
 
 # (4) Run the code from "run__rotate_and_crop_on_l_r.tcl" script
 source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__rotate_and_crop_on_l_r.tcl"]
+
+# (5) Restore the old value of SUBDIR_NAME_FOR_CONVERTED_IMAGES (or delete it)
+if { $OLD__SUBDIR_NAME_FOR_CONVERTED_IMAGES != "INEXISTENT-VARIABLE" }  {
+  set SUBDIR_NAME_FOR_CONVERTED_IMAGES $OLD__SUBDIR_NAME_FOR_CONVERTED_IMAGES
+} else {
+  unset SUBDIR_NAME_FOR_CONVERTED_IMAGES
+}
 
 ################################################################################
 
