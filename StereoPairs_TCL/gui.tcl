@@ -12,6 +12,7 @@ source [file join $SCRIPT_DIR   "preferences_mgr.tcl"]
 # GUI-related dependencies
 source [file join $SCRIPT_DIR   "gui_options_form.tcl"]
 source [file join $SCRIPT_DIR   "gui_text_viewer.tcl"]
+source [file join $SCRIPT_DIR   "gui_ext_tools.tcl"]
 
 ### Sketch of the GUI #####
 # |                 |                 |                   |                   | |
@@ -443,7 +444,7 @@ proc _GUI_RequestOptions {toolDescrStr toolKeyPrefix errCnt}  {
   #~ set keyToVal [preferences_strip_rootdir_prefix_from_dirs \
                                           #~ $keyToValIni $GUI_VARS(WORK_DIR) "."]
   set keyToValUlt [GUI_options_form_show \
-                $PREFS($key_keyToDescrAndFormat) $keyToValIni 0 \
+                $PREFS($key_keyToDescrAndFormat) $keyToValIni 0 0  \
                 "$toolDescrStr Parameters" $PREFS($key_keysInOrder)]
   if { $keyToValUlt == 0 }  {
     set nErrors 1;  # to force cancellation for any reason
@@ -477,8 +478,9 @@ proc _GUI_EditPreferences {}  {
     return  0;  # error already printed
   }
   set keyToValUlt [GUI_options_form_show \
-              $PREFS($key_keyToDescrAndFormat) $keyToValIni \
-              preferences_get_initial_user_changeable_values \
+              $PREFS($key_keyToDescrAndFormat) $keyToValIni   \
+              preferences_get_initial_user_changeable_values  \
+              GUI_ToolsShow                                   \
               "Edit Preferences" $PREFS($key_keysInOrder)]
   if { $keyToValUlt == 0 }  {
     return  0;   # error, if any, already reported; or it's a cancellation

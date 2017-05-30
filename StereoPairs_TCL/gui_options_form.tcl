@@ -135,7 +135,8 @@ wm protocol .optsWnd WM_DELETE_WINDOW {
 # 'getIniCBorZero' is the callback proc to read initial options or 0 if not needed
 ### Example of invocation:
 ##   GUI_options_form_show [dict create -a {"value of a" "%s"} -i {"value of i" "%d"}]  [dict create -a INIT_a -i 888] 
-proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal getIniCBorZero \
+proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal \
+                            getIniCBorZero cbToolsGUIorZero  \
                             {title ""} {keyOrder {}}}  {
   global _CONFIRM_STATUS  
   global KEY_TO_VAL
@@ -185,10 +186,9 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal getIniCBorZero \
       .optsWnd.f.reset configure -command {}
       .optsWnd.f.reset state  disabled
     }
-    # oddly we can reuse init-CB to decide on tools button
-    #     - its presense indicates general config mode
-    if { $getIniCBorZero != 0 } { ;   # enable and bind 'tools' button
-      .optsWnd.f.tools configure -command "_GUI_config_ext_tools"
+    if { $cbToolsGUIorZero != 0 } { ;   # enable and bind 'tools' button
+      .optsWnd.f.tools configure -command \
+                                      "_GUI_config_ext_tools $cbToolsGUIorZero"
       .optsWnd.f.tools state !disabled
     } else                      { ;   # disable and unbind 'tools' button
       .optsWnd.f.tools configure -command {}
@@ -340,8 +340,16 @@ proc _GUI_reset_options {getIniCBorZero} {
 }
 
 
-proc _GUI_config_ext_tools {} {
-  tk_messageBox -message "-W- Setting external tools not implemented yet..." -title $::WND_TITLE
+proc _GUI_config_ext_tools {cbToolsGUI} {
+  set res [$cbToolsGUI]
+  if { $res != 0 }  {
+    #set savedOK [PreferencesCollectAndWrite]
+    set savedOK 0
+    tk_messageBox -message "-W- Setting external tools not implemented yet..." -title $::WND_TITLE
+  } else {
+    # TODO: reread tools file to restore paths' environment variables
+  }
+
   update idletasks
 }
 
