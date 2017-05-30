@@ -22,7 +22,7 @@ package require ok_utils;   namespace import -force ::ok_utils::*
 # +--------------------------------------------------------------------------+-+
 # |<<<====================================================================>>>| |
 # +--------------------------------------------------------------------------+-+
-# |[BTN reset]         |BTN  okSave              |BTN close                  | |
+# |[BTN reset]   |[BTN tools]    |BTN  okSave        |BTN close              | |
 # +--------------------------------------------------------------------------+-+
 
 set WND_TITLE "DualCam Companion - options"
@@ -43,7 +43,8 @@ grid columnconfigure .optsWnd 0 -weight 1
 grid columnconfigure .optsWnd.f 0 -weight 1
 grid columnconfigure .optsWnd.f 1 -weight 1
 grid columnconfigure .optsWnd.f 2 -weight 1
-grid columnconfigure .optsWnd.f 3 -weight 0
+grid columnconfigure .optsWnd.f 3 -weight 1
+grid columnconfigure .optsWnd.f 4 -weight 1
 grid rowconfigure .optsWnd 0 -weight 1
 grid rowconfigure .optsWnd.f 0 -weight 0 -minsize 50
 grid rowconfigure .optsWnd.f 1 -weight 1
@@ -78,8 +79,9 @@ grid [ttk::scrollbar .optsWnd.f.optTableScrollHorz -orient horizontal -command "
   # to our GUI_PreferencesShow procedure that the user has finished interacting with the dialog
 
 grid [ttk::button .optsWnd.f.reset -text "Reset" -state disabled -command {}] -column 0 -row 3
-grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 1 -row 3
-grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 2 -row 3
+grid [ttk::button .optsWnd.f.tools -text "Tools..." -state disabled -command {}] -column 1 -row 3
+grid [ttk::button .optsWnd.f.okSave -text "OK" -command {set _CONFIRM_STATUS 1}] -column 2 -row 3
+grid [ttk::button .optsWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 3 -row 3
 
 
 foreach w [winfo children .optsWnd.f] {grid configure $w -padx 5 -pady 5}
@@ -183,7 +185,16 @@ proc GUI_options_form_show {keyToDescrAndFormat keyToInitVal getIniCBorZero \
       .optsWnd.f.reset configure -command {}
       .optsWnd.f.reset state  disabled
     }
-  
+    # oddly we can reuse init-CB to decide on tools button
+    #     - its presense indicates general config mode
+    if { $getIniCBorZero != 0 } { ;   # enable and bind 'tools' button
+      .optsWnd.f.tools configure -command "_GUI_config_ext_tools"
+      .optsWnd.f.tools state !disabled
+    } else                      { ;   # disable and unbind 'tools' button
+      .optsWnd.f.tools configure -command {}
+      .optsWnd.f.tools state  disabled
+    }
+    
     catch {grab set .optsWnd}
     
     # Now drop into the event loop and wait
@@ -325,6 +336,12 @@ proc _GUI_reset_options {getIniCBorZero} {
       ok_warn_msg "Cannot reset '$key' - no initial value obtained"
     }
   }
+  update idletasks
+}
+
+
+proc _GUI_config_ext_tools {} {
+  tk_messageBox -message "-W- Setting external tools not implemented yet..." -title $::WND_TITLE
   update idletasks
 }
 
