@@ -104,6 +104,8 @@ set SCRIPT_DIR__rotate_and_crop [file dirname [info script]]
 # (2) Load the code from "rotate_and_crop.tcl" script;  imports library utilities too
 source [file join $SCRIPT_DIR__rotate_and_crop "rotate_and_crop.tcl"]
 source [file join $SCRIPT_DIR__rotate_and_crop ".." "preferences_mgr.tcl"]
+source [file join $SCRIPT_DIR__rotate_and_crop ".." "dir_file_mgr.tcl"]
+
 
 # (3) Load orientation spec from preferences and decide on rotation and crop parameters
 if { 0 == [_set_rotcrop_params_from_preferences \
@@ -122,13 +124,13 @@ if { [info exists SUBDIR_NAME_FOR_CONVERTED_IMAGES] }  {
 
 # (5) Execute the main procedure of "rotate_and_crop.tcl" script in L/ subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF}   -tools_paths_file [file join $SCRIPT_DIR__rotate_and_crop ".." ".." ext_tool_dirs.csv]"]}   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF}   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
   return  0;  # error already printed
 }
 
 # (6) Execute the main procedure of "rotate_and_crop.tcl" script in R/ subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF}  -tools_paths_file [file join $SCRIPT_DIR__rotate_and_crop ".." ".." ext_tool_dirs.csv]"] }   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF}  -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
   return  0;  # error already printed
 }
 ################################################################################

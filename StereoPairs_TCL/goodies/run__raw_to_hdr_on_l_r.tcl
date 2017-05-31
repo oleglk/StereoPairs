@@ -103,6 +103,7 @@ set SCRIPT_DIR__raw_to_hdr [file dirname [info script]]
 source [file join $SCRIPT_DIR__raw_to_hdr "raw_to_hdr.tcl"]
 source [file join $SCRIPT_DIR__raw_to_hdr ".." "stereopair_naming.tcl"]
 source [file join $SCRIPT_DIR__raw_to_hdr ".." "preferences_mgr.tcl"]
+source [file join $SCRIPT_DIR__raw_to_hdr ".." "dir_file_mgr.tcl"]
 
 # (3) Read image-file naming parameters from Dualcam-Companion preferences file
 if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
@@ -130,7 +131,7 @@ if { [file exists "wb_ovrd_left.csv"] }  {
 #     "wb_ovrd_left.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_left.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"]}   {
+if { 0 == [raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
   return  0;  # error already printed
 }
 
@@ -146,7 +147,7 @@ if { 0 == [_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 \
 #     "wb_ovrd_right.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_right.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"] }   {
+if { 0 == [raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
   return  0;  # error already printed
 }
 ################################################################################
