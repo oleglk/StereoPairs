@@ -41,7 +41,7 @@ grid [ttk::button .toolWnd.f.chooseIMDir -text "ImageMagick folder..." -command 
 grid [ttk::entry .toolWnd.f.imDir -width 29 -textvariable ::_IM_DIR] -column 2 -row 1 -columnspan 2 -sticky we
 
 grid [ttk::button .toolWnd.f.chooseDcrawPath -text "Dcraw path..." -command GUI_ChooseDcraw] -column 1 -row 2 -sticky w
-grid [ttk::entry .toolWnd.f.dcrawPath -width 29 -textvariable ::_DCRAW] -column 2 -row 2 -columnspan 2 -sticky we
+grid [ttk::entry .toolWnd.f.dcrawPath -width 29 -textvariable ::_DCRAW_PATH] -column 2 -row 2 -columnspan 2 -sticky we
 
 grid [ttk::button .toolWnd.f.chooseEnfuseDir -text "Enfuse folder..." -command GUI_ChooseEnfuseDir] -column 1 -row 3 -sticky w
 grid [ttk::entry .toolWnd.f.enfuseDir -width 29 -textvariable ::_ENFUSE_DIR] -column 2 -row 3 -columnspan 2 -sticky we
@@ -135,13 +135,29 @@ proc GUI_ToolsShow {} {
 }
 
 
+# Reads old tool paths, displays the dialog, saves new tool paths
+proc GUI_ToolsShowAndApply {} {
+  set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  # at this point tools' file may not exist, so the bellow allowed to fail
+  set_ext_tool_paths_from_csv $extToolPathsFilePath
+  set res [GUI_ToolsShow]
+  if { $res != 0 }  {
+    set savedOK 0
+    tk_messageBox -message "-W- Setting external tools not implemented yet..." -title $::WND_TITLE
+  } else {
+    # TODO: reread tools file to restore paths' environment variables
+  }
+
+
+}
+
 proc GUI_ChooseDcraw {}  {
   global APP_TITLE
   set oldFocus [focus];  # save old keyboard focus to restore it later
   set ret [tk_getOpenFile]
   catch {raise .toolWnd; focus $oldFocus}; # TODO: how to restore keyboard focus
   if { $ret != "" }  {
-    set ::_DCRAW $ret
+    set ::_DCRAW_PATH $ret
     # TODO: check that the file chosen is executable
   }
   return  1

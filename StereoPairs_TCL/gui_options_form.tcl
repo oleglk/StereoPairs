@@ -341,15 +341,7 @@ proc _GUI_reset_options {getIniCBorZero} {
 
 
 proc _GUI_config_ext_tools {cbToolsGUI} {
-  set res [$cbToolsGUI]
-  if { $res != 0 }  {
-    #set savedOK [PreferencesCollectAndWrite]
-    set savedOK 0
-    tk_messageBox -message "-W- Setting external tools not implemented yet..." -title $::WND_TITLE
-  } else {
-    # TODO: reread tools file to restore paths' environment variables
-  }
-
+  set res [$cbToolsGUI] ;   # no additional actions so far
   update idletasks
 }
 

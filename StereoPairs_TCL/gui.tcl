@@ -480,7 +480,7 @@ proc _GUI_EditPreferences {}  {
   set keyToValUlt [GUI_options_form_show \
               $PREFS($key_keyToDescrAndFormat) $keyToValIni   \
               preferences_get_initial_user_changeable_values  \
-              GUI_ToolsShow                                   \
+              GUI_ToolsShowAndApply                           \
               "Edit Preferences" $PREFS($key_keysInOrder)]
   if { $keyToValUlt == 0 }  {
     return  0;   # error, if any, already reported; or it's a cancellation
