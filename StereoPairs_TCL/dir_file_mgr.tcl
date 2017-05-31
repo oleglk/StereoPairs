@@ -10,6 +10,7 @@ namespace import -force ::ok_utils::*
 
 set DIAGNOSTICS_FILE_NAME "dualcam_diagnostics.txt"
 set PREFERENCES_FILE_NAME "dualcam_ini.csv"
+set TOOLPATHS_FILE_NAME   "dualcam_ext_tool_dirs.csv"
 
 
 # Safely attempts to switch workarea root dir to 'workDir'; returns "" on success.
@@ -73,6 +74,17 @@ proc dualcam_find_preferences_file {{checkExist 1}}  {
   set pPath [file join [file normalize "~"] $PREFERENCES_FILE_NAME]
   if { $checkExist && (0 == [file exists $pPath]) } {
     ok_err_msg "Preferences file $pPath not found"
+    return ""
+  }
+  return $pPath
+}
+
+
+proc dualcam_find_toolpaths_file {{checkExist 1}}  {
+  global TOOLPATHS_FILE_NAME
+  set pPath [file join [file normalize "~"] $TOOLPATHS_FILE_NAME]
+  if { $checkExist && (0 == [file exists $pPath]) } {
+    ok_err_msg "Tool paths file $pPath not found"
     return ""
   }
   return $pPath

@@ -50,7 +50,7 @@ set FILENAME_RENAME_SPEC  "rename_spec.csv"
 proc pair_matcher_main {cmdLineAsStr}  {
   global STS SCRIPT_DIR ORIG_EXT_DICT
   _pair_matcher_set_defaults ;  # calling it in a function for repeated invocations
-  set extToolPathsFilePath [file join $SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  set extToolPathsFilePath [dualcam_find_toolpaths_file 1]
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
     return  0;  # error already printed
   }

@@ -137,7 +137,7 @@ proc GUI_ToolsShow {} {
 
 # Reads old tool paths, displays the dialog, saves new tool paths
 proc GUI_ToolsShowAndApply {} {
-  set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  set extToolPathsFilePath [dualcam_find_toolpaths_file 0]
   # at this point tools' file may not exist, so the bellow allowed to fail
   set_ext_tool_paths_from_csv $extToolPathsFilePath
   set res [GUI_ToolsShow]

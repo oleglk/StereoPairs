@@ -50,7 +50,10 @@ proc make_cards_in_current_dir {ext pairWidthCm origWhRatio}  {
 
 
 proc _read_and_check_ext_tool_paths {}  {
-  set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  if { 0 == [set extToolPathsFilePath [dualcam_find_toolpaths_file 0] }   {
+    #standalone invocaion
+    set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  }
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
     return  0;  # error already printed
   }

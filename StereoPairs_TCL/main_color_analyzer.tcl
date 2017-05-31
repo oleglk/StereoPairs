@@ -42,7 +42,7 @@ set COLORDIFF_SORTED_CSV_NAME "color_diff_lr.sorted.csv"  ;   # name for sorted 
 proc color_analyzer_main {cmdLineAsStr}  {
   global STS SCRIPT_DIR IMG_EXT_DICT
   _color_analyzer_set_defaults ;  # calling it in a function for repeated invocations
-  set extToolPathsFilePath [file join $SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+  set extToolPathsFilePath [dualcam_find_toolpaths_file 1]
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
     return  0;  # error already printed
   }
