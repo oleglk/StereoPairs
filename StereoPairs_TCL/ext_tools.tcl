@@ -35,11 +35,20 @@ ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
 # then assigns ultimate tool paths
 proc set_ext_tool_paths_from_csv {csvPath}  {
   unset -nocomplain ::_IMCONVERT ::_IMIDENTIFY ::_IMMONTAGE ::_DCRAW ::_EXIFTOOL
-  if { 0 ==[ok_read_variable_values_from_csv $csvPath "external tool path(s)"]} {
+  if { 0 == [ok_read_variable_values_from_csv \
+                                      $csvPath "external tool path(s)"]} {
     return  0;  # error already printed
   }
+  return  [_set_ext_tool_paths_from_variables "source: '$csvPath'"]
+}
+
+
+# Reads the system-dependent paths from their global variables,
+# then assigns ultimate tool paths
+proc _set_ext_tool_paths_from_variables {srcDescr}  {
+  unset -nocomplain ::_IMCONVERT ::_IMIDENTIFY ::_IMMONTAGE ::_DCRAW ::_EXIFTOOL
   if { 0 == [info exists ::_IM_DIR] }  {
-    ok_err_msg "Imagemagick directory path not assigned to variable _IM_DIR by '$csvPath'"
+    ok_err_msg "Imagemagick directory path not assigned to variable _IM_DIR; $srcDescr"
     return  0
   }
   set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
@@ -50,7 +59,7 @@ proc set_ext_tool_paths_from_csv {csvPath}  {
   if { 0 == [info exists ::_DCRAW_PATH] }  {
     set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
   } else {
-    ok_info_msg "Custom dcraw path specified by '$csvPath'"
+    ok_info_msg "Custom dcraw path specified; $srcDescr"
     set ::_DCRAW      [format "{%s}"  $::_DCRAW_PATH]
   }
   # - ExifTool:
@@ -107,4 +116,50 @@ proc verify_external_tools {} {
     ok_err_msg "Some or all external tools are missing"
     return  0
   }
+}
+
+
+# Retrieves external tools' paths from their variables.
+# Returns list of {key val} pair lists
+proc ext_tools_collect_and_verify {srcDescr}  {
+  global _IM_DIR _DCRAW_PATH _ENFUSE_DIR
+  set listOfPairs [list]
+  if { [info exists _IM_DIR] } {
+    lappend listOfPairs [list "_IM_DIR"     $_IM_DIR] }
+  if { [info exists _IM_DIR] } {
+    lappend listOfPairs [list "_DCRAW_PATH" $_DCRAW_PATH] }
+  if { [info exists _IM_DIR] } {
+    lappend listOfPairs [list "_ENFUSE_DIR" $_ENFUSE_DIR] }
+  if { 0 == [_set_ext_tool_paths_from_variables $srcDescr] }  {
+    return  0;  # error already printed
+  }
+  if { 0 == [verify_external_tools] }  {
+    return  0;  # error already printed
+  }
+  return  $listOfPairs
+}
+
+
+proc ext_tools_collect_and_write {srcDescr}  {
+  set extToolsAsListOfPairs [ext_tools_collect_and_verify $srcDescr]
+  if { $extToolsAsListOfPairs == 0 }  {
+    return  0;  # error already printed
+   }
+  return  [ext_tools_write_into_file $extToolsAsListOfPairs]
+}
+
+
+# Saves the obtained list of pairs (no header) in the predefined path.
+# Returns 1 on success, 0 on error.
+proc ext_tools_write_into_file {extToolsAsListOfPairs}  {
+  set pPath [dualcam_find_toolpaths_file 0]
+  if { 0 == [CanWriteFile $pPath] }  {
+    ok_err_msg "Cannot write into external tool paths file <$pPath>"
+    return  0
+  }
+  # prepare wrapped header; "concat" data-list to it 
+  set header [list [list "Environment-variable-name" "Path"]]
+  set extToolsListWithHeader [concat $header $extToolsAsListOfPairs]
+  return  [ok_write_list_of_lists_into_csv_file $extToolsListWithHeader \
+                                                $pPath ","]
 }

@@ -142,10 +142,12 @@ proc GUI_ToolsShowAndApply {} {
   set_ext_tool_paths_from_csv $extToolPathsFilePath
   set res [GUI_ToolsShow]
   if { $res != 0 }  {
-    set savedOK 0
-    tk_messageBox -message "-W- Setting external tools not implemented yet..." -title $::WND_TITLE
+    if { 0 == [ext_tools_collect_and_write "source: tools form"] }   {
+      tk_messageBox -message "-E- Error saving external tools' paths" -title $::WND_TITLE
+    }
   } else {
-    # TODO: reread tools file to restore paths' environment variables
+    # reread tools file to restore paths' environment variables
+    set_ext_tool_paths_from_csv $extToolPathsFilePath
   }
 
 
