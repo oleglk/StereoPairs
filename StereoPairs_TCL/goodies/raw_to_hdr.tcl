@@ -591,7 +591,7 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
   # - DCRAW:
   #set _DCRAW "dcraw.exe"
   # assume ::_DCRAW points at custom-build OK_dcraw.exe; the below is backup
-  if { 0 == [info exists ::_DCRAW] }  {
+  if { 0 == [info exists ::_DCRAW_PATH] }  {
     set ::_DCRAW      [format "{%s}"  [file join $::_IM_DIR "dcraw.exe"]]
   } else {
     ok_info_msg "Custom dcraw path specified by '$csvPath'"
