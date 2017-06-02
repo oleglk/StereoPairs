@@ -126,9 +126,9 @@ proc ext_tools_collect_and_verify {srcDescr}  {
   set listOfPairs [list]
   if { [info exists _IM_DIR] } {
     lappend listOfPairs [list "_IM_DIR"     $_IM_DIR] }
-  if { [info exists _IM_DIR] } {
+  if { [info exists _DCRAW_PATH] } {
     lappend listOfPairs [list "_DCRAW_PATH" $_DCRAW_PATH] }
-  if { [info exists _IM_DIR] } {
+  if { [info exists _ENFUSE_DIR] } {
     lappend listOfPairs [list "_ENFUSE_DIR" $_ENFUSE_DIR] }
   if { 0 == [_set_ext_tool_paths_from_variables $srcDescr] }  {
     return  0;  # error already printed
@@ -136,6 +136,7 @@ proc ext_tools_collect_and_verify {srcDescr}  {
   if { 0 == [verify_external_tools] }  {
     return  0;  # error already printed
   }
+  #puts "@@@ {$listOfPairs}";  set ::_TMP_PATHS $listOfPairs
   return  $listOfPairs
 }
 
