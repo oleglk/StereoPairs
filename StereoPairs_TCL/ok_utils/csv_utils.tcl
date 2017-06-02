@@ -7,6 +7,7 @@ namespace eval ::ok_utils:: {
   namespace export                      \
   ok_csv2list                           \
   ok_list2csv                           \
+  ok_list2csv_1line                     \
   ok_write_array_of_lists_into_csv_file \
   ok_write_list_of_lists_into_csv_file  \
   ok_read_csv_file_into_array_of_lists  \
@@ -55,7 +56,7 @@ proc ::ok_utils::ok_list2csv {list {sepChar ,}} {
 	    }
 	    set sep $sepChar
     }
-    append out $sepChar
+    append out "$sepChar\n"
   }
   return $out
 }
@@ -63,6 +64,20 @@ proc ::ok_utils::ok_list2csv {list {sepChar ,}} {
 
 ## Oleg's code
 
+proc ::ok_utils::ok_list2csv_1line {list {sepChar ,}} {
+  set out ""
+  set sep {}
+  foreach val $list {
+    if {[string match "*\[\"$sepChar\]*" $val]} {
+      append out $sep\"[string map [list \" \"\"] $val]\"
+    } else {
+      append out $sep$val
+    }
+    set sep $sepChar
+  }
+  append out $sepChar
+  return $out
+}
 
 # Stores lists from 'arrName' one-at-a-line in file 'fullPath';
 # each list prepended by its key
@@ -81,7 +96,7 @@ proc ::ok_utils::ok_write_array_of_lists_into_csv_file {arrName fullPath headerP
     foreach name [array names theArr] {
       if { 1 == [regexp $headerPattern $name] } {
         puts $outF [format "%s%s%s" \
-                            $name $sepChar [ok_list2csv $theArr($name) $sepChar]]
+                    $name $sepChar [ok_list2csv_1line $theArr($name) $sepChar]]
         break
       }
     }
@@ -89,7 +104,7 @@ proc ::ok_utils::ok_write_array_of_lists_into_csv_file {arrName fullPath headerP
     foreach name [lsort [array names theArr]] {
       if { 0 == [regexp $headerPattern $name] } {
         puts $outF [format "%s%s%s" \
-                            $name $sepChar [ok_list2csv $theArr($name) $sepChar]]
+                     $name $sepChar [ok_list2csv_1line $theArr($name) $sepChar]]
         incr goodCnt
       }
     }
@@ -114,10 +129,12 @@ proc ::ok_utils::ok_write_list_of_lists_into_csv_file {topList fullPath {sepChar
     } else {
       set outF stdout
     }
-    foreach rec $topList {
-      puts $outF [ok_list2csv $rec $sepChar]
-      incr goodCnt
-    }
+    puts $outF [ok_list2csv $topList $sepChar]
+    incr goodCnt
+    #~ foreach rec $topList {
+      #~ puts $outF [ok_list2csv $rec $sepChar]
+      #~ incr goodCnt
+    #~ }
     if { ![string equal $fullPath "stdout"] } {    close $outF	}
   } execResult]
   if { $tclExecResult != 0 } {
