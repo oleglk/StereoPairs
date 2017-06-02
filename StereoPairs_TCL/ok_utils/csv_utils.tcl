@@ -130,7 +130,7 @@ proc ::ok_utils::ok_write_list_of_lists_into_csv_file {topList fullPath {sepChar
       set outF stdout
     }
     puts $outF [ok_list2csv $topList $sepChar]
-    incr goodCnt
+    incr goodCnt [llength $topList]
     #~ foreach rec $topList {
       #~ puts $outF [ok_list2csv $rec $sepChar]
       #~ incr goodCnt
@@ -162,6 +162,7 @@ proc ::ok_utils::ok_read_csv_file_into_array_of_lists {arrName fullPath sepChar 
   set inF [open $fullPath r]
   	while { [gets $inF line] >= 0 } {
       set lst [ok_discard_empty_list_elements [ok_csv2list $line $sepChar]]
+      if { [llength $lst] == 0 }  { continue } ;  # skip empty lines
       if { ($requireEqualLength != 0) && ($prevLst != {}) && ($goodCnt > 1) && \
             ([llength $lst] != [llength $prevLst]) }  {
         ok_err_msg "Line length mismatch in $descr: {$prevLst} vs {$lst}" 
