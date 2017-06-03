@@ -40,10 +40,10 @@ grid rowconfigure .toolWnd.f 3 -weight 0; grid rowconfigure .toolWnd.f 4 -weight
 grid [ttk::button .toolWnd.f.chooseIMDir -text "ImageMagick folder..." -command GUI_ChooseIMDir] -column 1 -row 1 -sticky w
 grid [ttk::entry .toolWnd.f.imDir -width 29 -textvariable ::_IM_DIR] -column 2 -row 1 -columnspan 2 -sticky we
 
-grid [ttk::button .toolWnd.f.chooseDcrawPath -text "Dcraw path..." -command GUI_ChooseDcraw] -column 1 -row 2 -sticky w
+grid [ttk::button .toolWnd.f.chooseDcrawPath -text "Dcraw path (optional)..." -command GUI_ChooseDcraw] -column 1 -row 2 -sticky w
 grid [ttk::entry .toolWnd.f.dcrawPath -width 29 -textvariable ::_DCRAW_PATH] -column 2 -row 2 -columnspan 2 -sticky we
 
-grid [ttk::button .toolWnd.f.chooseEnfuseDir -text "Enfuse folder..." -command GUI_ChooseEnfuseDir] -column 1 -row 3 -sticky w
+grid [ttk::button .toolWnd.f.chooseEnfuseDir -text "Enfuse folder (optional)..." -command GUI_ChooseEnfuseDir] -column 1 -row 3 -sticky w
 grid [ttk::entry .toolWnd.f.enfuseDir -width 29 -textvariable ::_ENFUSE_DIR] -column 2 -row 3 -columnspan 2 -sticky we
 
 grid [ttk::button .toolWnd.f.save -text "Save" -command {set _CONFIRM_STATUS 1}] -column 2 -row 6
@@ -56,6 +56,7 @@ grid [ttk::button .toolWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS
 
 foreach w [winfo children .toolWnd.f] {grid configure $w -padx 5 -pady 5}
 
+wm resizable .toolWnd 1 0;   # prohibit changing window height
 
 # Set the window title, then withdraw the window
 # from the screen (hide it)
