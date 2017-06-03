@@ -36,6 +36,7 @@ grid rowconfigure .toolWnd 0 -weight 0;   grid rowconfigure .toolWnd.f 0 -weight
 grid rowconfigure .toolWnd.f 1 -weight 0; grid rowconfigure .toolWnd.f 2 -weight 0
 grid rowconfigure .toolWnd.f 3 -weight 0; grid rowconfigure .toolWnd.f 4 -weight 0
 
+# tool-path entries aren't disabled to permit clearing optional ones
 
 grid [ttk::button .toolWnd.f.chooseIMDir -text "ImageMagick folder..." -command GUI_ChooseIMDir] -column 1 -row 1 -sticky w
 grid [ttk::entry .toolWnd.f.imDir -width 29 -textvariable ::_IM_DIR] -column 2 -row 1 -columnspan 2 -sticky we
@@ -46,12 +47,12 @@ grid [ttk::entry .toolWnd.f.dcrawPath -width 29 -textvariable ::_DCRAW_PATH] -co
 grid [ttk::button .toolWnd.f.chooseEnfuseDir -text "Enfuse folder (optional)..." -command GUI_ChooseEnfuseDir] -column 1 -row 3 -sticky w
 grid [ttk::entry .toolWnd.f.enfuseDir -width 29 -textvariable ::_ENFUSE_DIR] -column 2 -row 3 -columnspan 2 -sticky we
 
-grid [ttk::button .toolWnd.f.save -text "Save" -command {set _CONFIRM_STATUS 1}] -column 2 -row 6
-  # _CONFIRM_STATUS is a global variable that will hold the value
+grid [ttk::button .toolWnd.f.save -text "Save" -command {set _TOOLS_CONFIRM_STATUS 1}] -column 2 -row 6
+  # _TOOLS_CONFIRM_STATUS is a global variable that will hold the value
   # corresponding to the button clicked.  It will also serve as our signal
   # to our GUI_ToolsShow procedure that the user has finished interacting with the dialog
 
-grid [ttk::button .toolWnd.f.cancel -text "Cancel" -command {set _CONFIRM_STATUS 0}] -column 3 -row 6
+grid [ttk::button .toolWnd.f.cancel -text "Cancel" -command {set _TOOLS_CONFIRM_STATUS 0}] -column 3 -row 6
 
 
 foreach w [winfo children .toolWnd.f] {grid configure $w -padx 5 -pady 5}
@@ -96,7 +97,7 @@ wm protocol .toolWnd WM_DELETE_WINDOW {
 # Display the dialog
 ###########################
 proc GUI_ToolsShow {} {
-  global _CONFIRM_STATUS
+  global _TOOLS_CONFIRM_STATUS
   
   
   #~ # read proxy variables
@@ -117,11 +118,11 @@ proc GUI_ToolsShow {} {
   catch {grab set .toolWnd}
 
   # Now drop into the event loop and wait
-  # until the _CONFIRM_STATUS variable is
+  # until the _TOOLS_CONFIRM_STATUS variable is
   # set.  This is our signal that the user
   # has clicked on one of the buttons.
 
-  tkwait variable _CONFIRM_STATUS
+  tkwait variable _TOOLS_CONFIRM_STATUS
 
   # Release the grab (very important!) and
   # return focus to its original widget.
@@ -132,7 +133,7 @@ proc GUI_ToolsShow {} {
   focus $oldFocus
   wm withdraw .toolWnd
 
-  return $_CONFIRM_STATUS
+  return $_TOOLS_CONFIRM_STATUS
 }
 
 

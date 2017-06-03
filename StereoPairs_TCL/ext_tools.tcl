@@ -109,6 +109,12 @@ proc verify_external_tools {} {
     ok_err_msg "Inexistent 'dcraw' tool '$::_DCRAW'"
     incr errCnt 1
   }
+  if { ([info exists ::_ENFUSE_DIR]) &&               \
+       ("" != [string trim $::_ENFUSE_DIR " {}"]) &&  \
+       (![ok_filepath_is_existent_dir [string trim $::_ENFUSE_DIR " {}"]]) }  {
+    ok_err_msg "Inexistent or invalid 'enfuse' directory '$::_ENFUSE_DIR'"
+    incr errCnt 1
+  }
   if { $errCnt == 0 }  {
     ok_info_msg "All external tools are present"
     return  1
@@ -124,11 +130,11 @@ proc verify_external_tools {} {
 proc ext_tools_collect_and_verify {srcDescr}  {
   global _IM_DIR _DCRAW_PATH _ENFUSE_DIR
   set listOfPairs [list]
-  if { [info exists _IM_DIR] } {
+  if { ([info exists _IM_DIR]) && ("" != [string trim $_IM_DIR]) } {
     lappend listOfPairs [list "_IM_DIR"     $_IM_DIR] }
-  if { [info exists _DCRAW_PATH] } {
+  if { ([info exists _DCRAW_PATH]) && ("" != [string trim $_DCRAW_PATH]) } {
     lappend listOfPairs [list "_DCRAW_PATH" $_DCRAW_PATH] }
-  if { [info exists _ENFUSE_DIR] } {
+  if { ([info exists _ENFUSE_DIR]) && ("" != [string trim $_ENFUSE_DIR]) } {
     lappend listOfPairs [list "_ENFUSE_DIR" $_ENFUSE_DIR] }
   if { 0 == [_set_ext_tool_paths_from_variables $srcDescr] }  {
     return  0;  # error already printed
