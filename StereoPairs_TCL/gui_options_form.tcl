@@ -68,10 +68,10 @@ ttk::entry .optsWnd.f.fullHeader.valEntry  -width [string length $VAL_HDR]
 #~ .optsWnd.f.fullHeader  configure -state disabled
 #~ set FONT_HDR [.optsWnd.f.fullHeader configure -font]
 
-grid [tk::text .optsWnd.f.optTable -width 71 -height 15 -wrap none -state disabled] -column 0 -row 1 -columnspan 3 -sticky wens
-grid [ttk::scrollbar .optsWnd.f.optTableScrollVert -orient vertical -command ".optsWnd.f.optTable yview"] -column 3 -row 1 -columnspan 1 -sticky wns
+grid [tk::text .optsWnd.f.optTable -width 71 -height 15 -wrap none -state disabled] -column 0 -row 1 -columnspan 4 -sticky wens
+grid [ttk::scrollbar .optsWnd.f.optTableScrollVert -orient vertical -command ".optsWnd.f.optTable yview"] -column 4 -row 1 -columnspan 1 -sticky wns
 .optsWnd.f.optTable configure -yscrollcommand ".optsWnd.f.optTableScrollVert set"
-grid [ttk::scrollbar .optsWnd.f.optTableScrollHorz -orient horizontal -command ".optsWnd.f.optTable xview"] -column 0 -row 2 -columnspan 3 -sticky wen
+grid [ttk::scrollbar .optsWnd.f.optTableScrollHorz -orient horizontal -command ".optsWnd.f.optTable xview"] -column 0 -row 2 -columnspan 4 -sticky wen
 .optsWnd.f.optTable configure -xscrollcommand ".optsWnd.f.optTableScrollHorz set"
 
   # _CONFIRM_STATUS is a global variable that will hold the value
