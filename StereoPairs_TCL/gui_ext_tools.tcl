@@ -156,9 +156,15 @@ proc GUI_ToolsShowAndApply {} {
 }
 
 proc GUI_ChooseDcraw {}  {
-  global APP_TITLE
+  global APP_TITLE _DCRAW_PATH
   set oldFocus [focus];  # save old keyboard focus to restore it later
-  set ret [tk_getOpenFile]
+  if { ([info exists _DCRAW_PATH]) && ("" != [string trim $_DCRAW_PATH]) } {
+    set ret [tk_getOpenFile -initialdir [file dirname $_DCRAW_PATH]  \
+                            -initialfile $_DCRAW_PATH]
+  } else {
+    set ret [tk_getOpenFile]
+  }
+
   catch {raise .toolWnd; focus $oldFocus}; # TODO: how to restore keyboard focus
   if { $ret != "" }  {
     set ::_DCRAW_PATH $ret
@@ -169,9 +175,13 @@ proc GUI_ChooseDcraw {}  {
 
 
 proc GUI_ChooseIMDir {}  {
-  global APP_TITLE
+  global APP_TITLE _IM_DIR
   set oldFocus [focus];  # save old keyboard focus to restore it later
-  set ret [tk_chooseDirectory]
+  if { ([info exists _IM_DIR]) && ("" != [string trim $_IM_DIR]) } {
+    set ret [tk_chooseDirectory -initialdir $_IM_DIR]
+  } else {
+    set ret [tk_chooseDirectory]
+  }
   catch {raise .toolWnd; focus $oldFocus}; # TODO: how to restore keyboard focus
   if { $ret != "" }  {
     set ::_IM_DIR $ret
@@ -181,9 +191,13 @@ proc GUI_ChooseIMDir {}  {
 
 
 proc GUI_ChooseEnfuseDir {}  {
-  global APP_TITLE
+  global APP_TITLE _ENFUSE_DIR
   set oldFocus [focus];  # save old keyboard focus to restore it later
-  set ret [tk_chooseDirectory]
+  if { ([info exists _ENFUSE_DIR]) && ("" != [string trim $_ENFUSE_DIR]) } {
+    set ret [tk_chooseDirectory -initialdir $_ENFUSE_DIR]
+  } else {
+    set ret [tk_chooseDirectory]
+  }
   catch {raise .toolWnd; focus $oldFocus}; # TODO: how to restore keyboard focus
   if { $ret != "" }  {
     set ::_ENFUSE_DIR $ret
