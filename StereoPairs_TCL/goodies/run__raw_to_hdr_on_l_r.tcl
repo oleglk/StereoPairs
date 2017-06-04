@@ -136,7 +136,7 @@ if { 0 == [raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -r
 }
 
 
-# (6) Change image-file names in WB-file created while pocessing left directory
+# (6) Change image-file names in WB-file created while processing left directory
 #     into names of their right peers
 if { 0 == [_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 \
                                                     "white-balance-sync"] }   {
@@ -150,6 +150,8 @@ if { 0 == [_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 \
 if { 0 == [raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
   return  0;  # error already printed
 }
+
+return  1;  # indicate successfull execution
 ################################################################################
 
 
