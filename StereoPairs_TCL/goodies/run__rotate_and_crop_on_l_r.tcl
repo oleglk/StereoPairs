@@ -135,4 +135,5 @@ if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -c
 }
 ################################################################################
 
+return  1;  # success
 

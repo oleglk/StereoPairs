@@ -31,7 +31,9 @@ if { 1 == [source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__raw_t
 # ... getting here only if RAW conversion was successfull ...
 
 # (4) Run the code from "run__rotate_and_crop_on_l_r.tcl" script
-  source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__rotate_and_crop_on_l_r.tcl"]
+  set res [source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__rotate_and_crop_on_l_r.tcl"]]
+} else {
+  set res 0;  # failure
 }
 
 # (5) Restore the old value of SUBDIR_NAME_FOR_CONVERTED_IMAGES (or delete it)
@@ -40,7 +42,6 @@ if { $OLD__SUBDIR_NAME_FOR_CONVERTED_IMAGES != "INEXISTENT-VARIABLE" }  {
 } else {
   unset SUBDIR_NAME_FOR_CONVERTED_IMAGES
 }
-
 ################################################################################
 
-
+return  $res
