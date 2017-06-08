@@ -28,6 +28,7 @@ proc _rotate_and_crop_set_defaults {}  {
   set ::STS(padY)             0  ;  # vertical   padding in % - after rotate
   set ::STS(cropRatio)        0  ;  # 0 == no crop; otherwise width/height AFTER rotation
   set ::STS(imSaveParams)     "" ;  # compression and quality; should match type
+  set ::STS(forceJpegQuality) 0  ;  # if > 0, tells forced JPEG quality value
 }
 ################################################################################
 _rotate_and_crop_set_defaults ;  # load only;  do call it in a function for repeated invocations
@@ -70,6 +71,7 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   -pad_x   {val "horizontal padding in % - after rotate"}  \
   -pad_y   {val "vertical   padding in % - after rotate"}  \
   -crop_ratio  {val "width-to-height ratio AFTER rotation; 0 means do not crop"} \
+  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"} \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -78,7 +80,7 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
     {-final_depth "8"} {-rot_angle "0"} {-pad_x "0"} {-pad_y "0"} \
-    {-crop_ratio "0"}  {-bu_subdir_name "Orig"} }
+    {-crop_ratio "0"}  {-jpeg_quality "0"}  {-bu_subdir_name "Orig"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -95,7 +97,7 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 0 -final_depth 8 -inp_dir L -bu_subdir_name {} -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 2 - rotate and crop: ======="
-    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name {BU} -img_extensions {JPG TIF} -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " rotate_and_crop_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality 99 -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -107,7 +109,7 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   set ::STS(imSaveParams) [dict create];  # early check of image types
   foreach ext $::STS(imgExts)  {
     if { "-ERROR-" == [set saveParamsForType [choose_im_img_save_params \
-                                                  $ext $::STS(finalDepth)]] }  {
+                        $ext $::STS(finalDepth) $::STS(forceJpegQuality)]] }  {
       return  0;  # error already printed
     }
     dict set ::STS(imSaveParams) $ext $saveParamsForType
@@ -203,6 +205,15 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
     ok_info_msg "Please specify rotation angle and/or crop ratio; example: -rot_angle 270 -crop_ratio 1"
     incr errCnt 1
   }
+  if { 0 != $cml(-jpeg_quality) }  { ;  # =0 (default) if not given
+    if { ([string is integer $cml(-jpeg_quality)]) && \
+          ($cml(-jpeg_quality) >= 0) && ($cml(-jpeg_quality) <= 100) }  {
+      set ::STS(forceJpegQuality) $cml(-jpeg_quality)
+    } else {
+      ok_err_msg "Parameter telling JPEG file-save quality (-jpeg_quality); should be 0..100"
+      incr errCnt 1
+    }
+  }
   if { $errCnt > 0 }  {
     #ok_err_msg "Error(s) in command parameters!"
     return  0
@@ -253,7 +264,7 @@ proc _arrange_dirs_in_current_dir {} {
 # Performs rotations and croppings; returns num of processed files, 0 if none, -1 on error.
 proc _rotate_crop_all_in_current_dir {imgExt} {
   if { "-ERROR-" == [set imSaveParams [choose_im_img_save_params \
-                                              $imgExt $::STS(finalDepth)]] }  {
+                     $imgExt $::STS(finalDepth) $::STS(forceJpegQuality)]] }  {
     ok_err_msg "Format '*.$imgExt not supported for saving images"
     return  -1
   }
@@ -280,11 +291,13 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
 
 # Returns ImageMagick file-save compression and quality parameters.
 # On error returns "-ERROR-".
-proc choose_im_img_save_params {imgExt finalDepth}  {
+proc choose_im_img_save_params {imgExt finalDepth forceJpegQuality}  {
   if { ($finalDepth != 8) && ($finalDepth != 16) }  {  return  "-ERROR-"  }
+  set jpegQual [expr {($forceJpegQuality > 0)? \
+                                            "-quality $forceJpegQuality" : ""}]
   switch -nocase -- $imgExt  {
     "tif"   {  return "-compress LZW -depth $finalDepth"  }
-    "jpg"   {  return "-depth $finalDepth"                }
+    "jpg"   {  return "-depth $finalDepth $jpegQual"      }
     default {  return  "-ERROR-"                          }
   }
 }

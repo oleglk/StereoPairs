@@ -12,6 +12,7 @@ dict set g_cropPreferences Angled      xyRat 1.0
 dict set g_cropPreferences Angled      pdX   10
 dict set g_cropPreferences Angled      pdY   10
 
+set g_jpegQuality 99;  # 1..100 forces given JPEG quality; 0 leaves to default
 
 ################################################################################
 ## Local procedures
@@ -124,13 +125,13 @@ if { [info exists SUBDIR_NAME_FOR_CONVERTED_IMAGES] }  {
 
 # (5) Execute the main procedure of "rotate_and_crop.tcl" script in L/ subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF}   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
   return  0;  # error already printed
 }
 
 # (6) Execute the main procedure of "rotate_and_crop.tcl" script in R/ subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF}  -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
   return  0;  # error already printed
 }
 ################################################################################
