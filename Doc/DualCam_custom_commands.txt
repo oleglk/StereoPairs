@@ -60,11 +60,11 @@ Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\run__rotate_and_crop_on_l_r.tcl
 -- a small TCL script that adapts the rather generic rotate_and_crop.tcl to the context of Dualcam-Companion
 -- loads the code from rotate_and_crop.tcl script and runs it with prearranged arguments
---- the script starts from defining user preferences for crop settings per cameras' arrangement in the rig
----- builds TCL dictionary 'g_cropPreferences' with the following set of fields per cameras' arrangement:
+--- the script starts from defining user preferences for crop settings per camera arrangement in the rig
+---- builds TCL dictionary 'g_cropPreferences' with the following set of fields per camera arrangement:
 ----- xyRat - sides' ratio (horizontal / vertical) of one image in the pair
------ pdX   - horizontal padding (%) - after the desired sides' ratio achieved
------ pdY   - vertical   padding (%) - after the desired sides' ratio achieved
+----- pdX   - horizontal padding (%) - after the desired sides' ratio achieved; half of specified amount added to each side
+----- pdY   - vertical   padding (%) - after the desired sides' ratio achieved; half of specified amount added to each side
 --- setting the 'g_jpegQuality' variable allows the user to choose output quality for JPEG files
 --- here is the outline of rotate_and_crop.tcl invocation lines
 --------------------------------------------------------------------------------
@@ -78,8 +78,8 @@ rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $
 --------------------------------------------------------------------------------
 --- arguments '-inp_dir $INDIR_L', '-inp_dir $INDIR_R' tell to run rotation and cropping in subdirectories chosen according to the caller wrapper directive (see above)
 --- arguments '-rot_angle $angleL', '-rot_angle $angleR' specify rotation angles (clockwise) chosen automatically according to camera arrangement
---- arguments '-pad_x $padX -pad_y $padY -crop_ratio $xyRatio' tell geometrical parameters of the cropped area; configurable by the user through 'g_cropPreferences' dictionary at the top of the script
---- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16 8-bit-per-channel TIFF-s; the argument is irrelevant for JPEG files
+--- arguments '-pad_x $padX', '-pad_y $padY', '-crop_ratio $xyRatio' tell geometrical parameters of the cropped area; configurable by the user through 'g_cropPreferences' dictionary at the top of the script
+--- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16-bit-per-channel TIFF-s; the argument is irrelevant for JPEG files
 --- argument '-bu_subdir_name {BU}' tells to save backup copies of the original images in subdirectory BU under the input directory
 --- argument '-img_extensions {JPG TIF}' tells to process all images with extensions .JPG and .TIF under the input directory
 --- argument '-jpeg_quality $::g_jpegQuality' specifies quality level for saving JPEG images; the argument is irrelevant for TIFF files
@@ -90,7 +90,7 @@ rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $
 --- one can use any TCL interpreter, not necessarilly the one that runs Dualcam-Companion GUI
 -- assumes that run_tcl_rotate_and_crop_on_l_r.bat resides in the same directory as wrap__run_tcl_rotate_and_crop.bat itself
 --- includes batch utility "Assign_SCRIPT_DIR" to detect the directory of itself
--- doesn't contain any logic of RAW conversion
+-- doesn't contain any logic of rottion and cropping
 ---- the essense of wrap__run_tcl_rotate_and_crop.bat is in the following line: -----
   "C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__rotate_and_crop_on_l_r.tcl"
   --------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW 
 --------------------------------------------------------------------------------
 --- arguments '-inp_dirs {L}', '-inp_dirs {R}' tell to run RAW conversion in subdirectories L/ or R/ of the current workarea directory respectively
 --- argument '-out_subdir_name OUT' tells to put ultimate images in subdirectories L/OUT/ and R/OUT/ of the current workarea directory
---- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16 8-bit-per-channel TIFF-s
+--- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16-bit-per-channel TIFF-s
 --- argument '-raw_ext ARW' tells the extension of input RAW images; ARW is Sony-Alpha RAW
 --- the combination of arguments '-wb_out_file NAME2.csv -wb_inp_file NAME1.csv' tells that RAW-conversion should read white-balance parameters (RGB multipliers per an image for dcraw) from file "NAME1.csv" in the current workarea directory, and write the white-balance parameters it used for each image into file "NAME2.csv" in the same directory
 --- the script feeds white-balance parameters used on left images to the conversion of their right peers
@@ -214,6 +214,17 @@ raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW 
 -- you can use supplied "Doc/EXAMPLE__ext_tool_dirs.csv" file as the starting point
 TODO
 --------------------------------------------------------------------------------
+
+
+
+RAW conversion followed by rotation and cropping
+
+A logical extension of having utilities for the two operations is to build a combined action that runs both.
+
+Files involved:
+* StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_rotate_and_crop.tcl
+-- a small TCL script that runs RAW conversion followed by rotate-and-crop
+--- uses TCL global variable SUBDIR_NAME_FOR_CONVERTED_IMAGES to tell the rotation-and-cropping script that RAW conversion puts its output images under subdirectories OUT/ (of left- and right images' directories)
 
 
 TODO
