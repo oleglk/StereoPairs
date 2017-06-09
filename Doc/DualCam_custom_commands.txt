@@ -56,6 +56,7 @@ Files involved:
 -- 4 rotation angles permitted: 0, 90, 80, 270 degrees
 -- crop performed around the image center to achieve specified width-to-length ratio with maximum image area
 -- supports padding images (horizontally and vertically) on top of the cropped area; pads specified in percents
+--- note, padding is mandatory if lens axes aren't vertically aligned - like in the vertical DualCam
 * StereoPairs\StereoPairs_TCL\goodies\run__rotate_and_crop_on_l_r.tcl
 -- a small TCL script that adapts the rather generic rotate_and_crop.tcl to the context of Dualcam-Companion
 -- loads the code from rotate_and_crop.tcl script and runs it with prearranged arguments
@@ -76,7 +77,23 @@ rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $
 rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"
 --------------------------------------------------------------------------------
 --- arguments '-inp_dir $INDIR_L', '-inp_dir $INDIR_R' tell to run rotation and cropping in subdirectories chosen according to the caller wrapper directive (see above)
-TODO
+--- arguments '-rot_angle $angleL', '-rot_angle $angleR' specify rotation angles (clockwise) chosen automatically according to camera arrangement
+--- arguments '-pad_x $padX -pad_y $padY -crop_ratio $xyRatio' tell geometrical parameters of the cropped area; configurable by the user through 'g_cropPreferences' dictionary at the top of the script
+--- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16 8-bit-per-channel TIFF-s; the argument is irrelevant for JPEG files
+--- argument '-bu_subdir_name {BU}' tells to save backup copies of the original images in subdirectory BU under the input directory
+--- argument '-img_extensions {JPG TIF}' tells to process all images with extensions .JPG and .TIF under the input directory
+--- argument '-jpeg_quality $::g_jpegQuality' specifies quality level for saving JPEG images; the argument is irrelevant for TIFF files
+--- argument '-tools_paths_file [dualcam_find_toolpaths_file 0]' tells to take external tools paths from the same file that's provided for the main DualCam-Companion application
+* StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_rotate_and_crop.bat
+-- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
+-- invokes new instance of TCL interpreter and tells it to execute run__rotate_and_crop_on_l_r.tcl
+--- one can use any TCL interpreter, not necessarilly the one that runs Dualcam-Companion GUI
+-- assumes that run_tcl_rotate_and_crop_on_l_r.bat resides in the same directory as wrap__run_tcl_rotate_and_crop.bat itself
+--- includes batch utility "Assign_SCRIPT_DIR" to detect the directory of itself
+-- doesn't contain any logic of RAW conversion
+---- the essense of wrap__run_tcl_rotate_and_crop.bat is in the following line: -----
+  "C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__rotate_and_crop_on_l_r.tcl"
+  --------------------------------------------------------------------------------
 
 
 
