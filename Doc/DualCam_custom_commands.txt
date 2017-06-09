@@ -59,13 +59,24 @@ Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\run__rotate_and_crop_on_l_r.tcl
 -- a small TCL script that adapts the rather generic rotate_and_crop.tcl to the context of Dualcam-Companion
 -- loads the code from rotate_and_crop.tcl script and runs it with prearranged arguments
+--- the script starts from defining user preferences for crop settings per cameras' arrangement in the rig
+---- builds TCL dictionary 'g_cropPreferences' with the following set of fields per cameras' arrangement:
+----- xyRat - sides' ratio (horizontal / vertical) of one image in the pair
+----- pdX   - horizontal padding (%) - after the desired sides' ratio achieved
+----- pdY   - vertical   padding (%) - after the desired sides' ratio achieved
+--- setting the 'g_jpegQuality' variable allows the user to choose output quality for JPEG files
 --- here is the outline of rotate_and_crop.tcl invocation lines
 --------------------------------------------------------------------------------
 ## Load orientation spec from Dualcam-Companion preferences file and decide on rotation and crop parameters
 ## Choose subdirectories with left/right images - depending on invocation scenario - provided by upper wrapper script through environment variable SUBDIR_NAME_FOR_CONVERTED_IMAGES
-### Specifically camera JPEG-s expected under L/ and R/, while results of supplied RAW-conversion script - under L/OUT/ and R/OUT/
-## 
-
+### For example camera JPEG-s expected under L/ and R/, while results of supplied RAW-conversion script - under L/OUT/ and R/OUT/
+## Execute the main procedure of "rotate_and_crop.tcl" script in subdirectory with left images
+rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"
+## Execute the main procedure of "rotate_and_crop.tcl" script in subdirectory with right images
+rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"
+--------------------------------------------------------------------------------
+--- arguments '-inp_dir $INDIR_L', '-inp_dir $INDIR_R' tell to run rotation and cropping in subdirectories chosen according to the caller wrapper directive (see above)
+TODO
 
 
 
