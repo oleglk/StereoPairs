@@ -6,21 +6,23 @@ set g_jpegQuality 99;  # 1..100 forces given JPEG quality; 0 leaves to default
 ## Local procedures
 ################################################################################
 
+# Determines width/height ratio for given DualCam arrangement
 proc get_recommended_sides_ratio {lrOrientSpec sidesRatio}  {
   upvar $sidesRatio ratio
   switch $lrOrientSpec {
     "bd-bd" { set ratio [expr 4.0 / 3.0];   return  1 };  # horizontal
     "br-bl" { set ratio 1.0;                return  1 };  # vertical
     "br-bd" { set ratio 1.0;                return  1 };  # anled
-    default { ok_err_msg "Invalid DualCam arrangement '$lrOrientSpec'"
-              return  0 }
+    default {
+      ok_err_msg "Invalid DualCam arrangement '$lrOrientSpec'";   return  0 }
   }
 }
 
 
 # Reads and applies relevant preferences from DualCam-Companion
-proc _set_cards_params_from_preferences {subDirFinal} {
+proc _set_cards_params_from_preferences {subDirFinal sidesRatio} {
   upvar $subDirFinal dirFinal
+  upvar $sidesRatio ratio
   array unset ::STS ;   # array for global settings ;  unset once per a project
   preferences_set_initial_values  ; # initializing the settings is mandatory
   # load default settings if possible
@@ -31,13 +33,16 @@ proc _set_cards_params_from_preferences {subDirFinal} {
     ok_info_msg "Preferences successfully loaded"
   }
   # perform initializations dependent on the saved or hardcoded preferences
+  if { 0 == [preferences_get_val -lr_cam_orient lrOrientSpec]} {
+    ok_err_msg "Missing preference for left- and right cameras' orientations"
+    set allApplied 0
+  }
   if { 0 == [preferences_get_val -final_img_dir dirFinal]} {
     ok_err_msg "Missing preference for final images subdirectory"
     set allApplied 0
   }
-  if { 0 == [preferences_get_val -left_img_subdir dirL]} {
-    ok_err_msg "Missing preference for left-side images subdirectory"
-    set allApplied 0
+  if { 0 == [get_recommended_sides_ratio $lrOrientSpec ratio] }  {
+    set allApplied 0;  # error already printed; this one is fatal
   }
   if { $allApplied == 1 }  {
     ok_info_msg "Relevant preferences successfully loaded and applied"
@@ -69,21 +74,28 @@ source [file join $SCRIPT_DIR__cards ".." "dir_file_mgr.tcl"]
 
 
 # (3) Load orientation spec from preferences and decide on rotation and crop parameters
-if { 0 == [_set_cards_params_from_preferences subDirFinal] }  {
+if { 0 == [_set_cards_params_from_preferences subDirFinal sidesRatio] }  {
   return  0;  # error already printed
 }
 
+# (4) Change directory to that of the final images
+TODO
 
-# (4) Execute the main procedure of "make_stereocards.tcl" script
+
+# (5) Execute the main procedure of "make_stereocards.tcl" script
 # (the make_stereocards.tcl script knows location of tool-path file in Dualcam-Companion software)
-if { 0 == [make_cards_in_current_dir "tif" 6.4 [expr 4.0/3.0]]}   {
-  return  0;  # error already printed
+set anyExtDone 0
+foreach ext {tif jpg} {
+  incr anyExtDone [make_cards_in_current_dir $ext 6.4 $sidesRatio]
 }
 
-# (5) Execute the main procedure of "rotate_and_crop.tcl" script in right images' subdirectory
-# (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirR -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
-  return  0;  # error already printed
+# (6) Return to work-area root directory
+TODO
+
+# (7) The end - indicate faiure if needed
+if { $anyExtDone <= 0 }   {;  # error already printed
+  ok_warn_msg "No stereocards created for neither image type"
+  return  0
 }
 ################################################################################
 
