@@ -271,7 +271,7 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
   puts "====== Begin rotations and croppings in '[pwd]'; extension: '$imgExt' ========"
   set imgPaths [glob -nocomplain "*.$imgExt"]
   if { 0 == [llength $imgPaths] }  {
-    ok_warn_msg "No images (*.$imgExt) found in '[pwd]'"
+    ok_info_msg "No images (*.$imgExt) found in '[pwd]'"
     return  0
   }
   foreach imgPath $imgPaths {
