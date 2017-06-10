@@ -56,7 +56,7 @@ grid rowconfigure .optsWnd.f 3 -weight 0
 set KEY_HDR "Option-name              "
 set VAL_HDR "Option-value                "; # for now - length by try and error
 set DESCR_HDR "Option-Description"
-grid [tk::text .optsWnd.f.fullHeader -width 71 -height 1 -wrap none -state normal] -column 0 -row 0 -columnspan 3 -sticky wens
+grid [tk::text .optsWnd.f.fullHeader -width 71 -height 1 -wrap none -state normal] -column 0 -row 0 -columnspan 4 -sticky wens
 .optsWnd.f.fullHeader  insert end "$KEY_HDR\t";  # insert text-only line prefix
 ttk::entry .optsWnd.f.fullHeader.valEntry  -width [string length $VAL_HDR]
 .optsWnd.f.fullHeader.valEntry  insert 0 $VAL_HDR
@@ -327,8 +327,15 @@ proc _GUI_append_one_option_record {key val descr formatSpec} {
 
 
 proc _GUI_reset_options {getIniCBorZero} {
-  global KEY_TO_VAL
+  global KEY_TO_VAL APP_TITLE
   $getIniCBorZero allUserIniOptions
+  set answer [tk_messageBox -type "yesno" -default "no" \
+                      -message "Are you sure you want to reset preferences?" \
+                      -icon question -title $APP_TITLE]
+  if { $answer == "no" }  {
+    ok_info_msg "Cancelled resetting preferences";    return
+  }
+
   foreach key [array names KEY_TO_VAL] {
     if { 1 == [ok_name_in_array $key allUserIniOptions] } {
       set KEY_TO_VAL($key) $allUserIniOptions($key)
@@ -336,6 +343,7 @@ proc _GUI_reset_options {getIniCBorZero} {
       ok_warn_msg "Cannot reset '$key' - no initial value obtained"
     }
   }
+  ok_info_msg "Performed resetting preferences"
   update idletasks
 }
 
