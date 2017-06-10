@@ -37,12 +37,12 @@ proc _get_rotcrop_params_for_cam_arrangement {lrArrangement xyRatio padX padY} {
 
 
 # Reads and applies relevant preferences from DualCam-Companion
-proc _set_rotcrop_params_from_preferences {angleL angleR xyRatio padX padY} {
-  upvar $angleL angL
-  upvar $angleR angR
+proc _set_rotcrop_params_from_preferences {subDirL subDirR \
+                                           angleL angleR xyRatio padX padY} {
+  upvar $subDirL dirL;  upvar $subDirR dirR
+  upvar $angleL angL;   upvar $angleR angR
   upvar $xyRatio xyRat
-  upvar $padX pdX
-  upvar $padY pdY
+  upvar $padX pdX;      upvar $padY pdY
   array unset ::STS ;   # array for global settings ;  unset once per a project
   preferences_set_initial_values  ; # initializing the settings is mandatory
   # load default settings if possible
@@ -55,6 +55,14 @@ proc _set_rotcrop_params_from_preferences {angleL angleR xyRatio padX padY} {
   # perform initializations dependent on the saved or hardcoded preferences
   if { 0 == [preferences_get_val -lr_cam_orient lrOrientSpec]} {
     ok_err_msg "Missing preference for left- and right cameras' orientations"
+    set allApplied 0
+  }
+  if { 0 == [preferences_get_val -left_img_subdir dirL]} {
+    ok_err_msg "Missing preference for left-side images subdirectory"
+    set allApplied 0
+  }
+  if { 0 == [preferences_get_val -right_img_subdir dirR]} {
+    ok_err_msg "Missing preference for right-side images subdirectory"
     set allApplied 0
   }
   if { 0 == [get_lr_postproc_rotation_angles $lrOrientSpec angL angR] } {
@@ -110,28 +118,20 @@ source [file join $SCRIPT_DIR__rotate_and_crop ".." "dir_file_mgr.tcl"]
 
 # (3) Load orientation spec from preferences and decide on rotation and crop parameters
 if { 0 == [_set_rotcrop_params_from_preferences \
-                                angleL angleR xyRatio padX padY] }  {
+                          subDirL subDirR angleL angleR xyRatio padX padY] }  {
   return  0;  # error already printed
 }
 
-# (4) Assign input directories depending on $SUBDIR_NAME_FOR_CONVERTED_IMAGES
-if { [info exists SUBDIR_NAME_FOR_CONVERTED_IMAGES] }  {
-  set INDIR_L [file join "L" $SUBDIR_NAME_FOR_CONVERTED_IMAGES]
-  set INDIR_R [file join "R" $SUBDIR_NAME_FOR_CONVERTED_IMAGES]
-} else {
-  set INDIR_L "L"
-  set INDIR_R "R"
-}
 
-# (5) Execute the main procedure of "rotate_and_crop.tcl" script in L/ subdirectory
+# (4) Execute the main procedure of "rotate_and_crop.tcl" script in left images' subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirL -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
   return  0;  # error already printed
 }
 
-# (6) Execute the main procedure of "rotate_and_crop.tcl" script in R/ subdirectory
+# (5) Execute the main procedure of "rotate_and_crop.tcl" script in right images' subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirR -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
   return  0;  # error already printed
 }
 ################################################################################

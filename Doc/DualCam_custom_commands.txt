@@ -69,14 +69,14 @@ Files involved:
 --- here is the outline of rotate_and_crop.tcl invocation lines
 --------------------------------------------------------------------------------
 ## Load orientation spec from Dualcam-Companion preferences file and decide on rotation and crop parameters
-## Choose subdirectories with left/right images - depending on invocation scenario - provided by upper wrapper script through environment variable SUBDIR_NAME_FOR_CONVERTED_IMAGES
+## Load names of subdirectories with left/right images from Dualcam-Companion preferences file
 ### For example camera JPEG-s expected under L/ and R/, while results of supplied RAW-conversion script - under L/OUT/ and R/OUT/
 ## Execute the main procedure of "rotate_and_crop.tcl" script in subdirectory with left images
-rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_L -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"
+rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirL -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"
 ## Execute the main procedure of "rotate_and_crop.tcl" script in subdirectory with right images
-rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $INDIR_R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"
+rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirR -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"
 --------------------------------------------------------------------------------
---- arguments '-inp_dir $INDIR_L', '-inp_dir $INDIR_R' tell to run rotation and cropping in subdirectories chosen according to the caller wrapper directive (see above)
+--- arguments '-inp_dir $subDirL', '-inp_dir $subDirR' tell to run rotation and cropping in subdirectories chosen according to the Preferences file (see above)
 --- arguments '-rot_angle $angleL', '-rot_angle $angleR' specify rotation angles (clockwise) chosen automatically according to camera arrangement
 --- arguments '-pad_x $padX', '-pad_y $padY', '-crop_ratio $xyRatio' tell geometrical parameters of the cropped area; configurable by the user through 'g_cropPreferences' dictionary at the top of the script
 --- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16-bit-per-channel TIFF-s; the argument is irrelevant for JPEG files
