@@ -229,9 +229,9 @@ Files involved:
 -- see "Rotation and cropping" section
 * StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_rotate_and_crop.tcl
 -- a small TCL script that runs RAW conversion followed by rotate-and-crop
---- uses TCL global variable SUBDIR_NAME_FOR_CONVERTED_IMAGES to tell the rotation-and-cropping script that RAW conversion puts its output images under subdirectories OUT/ (of left- and right images' directories)
 --- runs the RAW conversion by sourcing "run__raw_to_hdr_on_l_r.tcl" script
 --- if RAW conversion script reported success (returned 1),  runs rotation and crop by sourcing "run__rotate_and_crop_on_l_r.tcl" script
+---- the rotation-and-cropping script relies on Preferences (-left_img_subdir, -right_img_subdir) to learn where RAW conversion puts its output images
 * StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_raw_to_hdr_rotate_and_crop.bat
 -- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
 
