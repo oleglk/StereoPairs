@@ -210,6 +210,8 @@ proc GUI_UsrCmd1 {}  {
     _UpdateGuiEndAction;  return  0;  # error already reported
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
+  if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
     set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-1 output:\n==========\n$truncText\n==========\n"
@@ -231,6 +233,8 @@ proc GUI_UsrCmd2 {}  {
     _UpdateGuiEndAction;  return  0;  # error already reported
   }
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
+  if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
   if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
     set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-2 output:\n==========\n$truncText\n==========\n"
@@ -582,4 +586,19 @@ proc _GUI_TryStartAction {}  {
     #~ _UpdateGuiEndAction;  return  0
   #~ }
   return  1
+}
+
+
+proc _GUI_prepend_tcl_interpreter_if_needed_or_complain {progFilePath}  {
+  if { ".tcl" != [file extension $progFilePath] }  {
+    return  $progFilePath;  # not a TCL program
+  }
+  if { 0 == [set exePath [info nameofexecutable]] }  {
+    set msg "Cannot detect TCL interpreter to run '$progFilePath'"
+    ok_err_msg $msg;    tk_messageBox -message "-E- $msg" -title $APP_TITLE
+    return ""
+  }
+  set cmdLine [format {"%s" "%s"} $exePath $progFilePath]
+  ok_trace_msg "Formed TCL-based command line: $cmdLine'"
+  return  $cmdLine
 }
