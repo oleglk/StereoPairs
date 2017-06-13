@@ -10,9 +10,9 @@ set g_jpegQuality 99;  # 1..100 forces given JPEG quality; 0 leaves to default
 proc get_recommended_sides_ratio {lrOrientSpec sidesRatio}  {
   upvar $sidesRatio ratio
   switch $lrOrientSpec {
-    "bd-bd" { set ratio [expr 4.0 / 3.0];   return  1 };  # horizontal
-    "br-bl" { set ratio 1.0;                return  1 };  # vertical
-    "br-bd" { set ratio 1.0;                return  1 };  # anled
+    "bd-bd" { set ratio [expr 4.0 / 3.0];   return  1 }
+    "br-bl" { set ratio 1.0;                return  1 }
+    "br-bd" { set ratio 1.0;                return  1 }
     default {
       ok_err_msg "Invalid DualCam arrangement '$lrOrientSpec'";   return  0 }
   }
@@ -79,7 +79,13 @@ if { 0 == [_set_cards_params_from_preferences subDirFinal sidesRatio] }  {
 }
 
 # (4) Change directory to that of the final images
-TODO
+set _oldWD [pwd];  # save the old cwd, cd to 'subDirFinal', restore before return
+set _tclResult [catch { set _res [cd $subDirFinal] } _execResult]
+if { $_tclResult != 0 } {
+  ok_err_msg "Failed changing work directory to '$subDirFinal': $_execResult!"
+  return  0
+}
+ok_info_msg "Success changing work directory to '$subDirFinal'"
 
 
 # (5) Execute the main procedure of "make_stereocards.tcl" script
@@ -90,7 +96,12 @@ foreach ext {tif jpg} {
 }
 
 # (6) Return to work-area root directory
-TODO
+set _tclResult [catch { set _res [cd $_oldWD] } _execResult]
+if { $_tclResult != 0 } {
+  ok_err_msg "Failed restoring work directory to '$_oldWD': $_execResult!"
+  return  0
+}
+
 
 # (7) The end - indicate faiure if needed
 if { $anyExtDone <= 0 }   {;  # error already printed
