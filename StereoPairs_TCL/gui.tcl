@@ -212,7 +212,7 @@ proc GUI_UsrCmd1 {}  {
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
   if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
-  if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
+  if { 1 == [ok_exec_under_catch [list exec {*}$cmdLine] resultText] }  {
     set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-1 output:\n==========\n$truncText\n==========\n"
   }
@@ -235,7 +235,7 @@ proc GUI_UsrCmd2 {}  {
   set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
   set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
   if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
-  if { 1 == [ok_exec_under_catch [list exec $cmdLine] resultText] }  {
+  if { 1 == [ok_exec_under_catch [list exec {*}$cmdLine] resultText] }  {
     set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-2 output:\n==========\n$truncText\n==========\n"
   }

@@ -14,7 +14,12 @@ In brief:
 -- if the commnad doesn't have separate window, all or part of the command's text output is copied into the log box of DualCam-Companion GUI when the command's execution is finished or aborted
 
 Command lines for the two custom commands are configured under "-custom_cmd_1" and "-custom_cmd_2" switches in the Preferences window.
-The safest practice is to enter only full path to an executable file in the Preferences. The executable could be either a real executable binary (.exe on Windows) or a shell script (batch file on Windows). In case this executable needs any command-line arguments, wrap it in a shell script (DOS batch on Windows); handle the argumennts inside this script.
+The safest practice is to enter only full path to a program file in the Preferences. The program file could be one of the following:
+(a) a real executable binary (.exe on Windows)
+(b) a shell script (batch file on Windows)
+(c) TCL script
+In case the executable in (a) or (b) needs any command-line arguments, wrap it in a shell script (DOS batch on Windows); handle the argumennts inside this script.
+If option (c) is used, the provided TCL script will be executed by a new instance of the same TCL interpeter that runs DualCam-Companion.
 The path stored in the Preferences should follow TCL syntax convention where slash (/) is used as a directory separator.
 
 Building and configuring proper wrappers for custom commands.
