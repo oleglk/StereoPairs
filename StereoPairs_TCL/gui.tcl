@@ -589,6 +589,10 @@ proc _GUI_TryStartAction {}  {
 }
 
 
+# If 'progFilePath' is TCL program, performs two adjustment:
+# (a) Inserts path of the TCCL interpreter in use as the 1st keyword
+# (b) If the path isn't absolute, tries to complete it
+#         as being under the directory of the current script.
 proc _GUI_prepend_tcl_interpreter_if_needed_or_complain {progFilePath}  {
   if { ".tcl" != [file extension $progFilePath] }  {
     return  $progFilePath;  # not a TCL program
@@ -598,7 +602,17 @@ proc _GUI_prepend_tcl_interpreter_if_needed_or_complain {progFilePath}  {
     ok_err_msg $msg;    tk_messageBox -message "-E- $msg" -title $APP_TITLE
     return ""
   }
-  set cmdLine [format {"%s" "%s"} $exePath $progFilePath]
+  set thisScriptDir [file normalize [file dirname [info script]]]
+  set fullPath [file join $thisScriptDir $progFilePath]
+  if { ([ok_is_underlying_filepath $progFilePath $thisScriptDir]) && \
+       ([file exists $fullPath]) }  {
+    ok_trace_msg "Custom TCL program file '$fullPath' located inside the distribution"
+    set ultPath $fullPath
+  } else {
+    ok_trace_msg "Custom TCL program file '$progFilePath' located outside the distribution"
+    set ultPath $progFilePath
+  }
+  set cmdLine [format {"%s" "%s"} $exePath $ultPath]
   ok_trace_msg "Formed TCL-based command line: $cmdLine'"
   return  $cmdLine
 }

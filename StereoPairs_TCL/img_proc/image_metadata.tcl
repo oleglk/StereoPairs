@@ -18,7 +18,7 @@ namespace eval ::img_proc:: {
       get_image_attributes_by_dcraw           \
 }
 
-set SCRIPT_DIR [file dirname [info script]]
+# DO NOT for utils:  set SCRIPT_DIR [file dirname [info script]]
 package require ok_utils;   namespace import -force ::ok_utils::*
 
 set UTIL_DIR [file dirname [info script]]
