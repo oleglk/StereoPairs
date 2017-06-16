@@ -209,7 +209,7 @@ proc GUI_UsrCmd1 {}  {
   if { $errCnt > 0 } {
     _UpdateGuiEndAction;  return  0;  # error already reported
   }
-  set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  set cmdLine [join [lrange [ok_split_string_by_whitespace $paramStr] 1 end] " "]
   set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
   if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
   if { 1 == [ok_exec_under_catch [list exec {*}$cmdLine] resultText] }  {
@@ -232,7 +232,7 @@ proc GUI_UsrCmd2 {}  {
   if { $errCnt > 0 } {
     _UpdateGuiEndAction;  return  0;  # error already reported
   }
-  set cmdLine [lindex [ok_split_string_by_whitespace $paramStr] 1]; # only val
+  set cmdLine [join [lrange [ok_split_string_by_whitespace $paramStr] 1 end] " "]
   set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
   if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
   if { 1 == [ok_exec_under_catch [list exec {*}$cmdLine] resultText] }  {
@@ -595,6 +595,7 @@ proc _GUI_TryStartAction {}  {
 #         as being under the directory of the current script.
 proc _GUI_prepend_tcl_interpreter_if_needed_or_complain {progFilePath}  {
   if { ".tcl" != [file extension $progFilePath] }  {
+    ok_trace_msg "Command line '$progFilePath' is not a TCL program"
     return  $progFilePath;  # not a TCL program
   }
   if { 0 == [set exePath [info nameofexecutable]] }  {
