@@ -602,17 +602,8 @@ proc _GUI_prepend_tcl_interpreter_if_needed_or_complain {progFilePath}  {
     ok_err_msg $msg;    tk_messageBox -message "-E- $msg" -title $APP_TITLE
     return ""
   }
-  set thisScriptDir [file normalize [file dirname [info script]]]
-  set fullPath [file join $thisScriptDir $progFilePath]
-  if { ([ok_is_underlying_filepath $progFilePath $thisScriptDir]) && \
-       ([file exists $fullPath]) }  {
-    ok_trace_msg "Custom TCL program file '$fullPath' located inside the distribution"
-    set ultPath $fullPath
-  } else {
-    ok_trace_msg "Custom TCL program file '$progFilePath' located outside the distribution"
-    set ultPath $progFilePath
-  }
-  set cmdLine [format {"%s" "%s"} $exePath $ultPath]
+  set fullPath [file join $::SCRIPT_DIR $progFilePath];  # make abs path
+  set cmdLine [format {"%s" "%s"} $exePath $fullPath]
   ok_trace_msg "Formed TCL-based command line: $cmdLine'"
   return  $cmdLine
 }
