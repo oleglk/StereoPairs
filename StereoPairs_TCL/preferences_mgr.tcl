@@ -89,12 +89,12 @@ proc preferences_get_initial_values {arrayName}  {
   set _prefs(-workarea_root_dir)  "." ; # results in $_prefs(-INITIAL_WORK_DIR)
   # TODO
 
-  # user command #1
-  set _prefs(-custom_cmd_1)  "" ; # custom user command #1 - full cmd line
+  # user command #1 - full cmd line and button text
+  set _prefs(-custom_cmd_1)  [file join "goodies" "trial_tcl.tcl"]
   set _prefs(-custom_btn_1)  "Cust1" ; # custom user command #1 - button text
 
-  # user command #2
-  set _prefs(-custom_cmd_2)  "" ; # custom user command #2 - full cmd line
+  # user command #2 - full cmd line and button text
+  set _prefs(-custom_cmd_2)  [file join "goodies" "trial_tcl.tcl"]
   set _prefs(-custom_btn_2)  "Cust2" ; # custom user command #2 - button text
   
 #  set _prefs(-)  ""

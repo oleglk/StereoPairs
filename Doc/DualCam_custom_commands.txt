@@ -1,7 +1,7 @@
 A stereo-photo processing workflow of an advanced user may involve steps that the author of DualCam-Companion application never thought about. Such a possibility is addressed by providing custom-command buttons.
 
 DualCam-Companion application enables the user to configure up to two arbitrary commands to be invoked through its GUI buttons. These buttons are initially named "Cust1" and "Cust2", but could be customized through Preferences.
-The commands should be those from the user computer's operating system, not TCL procedures. E.g. whatever you can run from the computer's command prompt.
+The commands should be either user computer's operating system executables of TCL script files, not TCL procedures. E.g. whatever you can run from the computer's command prompt.
 
 The intention is for custom command to run in a separate window, so that its possible failure cannot hurt the DualCam-Companion from which it is launched.
 
@@ -21,6 +21,8 @@ The safest practice is to enter only full path to a program file in the Preferen
 In case the executable in (a) or (b) needs any command-line arguments, wrap it in a shell script (DOS batch on Windows); handle the argumennts inside this script.
 If option (c) is used, the provided TCL script will be executed by a new instance of the same TCL interpeter that runs DualCam-Companion.
 The path stored in the Preferences should follow TCL syntax convention where slash (/) is used as a directory separator.
+Options (a) and (b) require full absolute paths. Option (c) allows to use relative path for TCL script located anywhere under "StereoPairs_TCL" directory of the DualCam-Companion installation.
+
 
 Building and configuring proper wrappers for custom commands.
 ------------------------------------------------------------
@@ -52,7 +54,10 @@ Rotation is unambiguously defined by the cameras' arrangement, and there is no n
 Cropping decision is mostly up to the user, though cameras' arrangement do dictate certain limitations. For instance, if the cameras stay perpendicular to each other, the intersection is a quadrant; StereoPhotoMaker won't cut it by itself, since it requires that the two images have equal orientation.
 
 The supplied rotation utility is TCL-based; there is a file with core functionality and wrappers that adapt it for Dualcam-Companion.
-In order to run rotate-and-crop utility from Dualcam-Companion GUI, open Preferences window and type full path to 'StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_rotate_and_crop.bat' in the entry for one of the custom commands.
+In order to run rotate-and-crop utility from Dualcam-Companion GUI, open Preferences window and type one of the following in the entry for one of the custom commands:
+- full path to 'StereoPairs/StereoPairs_TCL/goodies/wrap__run_tcl_rotate_and_crop.bat'
+- just type  goodies/run__rotate_and_crop_on_l_r.tcl .
+
 
 Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\rotate_and_crop.tcl
@@ -91,11 +96,12 @@ rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $
 --- argument '-tools_paths_file [dualcam_find_toolpaths_file 0]' tells to take external tools paths from the same file that's provided for the main DualCam-Companion application
 * StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_rotate_and_crop.bat
 -- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
+-- actually this batch file is optional - one can directly configure "goodies/run__rotate_and_crop_on_l_r.tcl" in the Preferences
 -- invokes new instance of TCL interpreter and tells it to execute run__rotate_and_crop_on_l_r.tcl
 --- one can use any TCL interpreter, not necessarilly the one that runs Dualcam-Companion GUI
 -- assumes that run_tcl_rotate_and_crop_on_l_r.bat resides in the same directory as wrap__run_tcl_rotate_and_crop.bat itself
 --- includes batch utility "Assign_SCRIPT_DIR" to detect the directory of itself
--- doesn't contain any logic of rottion and cropping
+-- doesn't contain any logic of rotation and cropping
 ---- the essense of wrap__run_tcl_rotate_and_crop.bat is in the following line: -----
   "C:\Program Files (x86)\etcl\bin\etcl.exe" "%SCRIPT_DIR%\run__rotate_and_crop_on_l_r.tcl"
   --------------------------------------------------------------------------------
@@ -158,7 +164,10 @@ Files involved:
 RAW conversion by TCL script
 Involves invocation of a new instance of TCL interpreter while providing it with the script to execute.
 In order to run TCL based raw-conversion utility from Dualcam-Companion GUI:
-- open Preferences window and type full path to 'StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_raw_to_hdr.bat' in the entry for one of the custom commands
+- open Preferences window and type one of the following in the entry for one of the custom commands:
+- full path to 'StereoPairs/StereoPairs_TCL/goodies/wrap__run_tcl_raw_to_hdr.bat'
+- just type  goodies/run__raw_to_hdr_on_l_r.tcl .
+
 - add path to the directory with "enfuse" in '<YOUR-HOME-FOLDER>\dualcam_ext_tool_dirs.csv' - open Preferences window, press "Tools..." and use "Enfuse folder" button to choose the directory path.
 
 Files involved:
@@ -199,6 +208,7 @@ raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW 
 ------ the syntax is simply '-tools_paths_file FILEPATH'; the prearranged example uses a function from DualCam-Companion to locate the file
 * StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_raw_to_hdr.bat
 -- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
+-- actually this batch file is optional - one can directly configure "goodies/run__raw_to_hdr_on_l_r.tcl" in the Preferences
 -- invokes new instance of TCL interpreter and tells it to execute run__raw_to_hdr_on_l_r.tcl
 --- one can use any TCL interpreter, not necessarilly the one that runs Dualcam-Companion GUI
 -- assumes that run_tcl_raw_to_hdr_on_l_r.bat resides in the same directory as wrap__run_tcl_raw_to_hdr.bat itself
@@ -225,7 +235,7 @@ TODO
 RAW conversion followed by rotation and cropping
 
 A logical extension of having utilities for the two operations is to build a combined action that runs both.
-In order to invoke it from Dualcam-Companion GUI, set one of custom commands in preferences window to the TCL-style file-path of wrap__run_tcl_raw_to_hdr_rotate_and_crop.bat .
+In order to invoke it from Dualcam-Companion GUI, set one of custom commands in preferences window to goodies/run__raw_to_hdr_rotate_and_crop.tcl .
 
 Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\run__raw_to_hdr_on_l_r.tcl
@@ -239,6 +249,7 @@ Files involved:
 ---- the rotation-and-cropping script relies on Preferences (-left_img_subdir, -right_img_subdir) to learn where RAW conversion puts its output images
 * StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_raw_to_hdr_rotate_and_crop.bat
 -- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
+-- actually this batch file is optional - one can directly configure "goodies/run__raw_to_hdr_rotate_and_crop.tcl" in the Preferences
 
 
 TODO
