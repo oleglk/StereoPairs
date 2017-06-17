@@ -261,9 +261,28 @@ Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\make_stereocards.tcl
 -- the core stereocard generation utility
 -- needs to be run from the directory where input stereo images reside
--- invocation:  make_cards_in_current_dir <ext> <pairWidthCm> <origWhRatio>
+-- invocation:  make_cards_in_current_dir <ext> <pairWidthCm> <origWhRatio>  
+--- the parameters are file extension, width of one stereopair in cm, and width/height ratio of the input images
+---- having sides' ratio as parameter implies all images in one session comply with it (which is a good practice anyway)
+----- though small variations won't do any harm
+-- the pages' image files are created in Cards/ subdirectory of the current folder
+-- the script relies on ImageMagick; takes its location from the tools' CSV file compatible with that of DualCam-Companion
+--- if the tools' file from DualCam-Companion exists, reads ImageMagick path from it, otherwise - attempts "ext_tool_dirs.csv" from one directory above that of "make_stereocards.tcl" itself
+* StereoPairs\StereoPairs_TCL\goodies\run__make_stereocards.tcl
+-- a small TCL script that adapts the rather generic make_stereocards.tcl to the context of Dualcam-Companion
+-- loads the code from make_stereocards.tcl script and runs it with prearranged arguments
+--- here is the outline of make_stereocards.tcl invocation lines
+--------------------------------------------------------------------------------
+## Load orientation spec from preferences and decide on sides ratio
+## Load location of final images from preferences - they are inputs for stereocards
+## Change directory to that of the final images
+# Execute the main procedure of "make_stereocards.tcl" script twice - for TIFF and JPEG files
+# (a typical workflow produces one of these image types, so one of the two runs will do the job)
+foreach ext {tif jpg} { make_cards_in_current_dir $ext 6.4 $sidesRatio }
+-- width is preset to 6.4 cm
+## Return to the directory where the script started - which is the  work-area root directory
 
-TODO
+
 
 ========================================================================
 A background on invoking DOS commands

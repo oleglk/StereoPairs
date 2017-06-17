@@ -73,7 +73,8 @@ source [file join $SCRIPT_DIR__cards ".." "preferences_mgr.tcl"]
 source [file join $SCRIPT_DIR__cards ".." "dir_file_mgr.tcl"]
 
 
-# (3) Load orientation spec from preferences and decide on rotation and crop parameters
+# (3) Load orientation spec and location of final images from preferences
+#     and decide on sides ratio
 if { 0 == [_set_cards_params_from_preferences subDirFinal sidesRatio] }  {
   return  0;  # error already printed
 }
