@@ -375,3 +375,64 @@ proc ::img_proc::get_image_attributes_by_dcraw {fullPath imgInfoArr} {
   return  $readFieldsCnt
 }
 #### End of DCRAW-based section. Adapted from UWIC "read_image_metadata.tcl" ###
+
+
+
+
+# Puts into 'imgInfoArr' ISO, etc. of image 'fullPath'.
+# On success returns number of data fields being read, 0 on error.
+proc ::imageproc::get_image_attributes_by_exiv2 {fullPath imgInfoArr} {
+    upvar $imgInfoArr imgInfo
+    if { ![file exists $fullPath] || ![file isfile $fullPath] } {
+	ok_err_msg "Invalid image path $fullPath"
+	return  0
+    }
+    set readFieldsCnt 0
+    # command to mimic: eval [list $::ext_tools::EXIV2 pr PICT2057.MRW]
+    set tclExecResult [catch {
+	# Open a pipe to the program, then get the reply and process it
+	# set io [open "|e:/downloads/EXIV/exiv2.exe pr $fullPath" r]
+	set io [eval [list open [format {|{%s} pr %s} \
+				     $ext_tools::EXIV2 $fullPath] r]]
+	# while { 0 == [eof $io] } { set len [gets $io line]; puts $line }
+	while { 0 == [eof $io] } {
+	    set len [gets $io line]
+	    #puts $line
+	    if { 0 != [process_exiv2_exif_line $line imgInfo] } {
+		incr readFieldsCnt
+	    }
+	}
+    } execResult]
+    if { $tclExecResult != 0 } {
+	ok_err_msg "$execResult!";	return  0
+    }
+    set tclExecResult [catch {
+	close $io;  # generates error; separate "catch" to suppress it
+    } execResult]
+    if { $tclExecResult != 0 } {	ok_warn_msg "$execResult"    }
+    if { $readFieldsCnt == 0 } {
+	ok_err_msg "Cannot understand metadata of '$fullPath'"
+	return  0
+    }
+    ok_trace_msg "EXIF data of '$fullPath': ISO=$imgInfo($imageproc::IInfoISO)"
+    return  $readFieldsCnt
+}
+
+# Processes the following exif line(s):
+# ISO speed       : <val>
+# Focal length    : <val>
+# Returns 1 if line was recognized, otherwise 0
+proc ::imageproc::process_exiv2_exif_line {line imgInfoArr} {
+    upvar $imgInfoArr imgInfo
+    set lList [ok_discard_empty_list_elements [split $line " \t:"]]
+    if { [llength $lList] == 0 } {	return  0    }
+    if { "ISO" == [lindex $lList 0] } {
+	set imgInfo($imageproc::IInfoISO) [lindex $lList end]
+	return  1
+    }
+    if { "Focal" == [lindex $lList 0] } {
+	set imgInfo($imageproc::IInfoFocalLength) [lindex $lList 2]
+	return  1
+    }
+    return  0
+}
