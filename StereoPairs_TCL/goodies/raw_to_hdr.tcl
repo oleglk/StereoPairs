@@ -22,6 +22,7 @@ set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3 -6 -g 2.4 12.9";  # EXCLUDING WB
 set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3";  # EXCLUDING WB
 # set g_convertSaveParams "-depth 8 -compress LZW"
+# dcraw params change for preview mode: "-h" (half-size) instead of "-6" (16bit)
 
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
@@ -44,6 +45,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
   set ::STS(rotAngle)         -1 ;  # -1 == rotate according to EXIF;  0|90|180|270 - rotation angle clockwise
   set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
+  set ::STS(doPreview)        1  ;  # 1 == smaller and faster;  0 == full-size, very slow
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
   set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
@@ -112,6 +114,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -rotate {val "1 means rotate according to EXIF (default);  0|90|180|270 - rotation angle clockwise"} \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
+  -do_preview  {val "1 means create smaller-size previews; 0 means create full-size images"} \
   -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
   -wb_out_file {val	"name of the CSV file (under the working directory) for white-balance coefficients that were used for RAW images"} \
  ]
@@ -122,7 +125,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   array unset defCml
   ok_set_cmd_line_params defCml cmlD {                                  \
     {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"} \
-    {-wb_out_file "wb_out.csv"} }
+    {-do_preview "0"} {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -241,6 +244,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
         ok_err_msg "Parameter telling whether to perform blending (fusing) step (-do_blend); should be 0 or 1"
         incr errCnt 1
       }
+    }
+  } 
+  if { [info exists cml(-do_preview)] }  {
+    if { ($cml(-do_preview) == 0) || ($cml(-do_preview) == 1) }  {
+      set ::STS(doPreview) $cml(-do_preview)
+    } else {
+      ok_err_msg "Parameter telling whether to create only smaller preview images (-do_preview); should be 0 or 1"
+      incr errCnt 1
     }
   } 
   if { [info exists cml(-wb_inp_file)] }  {
