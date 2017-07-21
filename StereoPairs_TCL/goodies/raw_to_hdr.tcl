@@ -23,6 +23,8 @@ set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3";  # EXCLUDING WB
 # set g_convertSaveParams "-depth 8 -compress LZW"
 # dcraw params change for preview mode: "-h" (half-size) instead of "-6" (16bit)
+set g_dcrawParamsMain_preview "-v -c -H 2 -o 1 -q 3 -h -g 2.4 12.9";  # EXCLUDING WB
+set g_convertSaveParams_preview "-depth 8 -compress LZW"
 
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
@@ -175,9 +177,21 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
   } else {
     set ::STS(toolsPathsFile) $cml(-tools_paths_file)
   }
+  if { [info exists cml(-do_preview)] }  {
+    if { ($cml(-do_preview) == 0) || ($cml(-do_preview) == 1) }  {
+      set ::STS(doPreview) $cml(-do_preview)
+    } else {
+      ok_err_msg "Parameter telling whether to create only smaller preview images (-do_preview); should be 0 or 1"
+      incr errCnt 1
+    }
+  } 
   if { [info exists cml(-final_depth)] }  {
     if { ($cml(-final_depth) == 8) || ($cml(-final_depth) == 16) }  {
       set ::STS(finalDepth) $cml(-final_depth)
+      if { ($::STS(doPreview) == 1) && ($::STS(finalDepth) == 16) }  {
+        ok_warn_msg "Final images color depth overriden to 8-bit for preview mode"
+        set ::STS(finalDepth) 8
+      }
     } else {
       ok_err_msg "Invalid value specified for final images color depth (-final_depth); should be 8 or 16"
       incr errCnt 1
@@ -244,14 +258,6 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
         ok_err_msg "Parameter telling whether to perform blending (fusing) step (-do_blend); should be 0 or 1"
         incr errCnt 1
       }
-    }
-  } 
-  if { [info exists cml(-do_preview)] }  {
-    if { ($cml(-do_preview) == 0) || ($cml(-do_preview) == 1) }  {
-      set ::STS(doPreview) $cml(-do_preview)
-    } else {
-      ok_err_msg "Parameter telling whether to create only smaller preview images (-do_preview); should be 0 or 1"
-      incr errCnt 1
     }
   } 
   if { [info exists cml(-wb_inp_file)] }  {
@@ -467,17 +473,24 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     270     { set rotSwitch "-t 5"  }
     default { set rotSwitch ""      }
   }
-  ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
+  if { $::STS(doPreview) == 0 }  {
+    set _dcrawParamsMain $::g_dcrawParamsMain;        set descr "RAW-conversion"
+    set _convertSaveParams $::g_convertSaveParams
+  } else {
+    set _dcrawParamsMain $::g_dcrawParamsMain_preview;  set descr "RAW-preview"
+    set _convertSaveParams $::g_convertSaveParams_preview    
+  }
+  ok_info_msg "Start $descr '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
-  #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
-  set cmdListRawConv [concat $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd \
+  #eval exec $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::_convertSaveParams $outPath
+  set cmdListRawConv [concat $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd \
                           $colorSwitches $rotSwitch  $rawPath  \
-                          | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath]
+                          | $::_IMCONVERT ppm:- $_convertSaveParams $outPath]
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
     return  0; # error already printed
   }
 
-	ok_info_msg "Done RAW conversion of '$rawPath' into '$outPath'"
+	ok_info_msg "Done $descr of '$rawPath' into '$outPath'"
   return  1
 }
 
