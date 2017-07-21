@@ -152,6 +152,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "========= Example 3 - use camera-WB from first directory on images in the second one: ======="
     ok_info_msg " raw_to_hdr_main \"-final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv\""
     ok_info_msg "================================================================"
+    ok_info_msg "========= Example 4 - small size preview with camera-WB; tool paths file in home directory: ======="
+    ok_info_msg " raw_to_hdr_main \"-do_preview 1 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ~/dualcam_ext_tool_dirs.csv\""
+    ok_info_msg "================================================================"
     return  0
   }
   if { 0 == [_raw_to_hdr_parse_cmdline cml] }  {
