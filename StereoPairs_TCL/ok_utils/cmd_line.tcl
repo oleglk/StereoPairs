@@ -99,50 +99,53 @@ proc ::ok_utils::ok_new_cmd_line_descr {cmlDescrArrName argDescrList} {
 # set dsL {-a {"" Ahelp} -b {val Bhelp} -cd {list Chelp}}; array unset cmlD; array unset cml; array set cmlD $dsL;  ok_set_cmd_line_params cml cmlD {{-cd {d}}}
 proc ::ok_utils::ok_set_cmd_line_params {cmlArrName cmlDescrArrName \
 					     paramsList} {
-    upvar $cmlArrName      cml
-    upvar $cmlDescrArrName cmlDescr
-    # copy values using spec; should be "-name <val>|list"
-    foreach paramSet $paramsList {
-	set paramName [lindex $paramSet 0]
-	if { [llength $paramSet] == 2 } {;	    # parameter with value(s)
-	    set paramVal [lindex $paramSet 1]
-	} elseif { [llength $paramSet] == 1 } {;    # parameter without value
-	    set paramVal ""
-	} else {
-	    ok_err_msg "Command line error at '$paramName': should be \"-name <val>|list\""
-	    return  0
-	}
-	# puts ">>> paramName='$paramName';  paramVal='$paramVal'"
-	if { "-" != [string index $paramName 0] } {
-	    ok_err_msg "Command line error at '$paramName': missing leading -"
-	    return  0
-	}
-	if { ![info exists cmlDescr($paramName)] } {
-	    ok_err_msg "Command line error at '$paramName': unknown name"
-	    return  0
-	}
-	set valSpec [lindex $cmlDescr($paramName) 0]
-	# puts ">>> valSpec='$valSpec'"
-	set valCnt [llength $paramVal]
-	if { $valSpec == "val" } {
-	    if { $valCnt != 1 } {
-		ok_err_msg "Command line error at '$paramName': one value expected, got '$paramVal'"
-		return  0
-	    }
-	    set cml($paramName) $paramVal
-	} elseif { $valSpec == "list" } {
-	    # force parameter value to be a list
-	    if { $valCnt == 1 } {
-		set cml($paramName) [list $paramVal]
-	    } elseif { $valCnt > 1 } {
-		set cml($paramName) $paramVal
-	    } else {
-		set cml($paramName) [list]
-	    }
-	} else {;	# assume the spec is ""
-	    set cml($paramName) ""
-	}
+  upvar $cmlArrName      cml
+  upvar $cmlDescrArrName cmlDescr
+  # copy values using spec; should be "-name <val>|list"
+  foreach paramSet $paramsList {
+    set paramName [lindex $paramSet 0]
+    if { [llength $paramSet] == 2 } {;	    # parameter with value(s)
+        set paramVal [lindex $paramSet 1]
+    } elseif { [llength $paramSet] == 1 } {;    # parameter without value
+        set paramVal ""
+    } else {
+        ok_err_msg "Command line error at '$paramName': should be \"-name <val>|list\""
+        return  0
     }
+    # puts ">>> paramName='$paramName';  paramVal='$paramVal'"
+    if { "-" != [string index $paramName 0] } {
+        ok_err_msg "Command line error at '$paramName': missing leading -"
+        return  0
+    }
+    if { ![info exists cmlDescr($paramName)] } {
+        ok_err_msg "Command line error at '$paramName': unknown name"
+        return  0
+    }
+    set valSpec [lindex $cmlDescr($paramName) 0]
+    # puts ">>> valSpec='$valSpec'"gives empty value for  
+    set valCnt [llength $paramVal]
+    if { $valSpec == "val" } {
+      if { $valCnt > 1 } {
+        ok_err_msg "Command line error at '$paramName': one value expected, got '$paramVal'"
+        return  0
+      } elseif { $valCnt == 0 } {
+        ok_info_msg "Command line carries empty value for '$paramName'"; # it's OK
+      } else { ;  # $valCnt == 1
+        set cml($paramName) $paramVal
+      }
+    } elseif { $valSpec == "list" } {
+        # force parameter value to be a list
+        if { $valCnt == 1 } {
+      set cml($paramName) [list $paramVal]
+        } elseif { $valCnt > 1 } {
+      set cml($paramName) $paramVal
+        } else {
+      set cml($paramName) [list]
+        }
+    } else {;	# assume the spec is ""
+        set cml($paramName) ""
+    }
+  }
     return  1
 }
 
