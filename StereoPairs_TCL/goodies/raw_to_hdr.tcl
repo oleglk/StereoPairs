@@ -421,6 +421,10 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].TIF"]
+  #~ if { 1 == [file exists $outPath] }  {
+    #~ ok_info_msg "Image '$outPath' pre-existed; skipped by _convert_one_raw"
+    #~ return 1
+  #~ }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
@@ -474,6 +478,10 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "$rawName.TIF"]
+  #~ if { 1 == [file exists $outPath] }  {
+    #~ ok_info_msg "Image '$outPath' pre-existed; skipped by _fuse_one_hdr"
+    #~ return 1
+  #~ }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
