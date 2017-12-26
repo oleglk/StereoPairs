@@ -46,6 +46,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
+  set ::STS(doSkipExisting)   0  ;  # whether to keep pre-existent outputs untouched
   set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
   set ::STS(wbOutFile)        "" ;  # output file with per-image white balance coefficients
 
@@ -112,6 +113,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -rotate {val "1 means rotate according to EXIF (default);  0|90|180|270 - rotation angle clockwise"} \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
+  -do_skip_existing {val "1 means keep pre-existent outputs untouched; 0 means perform the conversion and override"} \
   -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
   -wb_out_file {val	"name of the CSV file (under the working directory) for white-balance coefficients that were used for RAW images"} \
  ]
@@ -122,7 +124,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   array unset defCml
   ok_set_cmd_line_params defCml cmlD {                                  \
     {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"} \
-    {-wb_out_file "wb_out.csv"} }
+     {-do_skip_existing "0"} {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -243,6 +245,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
       }
     }
   } 
+  if { [info exists cml(-do_skip_existing)] }  {
+    if { ($cml(-do_skip_existing) == 0) || ($cml(-do_skip_existing) == 1) }  {
+        set ::STS(doSkipExisting) $cml(-do_skip_existing)
+      } else {
+        ok_err_msg "Parameter telling whether to keep pre-existent outputs untouched (-do_skip_existing); should be 0 or 1"
+        incr errCnt 1
+      }
+  }
   if { [info exists cml(-wb_inp_file)] }  {
     set iwbPath [file join [pwd] $cml(-wb_inp_file)]
     if { 0 == [ok_filepath_is_readable $iwbPath] }  {
@@ -421,10 +431,10 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].TIF"]
-  #~ if { 1 == [file exists $outPath] }  {
-    #~ ok_info_msg "Image '$outPath' pre-existed; skipped by _convert_one_raw"
-    #~ return 1
-  #~ }
+  if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
+    ok_info_msg "Image '$outPath' pre-existed; skipped by RAW conversion step"
+    return 1
+  }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
@@ -478,10 +488,10 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "$rawName.TIF"]
-  #~ if { 1 == [file exists $outPath] }  {
-    #~ ok_info_msg "Image '$outPath' pre-existed; skipped by _fuse_one_hdr"
-    #~ return 1
-  #~ }
+  if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
+    ok_info_msg "Image '$outPath' pre-existed; skipped by fusion step"
+    return 1
+  }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }

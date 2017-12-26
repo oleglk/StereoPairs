@@ -268,6 +268,7 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
     ok_err_msg "Format '*.$imgExt not supported for saving images"
     return  -1
   }
+  set imSaveParams "-set comment \"/:/rotated$::STS(rotAngle)/:/cropped$::STS(cropRatio)/:/\" $imSaveParams"
   puts "====== Begin rotations and croppings in '[pwd]'; extension: '$imgExt' ========"
   set imgPaths [glob -nocomplain "*.$imgExt"]
   if { 0 == [llength $imgPaths] }  {
