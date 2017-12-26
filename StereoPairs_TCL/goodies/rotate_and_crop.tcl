@@ -304,6 +304,11 @@ proc choose_im_img_save_params {imgExt finalDepth forceJpegQuality}  {
 }
 
 
+proc _rotate_and_crop_is_image_processed {imgPath}  {
+  # TODO:implement
+}
+
+
 # Reads the system-dependent paths from 'csvPath',
 # then assigns ultimate tool paths
 proc _rotate_and_crop_set_ext_tool_paths_from_csv {csvPath}  {

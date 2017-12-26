@@ -15,6 +15,7 @@ namespace eval ::img_proc:: {
       get_image_timestamp_by_imagemagick      \
       get_image_brightness_by_imagemagick     \
       get_image_dimensions_by_imagemagick     \
+      get_image_attributes_by_imagemagick     \
       get_image_attributes_by_dcraw           \
 }
 
@@ -284,6 +285,53 @@ proc ::img_proc::get_image_dimensions_by_imagemagick {fullPath width height} {
   }
   set wd [lindex $whList 0];    set ht [lindex $whList 1]
   ok_trace_msg "Dimensions of $fullPath: width=$wd, height=$ht"
+  return  1
+}
+
+
+# (this proc is a derivative from LazyConv - same name under ::imageproc:: -
+# except for executable path not enclosed in extra curved brackets)
+# Puts into 'width' and 'height' horizontal and vertical sizes of 'fullPath'
+# Returns 1 on success, 0 on error.
+# Imagemagick "identify" invocation: identify -ping -format "%w %h" <filename>
+proc ::img_proc::get_image_attributes_by_imagemagick {fullPath \
+        width height comment} {
+  upvar $width wd
+  upvar $height ht
+  upvar $comment cm
+  if { ![file exists $fullPath] || ![file isfile $fullPath] } {
+    ok_err_msg "Invalid image path '$fullPath'"
+	  return  0
+  }
+  set tclExecResult [catch {
+    # Open a pipe to the program
+    #   set io [open "|identify -format \"%w %h\" $fullPath" r]
+    set io [eval [list open \
+        [format {|%s -ping -format "%%w_/_/_%%h_/_/_%%c" %s} \
+                  $::_IMIDENTIFY $fullPath] r]]
+    set len [gets $io line];	# Get the reply
+    close $io
+  } execResult]
+  if { $tclExecResult != 0 } {
+    ok_err_msg "$execResult!"
+    ok_err_msg "Cannot get width/height of '$fullPath'"
+    return  0
+  }
+  # $line should be: "<width> <height>"
+  if { $len == -1 } {
+    ok_err_msg "Cannot get width/height of '$fullPath'"
+    return  0
+  }
+  # ok_trace_msg "{W H} of $fullPath = $line"
+  set whList [ok_split_string_by_substring $line "_/_/_"]
+  if { [llength $whList] != 3 } {
+    ok_err_msg "Cannot get width/height/comment of '$fullPath'"
+	  return  0
+  }
+  set wd [lindex $whList 0];    set ht [lindex $whList 1]
+  set cm [lindex $whList 2]
+  ok_trace_msg "Dimensions of $fullPath: width=$wd, height=$ht"
+  ok_trace_msg "Comment of $fullPath: '$cm'"
   return  1
 }
 
