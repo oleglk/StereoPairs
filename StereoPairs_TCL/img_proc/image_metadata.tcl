@@ -255,37 +255,7 @@ proc ::img_proc::get_image_brightness_by_imagemagick {fullPath brightness} {
 proc ::img_proc::get_image_dimensions_by_imagemagick {fullPath width height} {
   upvar $width wd
   upvar $height ht
-  if { ![file exists $fullPath] || ![file isfile $fullPath] } {
-    ok_err_msg "Invalid image path '$fullPath'"
-	  return  0
-  }
-  set tclExecResult [catch {
-    # Open a pipe to the program
-    #   set io [open "|identify -format \"%w %h\" $fullPath" r]
-    set io [eval [list open [format {|%s -ping -format "%%w %%h" %s} \
-               $::_IMIDENTIFY $fullPath] r]]
-    set len [gets $io line];	# Get the reply
-    close $io
-  } execResult]
-  if { $tclExecResult != 0 } {
-    ok_err_msg "$execResult!"
-    ok_err_msg "Cannot get width/height of '$fullPath'"
-    return  0
-  }
-  # $line should be: "<width> <height>"
-  if { $len == -1 } {
-    ok_err_msg "Cannot get width/height of '$fullPath'"
-    return  0
-  }
-  # ok_trace_msg "{W H} of $fullPath = $line"
-  set whList [split $line " "]
-  if { [llength $whList] != 2 } {
-    ok_err_msg "Cannot get width/height of '$fullPath'"
-	  return  0
-  }
-  set wd [lindex $whList 0];    set ht [lindex $whList 1]
-  ok_trace_msg "Dimensions of $fullPath: width=$wd, height=$ht"
-  return  1
+  return  [get_image_attributes_by_imagemagick $fullPath wd ht comment]
 }
 
 

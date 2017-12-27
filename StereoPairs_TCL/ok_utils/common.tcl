@@ -161,15 +161,15 @@ proc ::ok_utils::ok_split_string_by_whitespace {inpStr} {
 # Returns a list with substrings from 'inpStr' that were separated by 'sepStr'
 # Derived from 'wsplit' at http://wiki.tcl.tk/1499
 proc ::ok_utils::ok_split_string_by_substring {inpStr sepStr} {
-    set first [string first $sepStr $inpStr]
-    if {$first == -1} {
-        return [list $inpStr]
-    } else {
-        set l [string length $sepStr]
-        set left [string range $inpStr 0 [expr {$first-1}]]
-        set right [string range $inpStr [expr {$first+$l}] end]
-        return [concat [list $left] [wsplit $right $sepStr]]
-    }
+  set first [string first $sepStr $inpStr]
+  if {$first == -1} {
+    return [list $inpStr]
+  } else {
+    set l [string length $sepStr]
+    set left [string range $inpStr 0 [expr {$first-1}]]
+    set right [string range $inpStr [expr {$first+$l}] end]
+    return  [concat [list $left] [ok_split_string_by_substring $right $sepStr]]
+  }
 }
 
 
