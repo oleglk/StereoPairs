@@ -15,6 +15,7 @@ namespace eval ::img_proc:: {
       get_image_timestamp_by_imagemagick      \
       get_image_brightness_by_imagemagick     \
       get_image_dimensions_by_imagemagick     \
+      get_image_comment_by_imagemagick        \
       get_image_attributes_by_imagemagick     \
       get_image_attributes_by_dcraw           \
 }
@@ -247,15 +248,20 @@ proc ::img_proc::get_image_brightness_by_imagemagick {fullPath brightness} {
 }
 
 
-# (this proc is a copy-paste from LazyConv - same name under ::imageproc:: -
-# except for executable path not enclosed in extra curved brackets)
 # Puts into 'width' and 'height' horizontal and vertical sizes of 'fullPath'
 # Returns 1 on success, 0 on error.
-# Imagemagick "identify" invocation: identify -ping -format "%w %h" <filename>
 proc ::img_proc::get_image_dimensions_by_imagemagick {fullPath width height} {
   upvar $width wd
   upvar $height ht
   return  [get_image_attributes_by_imagemagick $fullPath wd ht comment]
+}
+
+
+# Puts into 'comment'  the comment field of 'fullPath's metadata
+# Returns 1 on success, 0 on error.
+proc ::img_proc::get_image_comment_by_imagemagick {fullPath comment} {
+  upvar $comment cm
+  return  [get_image_attributes_by_imagemagick $fullPath width height cm]
 }
 
 
@@ -284,12 +290,12 @@ proc ::img_proc::get_image_attributes_by_imagemagick {fullPath \
   } execResult]
   if { $tclExecResult != 0 } {
     ok_err_msg "$execResult!"
-    ok_err_msg "Cannot get width/height of '$fullPath'"
+    ok_err_msg "Cannot get width/height/comment of '$fullPath'"
     return  0
   }
   # $line should be: "<width> <height>"
   if { $len == -1 } {
-    ok_err_msg "Cannot get width/height of '$fullPath'"
+    ok_err_msg "Cannot get width/height/comment of '$fullPath'"
     return  0
   }
   # ok_trace_msg "{W H} of $fullPath = $line"

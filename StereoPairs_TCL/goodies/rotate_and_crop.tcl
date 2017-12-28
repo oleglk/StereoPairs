@@ -263,6 +263,7 @@ proc _arrange_dirs_in_current_dir {} {
 
 # Performs rotations and croppings; returns num of processed files, 0 if none, -1 on error.
 proc _rotate_crop_all_in_current_dir {imgExt} {
+  set cntSkipped 0
   if { "-ERROR-" == [set imSaveParams [choose_im_img_save_params \
                      $imgExt $::STS(finalDepth) $::STS(forceJpegQuality)]] }  {
     ok_err_msg "Format '*.$imgExt not supported for saving images"
@@ -276,6 +277,10 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
     return  0
   }
   foreach imgPath $imgPaths {
+    if { 1 == [_rotate_and_crop_is_image_processed $imgPath] }  {
+      ok_info_msg "Image '$imgPath' assumed already rotated/cropped; skipped by rotation/cropping step"
+      incr cntSkipped 1;      continue
+    }
     if { 0 == [rotate_crop_one_img $imgPath \
                           $::STS(rotAngle) $::STS(padX)  $::STS(padY) \
                           $::STS(cropRatio) \
@@ -283,7 +288,7 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
       return  -1;  # error already printed
     }
   }
-  puts "====== Finished rotations and croppings in '[pwd]'; extension: '$imgExt'; [llength $imgPaths] image(s) processed ========"
+  puts "====== Finished rotations and croppings in '[pwd]'; extension: '$imgExt'; [llength $imgPaths] image(s) processed; $cntSkipped image(s) skipped ========"
   return  [llength $imgPaths]
 }
 
@@ -304,8 +309,12 @@ proc choose_im_img_save_params {imgExt finalDepth forceJpegQuality}  {
 }
 
 
+# Returns 1 if image 'imgPath' marked as processed, 0 if not marked, -1 on error
 proc _rotate_and_crop_is_image_processed {imgPath}  {
-  # TODO:implement
+  if { 0 == [get_image_comment_by_imagemagick $imgPath comment] } {
+    return  -1; # error already printed
+  }
+  return  [expr {1 == [regexp "/:/rotated.*/:/cropped.*/:/" $comment]}]
 }
 
 
