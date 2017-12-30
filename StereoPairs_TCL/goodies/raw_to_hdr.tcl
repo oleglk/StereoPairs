@@ -426,14 +426,18 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
 #     uses RGB multipliers from this dict
 # If 'rawNameToRgbMultList' dict given but doesn't include name of 'rawPath',
 #     inserts RGB multipliers from the RAW into this dict
+# TODO: return 1 if converted, 0 if skipped, -1 on error
 proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   upvar $rawNameToRgbMultList rawNameToRgb
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].TIF"]
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
-    ok_info_msg "Image '$outPath' pre-existed; skipped by RAW conversion step"
-    return 1
+    if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
+      ok_info_msg "Image '$outPath' pre-existed; skipped by RAW conversion step"
+      return 1
+    }
+    ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by RAW conversion step"
   }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
