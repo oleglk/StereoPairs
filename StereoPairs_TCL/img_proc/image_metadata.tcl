@@ -253,7 +253,7 @@ proc ::img_proc::get_image_brightness_by_imagemagick {fullPath brightness} {
 proc ::img_proc::check_image_integrity_by_imagemagick {fullPath} {
   set rc [get_image_attributes_by_imagemagick $fullPath width height comment 0]
   if { $rc == 0 }  { return 0 } ;   # cannot even read attributes
-  return  [expr {  ($width > 0) && ($height > 0))?  1 : 0 }]
+  return  [expr { (($width > 0) && ($height > 0))?  1 : 0 }]
 }
 
 

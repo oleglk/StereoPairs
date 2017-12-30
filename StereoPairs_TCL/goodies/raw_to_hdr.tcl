@@ -493,8 +493,11 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "$rawName.TIF"]
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
-    ok_info_msg "Image '$outPath' pre-existed; skipped by fusion step"
-    return 1
+    if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
+      ok_info_msg "Image '$outPath' pre-existed; skipped by fusion step"
+      return 1
+    }
+    ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by fusion step"
   }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
@@ -610,6 +613,7 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
   }
   set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
   set ::_IMMOGRIFY  [format "{%s}"  [file join $::_IM_DIR "mogrify.exe"]]
+  set ::_IMIDENTIFY [format "{%s}"  [file join $::_IM_DIR "identify.exe"]]
   # - DCRAW:
   # unless ::_DCRAW_PATH points to some custom executable, point at the default
   if { (![info exists ::_DCRAW_PATH]) || (""== [string trim $::_DCRAW_PATH]) } {
@@ -635,7 +639,11 @@ proc _raw_to_hdr_verify_external_tools {} {
     incr errCnt 1
   }
   if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'montage' tool '$::_IMMONTAGE'"
+    ok_err_msg "Inexistent ImageMagick 'mogrify' tool '$::_IMMOGRIFY'"
+    incr errCnt 1
+  }
+  if { 0 == [file exists [string trim $::_IMIDENTIFY " {}"]] }  {
+    ok_err_msg "Inexistent ImageMagick 'identify' tool '$::_IMIDENTIFY'"
     incr errCnt 1
   }
   if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
