@@ -506,8 +506,10 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
   set inPathNorm [file join $::STS(dirNorm) "$rawName.TIF"]
   set inPathHigh [file join $::STS(dirHigh) "$rawName.TIF"]
   foreach p [list $inPathLow $inPathNorm $inPathHigh]  {
-    if { ![ok_filepath_is_readable $p] }  {
-      ok_err_msg "Inexistent or unreadable intermediate image '$p'";    return 0
+    if { ![ok_filepath_is_readable $p] || \
+         (0 == [check_image_integrity_by_imagemagick $p]) }  {
+      ok_err_msg "Inexistent, unreadable or corrupted intermediate image '$p'"
+      return 0
     }
   }
   set cmdListFuse [concat $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) \
