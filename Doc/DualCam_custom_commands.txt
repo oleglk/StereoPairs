@@ -57,6 +57,7 @@ Files involved:
 -- crop performed around the image center to achieve specified width-to-length ratio with maximum image area
 -- supports padding images (horizontally and vertically) on top of the cropped area; pads specified in percents
 --- note, padding is mandatory if lens axes aren't vertically aligned - like in the vertical DualCam
+-- in order to enable rerun for the case of failure, the script marks already-processed images and ignores them when (and if) it runs again; image-comment metadata field is used for this mark
 * StereoPairs\StereoPairs_TCL\goodies\run__rotate_and_crop_on_l_r.tcl
 -- a small TCL script that adapts the rather generic rotate_and_crop.tcl to the context of Dualcam-Companion
 -- loads the code from rotate_and_crop.tcl script and runs it with prearranged arguments
@@ -173,7 +174,7 @@ Files involved:
 ##   if so, build input-white-balance argument for L/ subdirectory:
 ##     set INP_WB_OVRD "-wb_inp_file wb_ovrd_left.csv"
 #### Execute the main procedure of "raw_to_hdr.tcl" script in L/ subdirectory
-raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [dualcam_find_toolpaths_file 0]"]
+raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1"
 ## Change image-file names in WB file created while pocessing left directory
 ##     into names of their right peers; save in "wb_ovrd_right.csv"
 _swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 "white-balance-sync"]
@@ -192,6 +193,7 @@ raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW 
 ------------ white-balance input- and output files share the same syntax
 --- argument '-tools_paths_file [dualcam_find_toolpaths_file 0]' tells to take external tools paths from the same file that's provided for the main DualCam-Companion application
 ------ the syntax is simply '-tools_paths_file FILEPATH'; the prearranged example uses a function from DualCam-Companion to locate the file
+--- argument ' -do_skip_existing 1' tells not to regenerate intermediate or output files that already exist; this enables fool-proof rerun of the script in the case of failure - only the missing or corrupted images will be produced
 * StereoPairs\StereoPairs_TCL\goodies\wrap__run_tcl_raw_to_hdr.bat
 -- represents the ultimate single-executable-path to be configured as a custom command in Dualcam-Companion GUI
 -- invokes new instance of TCL interpreter and tells it to execute run__raw_to_hdr_on_l_r.tcl
