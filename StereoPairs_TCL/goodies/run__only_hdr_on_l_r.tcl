@@ -32,7 +32,7 @@ proc _swap_lr_names_in_csv_file {inPath outPath namePos descr}  {
       if { 0 == [llength $newLinesList] }  {
         lappend newLinesList $fileRec;      continue
       } else {
-        ok_err_msg "Unexpected line '$fileRec' in $descr file; aborting"
+        ok_err_msg "Unexpected line '$fileRec' in $descr file; please check image file names; aborting"
         return  0
       }
     }
