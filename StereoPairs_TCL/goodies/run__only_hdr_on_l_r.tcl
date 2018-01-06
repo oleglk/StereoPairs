@@ -16,7 +16,7 @@ proc _swap_lr_names_in_csv_file {inPath outPath namePos descr}  {
     return  0;  # error already printed
   }
   ok_info_msg "Read per-image records to be renamed from $descr file '$inPath'"
-  set cntSwapped 0;  set cntAll 0
+  set cntSwapped 0;  set cntAll 0;  set cntBad 0
   set newLinesList [list]
   foreach fileRec $linesList {
     if { $namePos >= [llength $fileRec] }  {
@@ -32,8 +32,8 @@ proc _swap_lr_names_in_csv_file {inPath outPath namePos descr}  {
       if { 0 == [llength $newLinesList] }  {
         lappend newLinesList $fileRec;      continue
       } else {
-        ok_err_msg "Unexpected line '$fileRec' in $descr file; please check image file names; aborting"
-        return  0
+        ok_warn_msg "Unexpected line '$fileRec' in $descr file; please check image file names; skipping it"
+        incr cntBad 1;  continue 
       }
     }
     set pureName2 [spm_purename_to_peer_purename $pureName1]
@@ -45,7 +45,7 @@ proc _swap_lr_names_in_csv_file {inPath outPath namePos descr}  {
   if { 0 == [ok_write_list_of_lists_into_csv_file $newLinesList $outPath ","] } {
     ok_err_msg "Failed to write $descr file '$outPath'";    return  0
   }
-  ok_info_msg "Wrote $cntSwapped renamed records into $descr file '$outPath'"
+  ok_info_msg "Wrote $cntSwapped renamed records into $descr file '$outPath'; $cntBad unexpected line(s) ignored"
   return  1
 }
 
