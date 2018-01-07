@@ -432,17 +432,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].TIF"]
-  if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
-    if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
-      ok_info_msg "Image '$outPath' pre-existed; skipped by RAW conversion step"
-      return 1
-    }
-    ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by RAW conversion step"
-  }
-  if { 0 == [ok_filepath_is_writable $outPath] }  {
-    ok_err_msg "Cannot write into '$outPath'";    return 0
-  }
-
+  # provide white-balance multipliers
   if { $rawNameToRgb != 0 }  {
     if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
       set rgbMultList [dict get $rawNameToRgb $rawName]
@@ -474,8 +464,19 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     270     { set rotSwitch "-t 5"  }
     default { set rotSwitch ""      }
   }
+  # check whether the output exists AFTER white-balance multipliers taken care of
+  if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
+    if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
+      ok_info_msg "Image '$outPath' pre-existed; skipped by RAW conversion step"
+      return 1
+    }
+    ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by RAW conversion step"
+  }
+  if { 0 == [ok_filepath_is_writable $outPath] }  {
+    ok_err_msg "Cannot write into '$outPath'";    return 0
+  }
+  
   ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
-
   #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
   set cmdListRawConv [concat $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd \
                           $colorSwitches $rotSwitch  $rawPath  \
