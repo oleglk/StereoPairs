@@ -22,6 +22,8 @@ namespace eval ::ok_utils:: {
   ok_pause_console \
   ok_finalize_diagnostics \
   ok_init_diagnostics     \
+  ok_set_start_time             \
+  ok_pause_and_reset_start_time \
 	ok_set_loud \
 	ok_loud_mode
 
@@ -32,6 +34,10 @@ namespace eval ::ok_utils:: {
 
     variable DIAGNOSTICS_FILE_HANDLE 0 ;  # =0 means not yet open
     variable DIAGNOSTICS_FILE_PATH  ""
+    
+    variable _WORK_START_TIMESTAMP   -1;  # global timer start time (sec)
+    variable _MAX_WORKTIME         3600;  # max time (sec) of continuous work
+    variable _PAUSE_DURATION         30;  # time to RELAX (sec)
 }
 
 
@@ -196,6 +202,27 @@ proc ::ok_utils::ok_init_diagnostics {outFilePath}  {
   set DIAGNOSTICS_FILE_PATH $outFilePath
   # file will be opened at 1st write
   _ok_write_diagnostics "Diagnostics log file set to '$DIAGNOSTICS_FILE_PATH'"
+}
+
+
+# Sets global timer to the currrent time
+proc ::ok_utils::ok_set_start_time {} {
+  variable _WORK_START_TIMESTAMP
+  set _WORK_START_TIMESTAMP [clock seconds]
+}
+
+
+# If time from the global-timer start exceeds '_MAX_WORKTIME',
+# waits for '_PAUSE_DURATION' sec then resumes the work
+proc ::ok_utils::ok_pause_and_reset_start_time {} {
+  variable _MAX_WORKTIME
+  variable _PAUSE_DURATION
+  set elapsedSec [expr {[clock seconds] - $_WORK_START_TIMESTAMP}]
+  if { $elapsedSec > $_MAX_WORKTIME } {
+    PriInfo "Relaxing for $_PAUSE_DURATION sec after $_MAX_WORKTIME sec of continuous work"
+    after [expr 1000 * $_PAUSE_DURATION]
+    ok_set_start_time
+  }
 }
 
 
