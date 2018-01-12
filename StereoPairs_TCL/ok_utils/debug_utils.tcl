@@ -37,8 +37,8 @@ namespace eval ::ok_utils:: {
     variable DIAGNOSTICS_FILE_PATH  ""
     
     variable _WORK_START_TIMESTAMP   -1;  # global timer start time (sec)
-    variable _MAX_WORKTIME         60;  # 3600;  # max time (sec) of continuous work
-    variable _PAUSE_DURATION         30;  # time to RELAX (sec)
+    variable _MAX_WORKTIME             3600;  # max time (sec) of continuous work
+    variable _PAUSE_DURATION              30;  # time to RELAX (sec)
 }
 
 
