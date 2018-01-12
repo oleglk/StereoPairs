@@ -76,6 +76,8 @@ proc raw_to_hdr_main {cmdLineAsStr {doHDR 1}}  {
   # TODO: custom _verify_external_tools
   if { 0 == [_raw_to_hdr_verify_external_tools] }  { return  0  };  # error already printed
 
+  ok_reset_start_time_if_needed ;   # the timer to track long activity periods
+
   set nInpDirs [llength $::STS(inpDirPaths)]
   ok_info_msg "Start processing RAW file(s) under $nInpDirs input directory(ies)"
   set cntDone 0
@@ -371,6 +373,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
       }
       ##$::_DCRAW  $::g_dcrawParamsMain -w -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
       ##if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
+      ok_pause_and_reset_start_time_if_needed ;   # allow periodical resting
     }
   }
   if { "" != $::STS(wbOutFile) }  { 
@@ -413,6 +416,7 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
     if { 0 == [_fuse_one_hdr $rawName $outDir $::g_fuseOpt] }  {
       return  -1
     }
+    ok_pause_and_reset_start_time_if_needed ;   # allow periodical resting
   }
   puts "====== Finished HDR fusing in '[pwd]'; [llength $rawPaths] image(s) processed ========"
   return  [llength $rawPaths]
