@@ -5,7 +5,7 @@ namespace eval ::ok_utils:: {
   namespace export                \
     ok_get_free_disk_space_kb     \
     ok_try_get_free_disk_space_kb \
-    ok_get_filelist_disk_space
+    ok_get_filelist_disk_space_kb
 }
 
 # Copied from "proc df-k" at http://wiki.tcl.tk/526#pagetoc071ae01c
@@ -25,7 +25,7 @@ proc ::ok_utils::ok_get_free_disk_space_kb {{dir .}} {
     {Windows NT} {
         set numPos 2;  # Oleg: was 0
         set lastLine [lindex [split [exec cmd /c dir /-c $dir] \n] end]
-        return  [expr {[lindex $lastLine $numPos] / 1024}]
+        return  [expr {round([lindex $lastLine $numPos] / 1024.0)}]
             # CL notes that, someday when we want a bit more
             #    sophistication in this region, we can try
             #    something like
@@ -40,7 +40,7 @@ proc ::ok_utils::ok_get_free_disk_space_kb {{dir .}} {
             #    explains use of PBHGetVInfo() to do something analogous
             #    for MacOS.
         }
-    default {error "don't know how to df-k on $::tcl_platform(os)"}
+    default {error "don't know how to measure free disk space on '$::tcl_platform(os)'"}
     }
 } ;#RS
 
@@ -60,7 +60,7 @@ proc ::ok_utils::ok_try_get_free_disk_space_kb {{dir .}} {
 
 # Calculates and returns total disk space consumed by files in 'filePathsList'.
 # On error returns -1 * <number-of-unreadable-files>
-proc ::ok_utils::ok_get_filelist_disk_space {filePathsList {priErr 1}}  {
+proc ::ok_utils::ok_get_filelist_disk_space_kb {filePathsList {priErr 1}}  {
   set size 0;    set noaccess [list]
   foreach filePath $filePathsList {
     if { [file exists $filePath] && [file readable $filePath] } {
@@ -75,5 +75,5 @@ proc ::ok_utils::ok_get_filelist_disk_space {filePathsList {priErr 1}}  {
     }
     return  [expr -1 * [llength $noaccess]]
   }
-  return  $size
+  return  [expr {round($size / 1024.0)}]
 }
