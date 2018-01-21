@@ -10,7 +10,7 @@ namespace eval ::ok_utils:: {
 
 # Copied from "proc df-k" at http://wiki.tcl.tk/526#pagetoc071ae01c
 # Returns free disk space in kilobytes
-proc ::ok_utils::ok_get_free_disk_space_kb {{dir .}} {
+proc ::ok_utils::ok_get_free_disk_space_kb {{dirNative .}} {
     switch $::tcl_platform(os) {
     FreeBSD -
     Linux -
@@ -19,12 +19,12 @@ proc ::ok_utils::ok_get_free_disk_space_kb {{dir .}} {
         # Use end-2 instead of 3 because long mountpoints can 
         # make the output to appear in two lines. There is df -k -P
         # to avoid this, but -P is Linux specific afaict
-        return  [lindex [lindex [split [exec df -k $dir] \n] end] end-2]
+        return  [lindex [lindex [split [exec df -k $dirNative] \n] end] end-2]
     }
-    HP-UX {return  [lindex [lindex [split [exec bdf   $dir] \n] end] 3]}
+    HP-UX {return  [lindex [lindex [split [exec bdf   $dirNative] \n] end] 3]}
     {Windows NT} {
         set numPos 2;  # Oleg: was 0
-        set lastLine [lindex [split [exec cmd /c dir /-c $dir] \n] end]
+        set lastLine [lindex [split [exec cmd /c dir /-c $dirNative] \n] end]
         return  [expr {round([lindex $lastLine $numPos] / 1024.0)}]
             # CL notes that, someday when we want a bit more
             #    sophistication in this region, we can try

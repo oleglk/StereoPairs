@@ -47,7 +47,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
   set ::STS(doSkipExisting)   0  ;  # whether to keep pre-existent outputs untouched
-  set :STS(abortOnLowDiskSpace) 1;  # whether to abort if not enough free disk space for conversion
+  set ::STS(abortOnLowDiskSpace) 1;  # whether to abort if not enough free disk space for conversion
   set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
   set ::STS(wbOutFile)        "" ;  # output file with per-image white balance coefficients
 
@@ -701,14 +701,16 @@ proc _estimate_free_disk_space_for_raw_conversion {rawPaths outDirPath} {
   if { 0 > [set rawKb [ok_get_filelist_disk_space_kb $rawPaths 1]] }  {
     return  0;  # cannot measure usage; assume not-enough; error already printed
   }
-  if { 0 > [set availKb [ok_try_get_free_disk_space_kb $outDirPath]] }  {
+  if { 0 > [set availKb [ok_try_get_free_disk_space_kb \
+                                      [file nativename $outDirPath]]] }  {
     return  0;  # cannot measure free; assume not-enough; error` already printed
   }
-  set reqKb [expr $rawKb * 20]
-  if { $availKb < $ }  {
-    ok_err_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; only $availKb available"
+  set reqKb [expr $rawKb * 20]; # temporary files measured to take ~20x of RAWs
+  if { $availKb < $reqKb }  {
+    ok_err_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; only $availKb Kb available"
     return  0
   }
+  ok_info_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; $availKb Kb available - should be enough"
   return  1
 }
 
