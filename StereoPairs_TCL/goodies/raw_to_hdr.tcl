@@ -336,8 +336,8 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
     return  0
   }
-  if { (0 == [_estimate_free_disk_space_for_raw_conversion $rawPaths [pwd]]) && \
-        $::STS(abortOnLowDiskSpace) }  {
+  if { (0 == [_estimate_free_disk_space_for_raw_conversion $rawPaths [pwd]]) \
+        && $::STS(abortOnLowDiskSpace) }  {
     return  -1;   # error already printed
   }
   if { "" == $::STS(wbInpFile) }  { 
@@ -707,8 +707,13 @@ proc _estimate_free_disk_space_for_raw_conversion {rawPaths outDirPath} {
   }
   set reqKb [expr $rawKb * 20]; # temporary files measured to take ~20x of RAWs
   if { $availKb < $reqKb }  {
-    ok_err_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; only $availKb Kb available"
-    return  0
+    set msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; only $availKb Kb available"
+    if { $::STS(doSkipExisting) == 0 }   {
+      ok_err_msg  $msg
+      return  0
+    } else {
+      ok_warn_msg "$msg. Allowed to continue due to repair mode - some files already exist" }
+      return  1
   }
   ok_info_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; $availKb Kb available - should be enough"
   return  1
