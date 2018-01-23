@@ -117,6 +117,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -rotate {val "1 means rotate according to EXIF (default);  0|90|180|270 - rotation angle clockwise"} \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
   -do_skip_existing {val "1 means keep pre-existent outputs untouched; 0 means perform the conversion and override"} \
+  -do_abort_on_low_disk_space {val "1 means exit if available free disk space smaller than estimated need; 0 means continue anyway"} \
   -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
   -wb_out_file {val	"name of the CSV file (under the working directory) for white-balance coefficients that were used for RAW images"} \
  ]
@@ -125,9 +126,10 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # create dummy command line with the default parameters and copy it
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
-  ok_set_cmd_line_params defCml cmlD {                                  \
-    {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"} \
-     {-do_skip_existing "0"} {-wb_out_file "wb_out.csv"} }
+  ok_set_cmd_line_params defCml cmlD {                                    \
+    {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"}  \
+    {-do_skip_existing "0"} {-do_abort_on_low_disk_space 1}               \
+    {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -253,6 +255,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
         set ::STS(doSkipExisting) $cml(-do_skip_existing)
       } else {
         ok_err_msg "Parameter telling whether to keep pre-existent outputs untouched (-do_skip_existing); should be 0 or 1"
+        incr errCnt 1
+      }
+  }
+  if { [info exists cml(-do_abort_on_low_disk_space)] }  {
+    if { ($cml(-do_abort_on_low_disk_space) == 0) || ($cml(-do_abort_on_low_disk_space) == 1) }  {
+        set ::STS(abortOnLowDiskSpace) $cml(-do_abort_on_low_disk_space)
+      } else {
+        ok_err_msg "Parameter telling whether to exit if free disk space is insufficient (-do_abort_on_low_disk_space); should be 0 or 1"
         incr errCnt 1
       }
   }
