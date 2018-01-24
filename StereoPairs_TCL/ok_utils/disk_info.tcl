@@ -5,7 +5,8 @@ namespace eval ::ok_utils:: {
   namespace export                \
     ok_get_free_disk_space_kb     \
     ok_try_get_free_disk_space_kb \
-    ok_get_filelist_disk_space_kb
+    ok_get_filelist_disk_space_kb \
+    ok_dirsize
 }
 
 # Copied from "proc df-k" at http://wiki.tcl.tk/526#pagetoc071ae01c
@@ -76,4 +77,32 @@ proc ::ok_utils::ok_get_filelist_disk_space_kb {filePathsList {priErr 1}}  {
     return  [expr -1 * [llength $noaccess]]
   }
   return  [expr {round($size / 1024.0)}]
+}
+
+
+# (Copied from: http://www.fundza.com/tcl/examples/file/dirsize.html)
+# Calculates the total size in bytes of a (parent) directory
+# including all its (child) sub-directories and files.
+# Returns this size in Kb.
+#    dir          the full path of the target directory - TCL convention
+#    totalsize    a variable that keeps a running
+#                 total of byte count ie. size
+proc ::ok_utils::ok_dirsize {dirPath totalsizeBytes} {
+  # enable a local variable to reference
+  # the global "totalsize" variable
+  upvar $totalsizeBytes bytes
+  
+  set contents [glob -directory $dirPath *]
+  foreach item $contents {
+   #puts "[format "%32s %f" $item [file size $item]]"
+   set bytes [expr $bytes + [file size $item]]
+
+   if { [file isdirectory $item] } {
+      # recurse ie. call ourself
+      ok_dirsize $item bytes
+   } elseif { [file isfile $item]} {
+      # nothing to do
+      }
+   }
+   return [expr {$bytes / 1000.0}]
 }
