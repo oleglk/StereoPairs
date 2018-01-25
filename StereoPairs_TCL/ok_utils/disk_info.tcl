@@ -86,6 +86,12 @@ proc ::ok_utils::ok_get_filelist_disk_space_kb {filePathsList {priErr 1}}  {
 proc ::ok_utils::ok_dirsize {dirPath {priErr 1}} {
   # enable a local variable to reference the global "totalsize" variable
   set totalsizeBytes 0;  set noaccessList [list]
+  if { ![file exists $dirPath] || ![file readable $dirPath] || \
+       ![file isdirectory $dirPath] } {
+    ##lappend noaccess $dirPath
+    ok_err_msg "Measuring disk space requested in inexistent or invalid directory '$dirPath'"
+    return  0
+  }
   set sizeKb [_ok_dirsize $dirPath totalsizeBytes noaccessList]
   if { 0 != [llength $noaccessList] }  {
     if { $priErr }  {
@@ -108,7 +114,7 @@ proc ::ok_utils::_ok_dirsize {dirPath totalsizeBytes noaccessList} {
   upvar $noaccessList   noaccess
   
   if { 0 == [info exists bytes] }  { set bytes 0 }; # for sure top-level frame
-  if { 0 == [info exists noaccess] } { set noaccess 0 ;# for sure top-level frame
+  if { 0 == [info exists noaccess] } { set noaccess [list]};# sure top-level frame
 
   set contents [glob -nocomplain -directory $dirPath *]
   foreach item $contents {
@@ -120,10 +126,9 @@ proc ::ok_utils::_ok_dirsize {dirPath totalsizeBytes noaccessList} {
     }
 
     if { [file isdirectory $item] } {
-      ok_dirsize $item bytes noaccess; # RECURSE ie. call ourself
+      _ok_dirsize $item bytes noaccess; # RECURSE ie. call ourself
     } elseif { [file isfile $item]} {
       # nothing to do
-      }
     }
   };#foreach_item
   return [expr {$bytes / 1000.0}]
