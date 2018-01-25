@@ -79,30 +79,52 @@ proc ::ok_utils::ok_get_filelist_disk_space_kb {filePathsList {priErr 1}}  {
   return  [expr {round($size / 1024.0)}]
 }
 
-
-# (Copied from: http://www.fundza.com/tcl/examples/file/dirsize.html)
 # Calculates the total size in bytes of a (parent) directory
 # including all its (child) sub-directories and files.
 # Returns this size in Kb.
 #    dir          the full path of the target directory - TCL convention
-#    totalsize    a variable that keeps a running
-#                 total of byte count ie. size
-proc ::ok_utils::ok_dirsize {dirPath totalsizeBytes} {
-  # enable a local variable to reference
-  # the global "totalsize" variable
-  upvar $totalsizeBytes bytes
-  
-  set contents [glob -directory $dirPath *]
-  foreach item $contents {
-   #puts "[format "%32s %f" $item [file size $item]]"
-   set bytes [expr $bytes + [file size $item]]
+proc ::ok_utils::ok_dirsize {dirPath {priErr 1}} {
+  # enable a local variable to reference the global "totalsize" variable
+  set totalsizeBytes 0;  set noaccessList [list]
+  set sizeKb [_ok_dirsize $dirPath totalsizeBytes noaccessList]
+  if { 0 != [llength $noaccessList] }  {
+    if { $priErr }  {
+      ok_err_msg "Measuring disk space used by '$dirPath' encountered [llength $noaccessList] unreadable file(s)"
+    }
+  }
+  return  $sizeKb
+}
 
-   if { [file isdirectory $item] } {
-      # recurse ie. call ourself
-      ok_dirsize $item bytes
-   } elseif { [file isfile $item]} {
+
+# (Based on: http://www.fundza.com/tcl/examples/file/dirsize.html)
+# Calculates the total size in bytes of a (parent) directory
+# including all its (child) sub-directories and files.
+# Returns this size in Kb.
+#    dir          the full path of the target directory - TCL convention
+#    totalsize    a variable that keeps a running total of byte count ie. size
+#    noaccessList a variable that keeps a running list of unreadable files
+proc ::ok_utils::_ok_dirsize {dirPath totalsizeBytes noaccessList} {
+  upvar $totalsizeBytes bytes
+  upvar $noaccessList   noaccess
+  
+  if { 0 == [info exists bytes] }  { set bytes 0 }; # for sure top-level frame
+  if { 0 == [info exists noaccess] } { set noaccess 0 ;# for sure top-level frame
+
+  set contents [glob -nocomplain -directory $dirPath *]
+  foreach item $contents {
+    if { [file readable $item] } {
+      #puts "[format "%32s %f" $item [file size $item]]"
+      incr bytes [file size $item]
+    } else {
+      lappend noaccess $item
+    }
+
+    if { [file isdirectory $item] } {
+      ok_dirsize $item bytes noaccess; # RECURSE ie. call ourself
+    } elseif { [file isfile $item]} {
       # nothing to do
       }
-   }
-   return [expr {$bytes / 1000.0}]
+    }
+  };#foreach_item
+  return [expr {$bytes / 1000.0}]
 }
