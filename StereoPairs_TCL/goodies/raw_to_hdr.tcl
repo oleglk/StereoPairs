@@ -708,22 +708,26 @@ proc _ColorMultLineCheckCB {nameAndMultsAsList}  {
 # Returns 1 if there's enough disk-space under 'outDirPath' to convert 'rawPaths'
 # Otherwise returns 0.
 proc _estimate_free_disk_space_for_raw_conversion {rawPaths outDirPath} {
+  set _DISK_USAGE_FACTOR 20; # temporary files measured to take ~20x of RAWs
   if { 0 > [set rawKb [ok_get_filelist_disk_space_kb $rawPaths 1]] }  {
     return  0;  # cannot measure usage; assume not-enough; error already printed
   }
-  if { 0 > [set availKb [ok_try_get_free_disk_space_kb \
-                                      [file nativename $outDirPath]]] }  {
+  if { 0 > [set availKb [ok_try_get_free_disk_space_kb $outDirPath]] }  {
     return  0;  # cannot measure free; assume not-enough; error` already printed
   }
-  set reqKb [expr $rawKb * 20]; # temporary files measured to take ~20x of RAWs
+  set outDirList [list $::STS(outDirName) \
+                       $::STS(dirNorm) $::STS(dirLow) $::STS(dirHigh)]
+  set existOutKb [ok_dir_list_size $outDirList];  # outputs that may preexist
+  set reqKb [expr {($rawKb * $_DISK_USAGE_FACTOR) - $existOutKb}]
   if { $availKb < $reqKb }  {
     set msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; only $availKb Kb available"
-    if { $::STS(doSkipExisting) == 0 }   {
-      ok_err_msg  $msg
-      return  0
-    } else {
-      ok_warn_msg "$msg. Allowed to continue due to repair mode - some files already exist" }
-      return  1
+    ok_err_msg  $msg;      return  0
+    #~ if { $::STS(doSkipExisting) == 0 }   {
+      #~ ok_err_msg  $msg;      return  0
+    #~ } else {
+      #~ ok_warn_msg "$msg. Allowed to continue due to repair mode - some files already exist"
+      #~ return  1
+    #~ }
   }
   ok_info_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; $availKb Kb available - should be enough"
   return  1

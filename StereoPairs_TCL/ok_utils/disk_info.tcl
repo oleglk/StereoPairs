@@ -6,7 +6,8 @@ namespace eval ::ok_utils:: {
     ok_get_free_disk_space_kb     \
     ok_try_get_free_disk_space_kb \
     ok_get_filelist_disk_space_kb \
-    ok_dirsize
+    ok_dir_list_size              \
+    ok_dir_size
 }
 
 # Copied from "proc df-k" at http://wiki.tcl.tk/526#pagetoc071ae01c
@@ -49,10 +50,11 @@ proc ::ok_utils::ok_get_free_disk_space_kb {{dirNative .}} {
 # If possible, returns free disk space on the disk of path '$dir'.
 # On error returns -1
 proc ::ok_utils::ok_try_get_free_disk_space_kb {{dir .}} {
-  set tclExecResult [catch {set n [ok_get_free_disk_space_kb $dir]} execResult]
+  set dirN [file nativename $dir]
+  set tclExecResult [catch {set n [ok_get_free_disk_space_kb $dirN]} execResult]
   if { $tclExecResult != 0 } {
     ok_err_msg "$execResult!"
-    ok_err_msg "Cannot check free space for '$dir'."
+    ok_err_msg "Cannot check free space for '$dir' ($dirN)."
     return  -1
   }
   return $n
@@ -79,12 +81,25 @@ proc ::ok_utils::ok_get_filelist_disk_space_kb {filePathsList {priErr 1}}  {
   return  [expr {round($size / 1024.0)}]
 }
 
+
+# Calculates the total size in bytes of (parent) directories in 'dirPathList'
+# including all their (child) sub-directories and files.
+# Returns this size in Kb.
+#  - dirPathList - list of full paths of the target directories - TCL convention
+proc ::ok_utils::ok_dir_list_size {dirPathList {priErr 1}} {
+  set totalsizeKBytes 0.0
+  foreach dir $dirPathList {
+    set totalsizeKBytes [expr {$totalsizeKBytes + [ok_dir_size $dir $priErr]}]
+  }
+  return  $totalsizeKBytes
+}
+
+
 # Calculates the total size in bytes of a (parent) directory
 # including all its (child) sub-directories and files.
 # Returns this size in Kb.
-#    dir          the full path of the target directory - TCL convention
-proc ::ok_utils::ok_dirsize {dirPath {priErr 1}} {
-  # enable a local variable to reference the global "totalsize" variable
+#    dirPath          the full path of the target directory - TCL convention
+proc ::ok_utils::ok_dir_size {dirPath {priErr 1}} {
   set totalsizeBytes 0;  set noaccessList [list]
   if { ![file exists $dirPath] || ![file readable $dirPath] || \
        ![file isdirectory $dirPath] } {
@@ -92,7 +107,7 @@ proc ::ok_utils::ok_dirsize {dirPath {priErr 1}} {
     ok_err_msg "Measuring disk space requested in inexistent or invalid directory '$dirPath'"
     return  0
   }
-  set sizeKb [_ok_dirsize $dirPath totalsizeBytes noaccessList]
+  set sizeKb [_ok_dir_size $dirPath totalsizeBytes noaccessList]
   if { 0 != [llength $noaccessList] }  {
     if { $priErr }  {
       ok_err_msg "Measuring disk space used by '$dirPath' encountered [llength $noaccessList] unreadable file(s)"
@@ -109,7 +124,7 @@ proc ::ok_utils::ok_dirsize {dirPath {priErr 1}} {
 #    dir          the full path of the target directory - TCL convention
 #    totalsize    a variable that keeps a running total of byte count ie. size
 #    noaccessList a variable that keeps a running list of unreadable files
-proc ::ok_utils::_ok_dirsize {dirPath totalsizeBytes noaccessList} {
+proc ::ok_utils::_ok_dir_size {dirPath totalsizeBytes noaccessList} {
   upvar $totalsizeBytes bytes
   upvar $noaccessList   noaccess
   
@@ -126,7 +141,7 @@ proc ::ok_utils::_ok_dirsize {dirPath totalsizeBytes noaccessList} {
     }
 
     if { [file isdirectory $item] } {
-      _ok_dirsize $item bytes noaccess; # RECURSE ie. call ourself
+      _ok_dir_size $item bytes noaccess; # RECURSE ie. call ourself
     } elseif { [file isfile $item]} {
       # nothing to do
     }
