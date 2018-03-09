@@ -22,6 +22,9 @@ set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3 -6 -g 2.4 12.9";  # EXCLUDING WB
 set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3";  # EXCLUDING WB
 # set g_convertSaveParams "-depth 8 -compress LZW"
+# dcraw params change for preview mode: "-h" (half-size) instead of "-6" (16bit)
+set g_dcrawParamsMain_preview "-v -c -H 2 -o 1 -q 3 -h -g 2.4 12.9";  # EXCLUDING WB
+set g_convertSaveParams_preview "-depth 8 -compress LZW"
 
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
@@ -44,6 +47,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
   set ::STS(rotAngle)         -1 ;  # -1 == rotate according to EXIF;  0|90|180|270 - rotation angle clockwise
   set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
+  set ::STS(doPreview)        1  ;  # 1 == smaller and faster;  0 == full-size, very slow
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
   set ::STS(doSkipExisting)   0  ;  # whether to keep pre-existent outputs untouched
@@ -118,6 +122,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
   -do_skip_existing {val "1 means keep pre-existent outputs untouched; 0 means perform the conversion and override"} \
   -do_abort_on_low_disk_space {val "1 means exit if available free disk space smaller than estimated need; 0 means continue anyway"} \
+  -do_preview  {val "1 means create smaller-size previews; 0 means create full-size images"} \
   -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
   -wb_out_file {val	"name of the CSV file (under the working directory) for white-balance coefficients that were used for RAW images"} \
  ]
@@ -129,7 +134,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   ok_set_cmd_line_params defCml cmlD {                                    \
     {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"}  \
     {-do_skip_existing "0"} {-do_abort_on_low_disk_space 1}               \
-    {-wb_out_file "wb_out.csv"} }
+    {-do_preview "0"} {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -153,6 +158,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 3 - use camera-WB from first directory on images in the second one: ======="
     ok_info_msg " raw_to_hdr_main \"-final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv\""
+    ok_info_msg "================================================================"
+    ok_info_msg "========= Example 4 - small size preview with camera-WB; tool paths file in home directory: ======="
+    ok_info_msg " raw_to_hdr_main \"-do_preview 1 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ~/dualcam_ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -179,9 +187,21 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
   } else {
     set ::STS(toolsPathsFile) $cml(-tools_paths_file)
   }
+  if { [info exists cml(-do_preview)] }  {
+    if { ($cml(-do_preview) == 0) || ($cml(-do_preview) == 1) }  {
+      set ::STS(doPreview) $cml(-do_preview)
+    } else {
+      ok_err_msg "Parameter telling whether to create only smaller preview images (-do_preview); should be 0 or 1"
+      incr errCnt 1
+    }
+  } 
   if { [info exists cml(-final_depth)] }  {
     if { ($cml(-final_depth) == 8) || ($cml(-final_depth) == 16) }  {
       set ::STS(finalDepth) $cml(-final_depth)
+      if { ($::STS(doPreview) == 1) && ($::STS(finalDepth) == 16) }  {
+        ok_warn_msg "Final images color depth overriden to 8-bit for preview mode"
+        set ::STS(finalDepth) 8
+      }
     } else {
       ok_err_msg "Invalid value specified for final images color depth (-final_depth); should be 8 or 16"
       incr errCnt 1
@@ -494,17 +514,24 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
-  
-  ok_info_msg "Start RAW-converting '$rawPath';  colors: $colorInfo; output into '$outPath'..."
-  #eval exec $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath
-  set cmdListRawConv [concat $::_DCRAW  $::g_dcrawParamsMain $dcrawParamsAdd \
+  if { $::STS(doPreview) == 0 }  {
+    set _dcrawParamsMain $::g_dcrawParamsMain;        set descr "RAW-conversion"
+    set _convertSaveParams $::g_convertSaveParams
+  } else {
+    set _dcrawParamsMain $::g_dcrawParamsMain_preview;  set descr "RAW-preview"
+    set _convertSaveParams $::g_convertSaveParams_preview    
+  }
+  ok_info_msg "Start $descr '$rawPath';  colors: $colorInfo; output into '$outPath'..."
+
+  #eval exec $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::_convertSaveParams $outPath
+  set cmdListRawConv [concat $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd \
                           $colorSwitches $rotSwitch  $rawPath  \
-                          | $::_IMCONVERT ppm:- $::g_convertSaveParams $outPath]
+                          | $::_IMCONVERT ppm:- $_convertSaveParams $outPath]
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
     return  0; # error already printed
   }
 
-	ok_info_msg "Done RAW conversion of '$rawPath' into '$outPath'"
+	ok_info_msg "Done $descr of '$rawPath' into '$outPath'"
   return  1
 }
 

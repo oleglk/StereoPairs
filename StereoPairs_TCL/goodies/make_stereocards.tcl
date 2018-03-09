@@ -1,13 +1,16 @@
 # make_stereocards.tcl
 
-set SCRIPT_DIR [file dirname [info script]]
-source [file join $SCRIPT_DIR  "ok_utils" "debug_utils.tcl"]
-source [file join $SCRIPT_DIR   "ext_tools.tcl"]
+set SCRIPT_DIR__cards [file dirname [info script]]
+
+# TODO: make locally arrangements to find the package(s) instead
+# TODO: for instance use the setup file from StereoPairs if found in ../
+source [file join $SCRIPT_DIR__cards "setup_goodies.tcl"]
 
 package require ok_utils;   namespace import -force ::ok_utils::*
 package require img_proc;   namespace import -force ::img_proc::*
 
-ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR' ----"
+ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR__cards' ----"
+source [file join $SCRIPT_DIR__cards ".." "ext_tools.tcl"]
 
 
 ################################################################################
@@ -50,9 +53,10 @@ proc make_cards_in_current_dir {ext pairWidthCm origWhRatio}  {
 
 
 proc _read_and_check_ext_tool_paths {}  {
-  if { 0 == [set extToolPathsFilePath [dualcam_find_toolpaths_file 0] }   {
+  if { 0 == [set extToolPathsFilePath [dualcam_find_toolpaths_file 0]] }   {
     #standalone invocaion
-    set extToolPathsFilePath [file join $::SCRIPT_DIR ".." "ext_tool_dirs.csv"]
+    set extToolPathsFilePath [file join $::SCRIPT_DIR__cards \
+                                        ".." "ext_tool_dirs.csv"]
   }
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
     return  0;  # error already printed
@@ -97,10 +101,14 @@ proc _sort_cards_in_current_dir {ext}  {
       }; #foreach
     }; #while
   }
-  ok_info_msg "Distributed [llength $imgFiles] input images into $cardCnt cards of 4"
-  ok_trace_msg "Image distribution:"
-  foreach line [_format_card_spec $listOfQuads]  {
-    ok_trace_msg $line
+  if { 0 < [llength $imgFiles] }  {
+    ok_info_msg "Distributed [llength $imgFiles] '*.$ext' input image(s) into $cardCnt card(s) of 4"
+    ok_trace_msg "Image distribution:"
+    foreach line [_format_card_spec $listOfQuads]  {
+      ok_trace_msg $line
+    }
+  } else {
+    ok_info_msg "No '*.$ext' input images found"
   }
   return  $listOfQuads
 }
