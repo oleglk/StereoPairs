@@ -19,6 +19,7 @@ namespace eval ::ok_utils:: {
 	ok_discard_empty_list_elements \
   ok_group_repeated_elements_in_list \
   ok_split_string_by_whitespace \
+  ok_split_string_by_substring \
 	ok_subtract_list_from_list \
 	ok_copy_array \
 	ok_list_to_array \
@@ -154,6 +155,21 @@ proc ::ok_utils::ok_group_repeated_elements_in_list {inpList headOrTail} {
 # Returns a list with words from 'inpStr'
 proc ::ok_utils::ok_split_string_by_whitespace {inpStr} {
   return  [regexp -all -inline {\S+} $inpStr]
+}
+
+
+# Returns a list with substrings from 'inpStr' that were separated by 'sepStr'
+# Derived from 'wsplit' at http://wiki.tcl.tk/1499
+proc ::ok_utils::ok_split_string_by_substring {inpStr sepStr} {
+  set first [string first $sepStr $inpStr]
+  if {$first == -1} {
+    return [list $inpStr]
+  } else {
+    set l [string length $sepStr]
+    set left [string range $inpStr 0 [expr {$first-1}]]
+    set right [string range $inpStr [expr {$first+$l}] end]
+    return  [concat [list $left] [ok_split_string_by_substring $right $sepStr]]
+  }
 }
 
 

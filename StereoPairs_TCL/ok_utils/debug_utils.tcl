@@ -22,6 +22,9 @@ namespace eval ::ok_utils:: {
   ok_pause_console \
   ok_finalize_diagnostics \
   ok_init_diagnostics     \
+  ok_set_start_time                       \
+  ok_pause_and_reset_start_time_if_needed \
+  ok_reset_start_time_if_needed           \
 	ok_set_loud \
 	ok_loud_mode
 
@@ -32,6 +35,10 @@ namespace eval ::ok_utils:: {
 
     variable DIAGNOSTICS_FILE_HANDLE 0 ;  # =0 means not yet open
     variable DIAGNOSTICS_FILE_PATH  ""
+    
+    variable _WORK_START_TIMESTAMP      -1;  # global timer start time (sec)
+    variable _MAX_WORKTIME            3600;  # max time (sec) of continuous work
+    variable _PAUSE_DURATION            60;  # time to RELAX (sec)
 }
 
 
@@ -197,6 +204,47 @@ proc ::ok_utils::ok_init_diagnostics {outFilePath}  {
   # file will be opened at 1st write
   _ok_write_diagnostics "Diagnostics log file set to '$DIAGNOSTICS_FILE_PATH'"
 }
+
+
+################################################################################
+## The mechanism of "global timer" intended to allow the system to rest 
+## after long periods of intensive computing/storage activity
+################################################################################
+
+# Sets global timer to the currrent time
+proc ::ok_utils::ok_set_start_time {} {
+  variable _WORK_START_TIMESTAMP
+  set _WORK_START_TIMESTAMP [clock seconds]
+}
+
+
+# If time from the global-timer start exceeds '_MAX_WORKTIME',
+# waits for '_PAUSE_DURATION' sec, then resets start time and resumes the work
+proc ::ok_utils::ok_pause_and_reset_start_time_if_needed {} {
+  variable _WORK_START_TIMESTAMP
+  variable _MAX_WORKTIME
+  variable _PAUSE_DURATION
+  set elapsedSec [expr {[clock seconds] - $_WORK_START_TIMESTAMP}]
+  if { $elapsedSec > $_MAX_WORKTIME } {
+    ok_info_msg "Relaxing for $_PAUSE_DURATION sec after $elapsedSec sec of continuous work"
+    after [expr 1000 * $_PAUSE_DURATION]
+    ok_set_start_time
+  }
+}
+
+
+# If time from the global-timer start exceeds '_MAX_WORKTIME' or is uninitialized,
+# resets start time
+proc ::ok_utils::ok_reset_start_time_if_needed {} {
+  variable _WORK_START_TIMESTAMP
+  variable _MAX_WORKTIME
+  set elapsedSec [expr {[clock seconds] - $_WORK_START_TIMESTAMP}]
+  if { ($_WORK_START_TIMESTAMP < 0) || ($elapsedSec > $_MAX_WORKTIME) } {
+    ok_info_msg "Resetting global start time after $elapsedSec sec of continuous work"
+    ok_set_start_time
+  }
+}
+################################################################################
 
 
 ################################################################################

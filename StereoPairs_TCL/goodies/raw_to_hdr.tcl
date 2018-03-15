@@ -50,6 +50,8 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(doPreview)        1  ;  # 1 == smaller and faster;  0 == full-size, very slow
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
   set ::STS(doBlend)          1  ;  # whether to perform blending (fusing) step
+  set ::STS(doSkipExisting)   0  ;  # whether to keep pre-existent outputs untouched
+  set ::STS(abortOnLowDiskSpace) 1;  # whether to abort if not enough free disk space for conversion
   set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
   set ::STS(wbOutFile)        "" ;  # output file with per-image white balance coefficients
 
@@ -78,6 +80,8 @@ proc raw_to_hdr_main {cmdLineAsStr {doHDR 1}}  {
   }
   # TODO: custom _verify_external_tools
   if { 0 == [_raw_to_hdr_verify_external_tools] }  { return  0  };  # error already printed
+
+  ok_reset_start_time_if_needed ;   # the timer to track long activity periods
 
   set nInpDirs [llength $::STS(inpDirPaths)]
   ok_info_msg "Start processing RAW file(s) under $nInpDirs input directory(ies)"
@@ -116,6 +120,8 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -rotate {val "1 means rotate according to EXIF (default);  0|90|180|270 - rotation angle clockwise"} \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
+  -do_skip_existing {val "1 means keep pre-existent outputs untouched; 0 means perform the conversion and override"} \
+  -do_abort_on_low_disk_space {val "1 means exit if available free disk space smaller than estimated need; 0 means continue anyway"} \
   -do_preview  {val "1 means create smaller-size previews; 0 means create full-size images"} \
   -wb_inp_file {val	"name of the CSV file (under the working directory) with white-balance coefficients to be used for RAW images"} \
   -wb_out_file {val	"name of the CSV file (under the working directory) for white-balance coefficients that were used for RAW images"} \
@@ -125,8 +131,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # create dummy command line with the default parameters and copy it
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
-  ok_set_cmd_line_params defCml cmlD {                                  \
-    {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"} \
+  ok_set_cmd_line_params defCml cmlD {                                    \
+    {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"}  \
+    {-do_skip_existing "0"} {-do_abort_on_low_disk_space 1}               \
     {-do_preview "0"} {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
@@ -263,6 +270,22 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
       }
     }
   } 
+  if { [info exists cml(-do_skip_existing)] }  {
+    if { ($cml(-do_skip_existing) == 0) || ($cml(-do_skip_existing) == 1) }  {
+        set ::STS(doSkipExisting) $cml(-do_skip_existing)
+      } else {
+        ok_err_msg "Parameter telling whether to keep pre-existent outputs untouched (-do_skip_existing); should be 0 or 1"
+        incr errCnt 1
+      }
+  }
+  if { [info exists cml(-do_abort_on_low_disk_space)] }  {
+    if { ($cml(-do_abort_on_low_disk_space) == 0) || ($cml(-do_abort_on_low_disk_space) == 1) }  {
+        set ::STS(abortOnLowDiskSpace) $cml(-do_abort_on_low_disk_space)
+      } else {
+        ok_err_msg "Parameter telling whether to exit if free disk space is insufficient (-do_abort_on_low_disk_space); should be 0 or 1"
+        incr errCnt 1
+      }
+  }
   if { [info exists cml(-wb_inp_file)] }  {
     set iwbPath [file join [pwd] $cml(-wb_inp_file)]
     if { 0 == [ok_filepath_is_readable $iwbPath] }  {
@@ -343,6 +366,10 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
     return  0
   }
+  if { (0 == [_estimate_free_disk_space_for_raw_conversion $rawPaths [pwd]]) \
+        && $::STS(abortOnLowDiskSpace) }  {
+    return  -1;   # error already printed
+  }
   if { "" == $::STS(wbInpFile) }  { 
     set rawNamesToWbMults  [dict create]
   } else {
@@ -381,6 +408,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
       }
       ##$::_DCRAW  $::g_dcrawParamsMain -w -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
       ##if NOT EXIST "$::g_dirLow\%%~nf.TIF" (echo * Missing "$::g_dirLow\%%~nf.TIF". Aborting... & exit /B -1)
+      ok_pause_and_reset_start_time_if_needed ;   # allow periodical resting
     }
   }
   if { "" != $::STS(wbOutFile) }  { 
@@ -423,6 +451,7 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
     if { 0 == [_fuse_one_hdr $rawName $outDir $::g_fuseOpt] }  {
       return  -1
     }
+    ok_pause_and_reset_start_time_if_needed ;   # allow periodical resting
   }
   puts "====== Finished HDR fusing in '[pwd]'; [llength $rawPaths] image(s) processed ========"
   return  [llength $rawPaths]
@@ -436,19 +465,13 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
 #     uses RGB multipliers from this dict
 # If 'rawNameToRgbMultList' dict given but doesn't include name of 'rawPath',
 #     inserts RGB multipliers from the RAW into this dict
+# TODO: return 1 if converted, 0 if skipped, -1 on error
 proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   upvar $rawNameToRgbMultList rawNameToRgb
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].TIF"]
-  #~ if { 1 == [file exists $outPath] }  {
-    #~ ok_info_msg "Image '$outPath' pre-existed; skipped by _convert_one_raw"
-    #~ return 1
-  #~ }
-  if { 0 == [ok_filepath_is_writable $outPath] }  {
-    ok_err_msg "Cannot write into '$outPath'";    return 0
-  }
-
+  # provide white-balance multipliers
   if { $rawNameToRgb != 0 }  {
     if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
       set rgbMultList [dict get $rawNameToRgb $rawName]
@@ -480,6 +503,17 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     270     { set rotSwitch "-t 5"  }
     default { set rotSwitch ""      }
   }
+  # check whether the output exists AFTER white-balance multipliers taken care of
+  if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
+    if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
+      ok_info_msg "Image '$outPath' pre-existed; skipped by RAW conversion step"
+      return 1
+    }
+    ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by RAW conversion step"
+  }
+  if { 0 == [ok_filepath_is_writable $outPath] }  {
+    ok_err_msg "Cannot write into '$outPath'";    return 0
+  }
   if { $::STS(doPreview) == 0 }  {
     set _dcrawParamsMain $::g_dcrawParamsMain;        set descr "RAW-conversion"
     set _convertSaveParams $::g_convertSaveParams
@@ -505,10 +539,13 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "$rawName.TIF"]
-  #~ if { 1 == [file exists $outPath] }  {
-    #~ ok_info_msg "Image '$outPath' pre-existed; skipped by _fuse_one_hdr"
-    #~ return 1
-  #~ }
+  if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
+    if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
+      ok_info_msg "Image '$outPath' pre-existed; skipped by fusion step"
+      return 1
+    }
+    ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by fusion step"
+  }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
@@ -516,8 +553,10 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
   set inPathNorm [file join $::STS(dirNorm) "$rawName.TIF"]
   set inPathHigh [file join $::STS(dirHigh) "$rawName.TIF"]
   foreach p [list $inPathLow $inPathNorm $inPathHigh]  {
-    if { ![ok_filepath_is_readable $p] }  {
-      ok_err_msg "Inexistent or unreadable intermediate image '$p'";    return 0
+    if { ![ok_filepath_is_readable $p] || \
+         (0 == [check_image_integrity_by_imagemagick $p]) }  {
+      ok_err_msg "Inexistent, unreadable or corrupted intermediate image '$p'"
+      return 0
     }
   }
   set cmdListFuse [concat $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) \
@@ -623,6 +662,7 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
   }
   set ::_IMCONVERT  [format "{%s}"  [file join $::_IM_DIR "convert.exe"]]
   set ::_IMMOGRIFY  [format "{%s}"  [file join $::_IM_DIR "mogrify.exe"]]
+  set ::_IMIDENTIFY [format "{%s}"  [file join $::_IM_DIR "identify.exe"]]
   # - DCRAW:
   # unless ::_DCRAW_PATH points to some custom executable, point at the default
   if { (![info exists ::_DCRAW_PATH]) || (""== [string trim $::_DCRAW_PATH]) } {
@@ -648,7 +688,11 @@ proc _raw_to_hdr_verify_external_tools {} {
     incr errCnt 1
   }
   if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'montage' tool '$::_IMMONTAGE'"
+    ok_err_msg "Inexistent ImageMagick 'mogrify' tool '$::_IMMOGRIFY'"
+    incr errCnt 1
+  }
+  if { 0 == [file exists [string trim $::_IMIDENTIFY " {}"]] }  {
+    ok_err_msg "Inexistent ImageMagick 'identify' tool '$::_IMIDENTIFY'"
     incr errCnt 1
   }
   if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
@@ -685,6 +729,35 @@ proc _ColorMultLineCheckCB {nameAndMultsAsList}  {
     }
   }
   return  "";  # OK
+}
+
+
+# Returns 1 if there's enough disk-space under 'outDirPath' to convert 'rawPaths'
+# Otherwise returns 0.
+proc _estimate_free_disk_space_for_raw_conversion {rawPaths outDirPath} {
+  set _DISK_USAGE_FACTOR 20; # temporary files measured to take ~20x of RAWs
+  if { 0 > [set rawKb [ok_get_filelist_disk_space_kb $rawPaths 1]] }  {
+    return  0;  # cannot measure usage; assume not-enough; error already printed
+  }
+  if { 0 > [set availKb [ok_try_get_free_disk_space_kb $outDirPath]] }  {
+    return  0;  # cannot measure free; assume not-enough; error` already printed
+  }
+  set outDirList [list $::STS(outDirName) \
+                       $::STS(dirNorm) $::STS(dirLow) $::STS(dirHigh)]
+  set existOutKb [ok_dir_list_size $outDirList];  # outputs that may preexist
+  set reqKb [expr {($rawKb * $_DISK_USAGE_FACTOR) - $existOutKb}]
+  if { $availKb < $reqKb }  {
+    set msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; only $availKb Kb available"
+    ok_err_msg  $msg;      return  0
+    #~ if { $::STS(doSkipExisting) == 0 }   {
+      #~ ok_err_msg  $msg;      return  0
+    #~ } else {
+      #~ ok_warn_msg "$msg. Allowed to continue due to repair mode - some files already exist"
+      #~ return  1
+    #~ }
+  }
+  ok_info_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; $availKb Kb available - should be enough"
+  return  1
 }
 
 

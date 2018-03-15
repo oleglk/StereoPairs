@@ -263,7 +263,8 @@ proc _arrange_dirs_in_current_dir {} {
 
 # Performs rotations and croppings; returns num of processed files, 0 if none, -1 on error.
 proc _rotate_crop_all_in_current_dir {imgExt} {
-  if { "-ERROR-" == [set imSaveParams [choose_im_img_save_params \
+  set cntSkipped 0
+  if { "-ERROR-" == [set commonImSaveParams [choose_im_img_save_params \
                      $imgExt $::STS(finalDepth) $::STS(forceJpegQuality)]] }  {
     ok_err_msg "Format '*.$imgExt not supported for saving images"
     return  -1
@@ -275,6 +276,16 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
     return  0
   }
   foreach imgPath $imgPaths {
+    if { 1 == [_rotate_and_crop_is_image_processed $imgPath] }  {
+      ok_info_msg "Image '$imgPath' assumed already rotated/cropped; skipped by rotation/cropping step"
+      incr cntSkipped 1;      continue
+    }
+    # add comment to mark the image as processed
+    if { 0 == [_make_new_image_comment $imgPath \
+                                $::STS(rotAngle) $::STS(cropRatio) comment] }  {
+      return  -1;  # error already printed
+    }
+    set imSaveParams "-set comment \"$comment\" $commonImSaveParams"
     if { 0 == [rotate_crop_one_img $imgPath \
                           $::STS(rotAngle) $::STS(padX)  $::STS(padY) \
                           $::STS(cropRatio) \
@@ -282,7 +293,8 @@ proc _rotate_crop_all_in_current_dir {imgExt} {
       return  -1;  # error already printed
     }
   }
-  puts "====== Finished rotations and croppings in '[pwd]'; extension: '$imgExt'; [llength $imgPaths] image(s) processed ========"
+  set nProcessed [expr {[llength $imgPaths] - $cntSkipped}]
+  puts "====== Finished rotations and croppings in '[pwd]'; extension: '$imgExt'; $nProcessed image(s) processed; $cntSkipped image(s) skipped ========"
   return  [llength $imgPaths]
 }
 
@@ -300,6 +312,30 @@ proc choose_im_img_save_params {imgExt finalDepth forceJpegQuality}  {
     "jpg"   {  return "-depth $finalDepth $jpegQual"      }
     default {  return  "-ERROR-"                          }
   }
+}
+
+
+# Returns 1 if image 'imgPath' marked as processed, 0 if not marked, -1 on error
+proc _rotate_and_crop_is_image_processed {imgPath}  {
+  if { 0 == [get_image_comment_by_imagemagick $imgPath comment] } {
+    return  -1; # error already printed
+  }
+  return  [expr {1 == [regexp "/:/rotated.*/:/cropped.*/:/" $comment]}]
+}
+
+
+# Puts into 'comment' a string that marks the image as processed
+# If 'imgPath' already has some comment, the string starts with it
+# Returns 1 on success, 0 on error
+proc _make_new_image_comment {imgPath rotAngle cropRatio comment}  {
+  upvar $comment cm
+  if { 0 == [get_image_comment_by_imagemagick $imgPath cm] } {
+    return  0; # error already printed
+  }
+  # add comment to mark the image as processed
+  if { $cm != "" }  { append cm "----" };  # seems like comments are single-line
+  append cm "/:/rotated$::STS(rotAngle)/:/cropped$::STS(cropRatio)/:/"
+  return  1
 }
 
 

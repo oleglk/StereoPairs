@@ -14,7 +14,10 @@ namespace eval ::img_proc:: {
       get_image_global_timestamp              \
       get_image_timestamp_by_imagemagick      \
       get_image_brightness_by_imagemagick     \
+      check_image_integrity_by_imagemagick    \
       get_image_dimensions_by_imagemagick     \
+      get_image_comment_by_imagemagick        \
+      get_image_attributes_by_imagemagick     \
       get_image_attributes_by_dcraw           \
 }
 
@@ -246,44 +249,80 @@ proc ::img_proc::get_image_brightness_by_imagemagick {fullPath brightness} {
 }
 
 
-# (this proc is a copy-paste from LazyConv - same name under ::imageproc:: -
+# Returns 1 if 'fullPath' is a valid image file, 0 otherwise.
+proc ::img_proc::check_image_integrity_by_imagemagick {fullPath} {
+  set rc [get_image_attributes_by_imagemagick $fullPath width height comment 0]
+  if { $rc == 0 }  { return 0 } ;   # cannot even read attributes
+  return  [expr { (($width > 0) && ($height > 0))?  1 : 0 }]
+}
+
+
+# Puts into 'width' and 'height' horizontal and vertical sizes of 'fullPath'
+# Returns 1 on success, 0 on error.
+proc ::img_proc::get_image_dimensions_by_imagemagick {fullPath width height} {
+  upvar $width wd
+  upvar $height ht
+  return  [get_image_attributes_by_imagemagick $fullPath wd ht comment 1]
+}
+
+
+# Puts into 'comment'  the comment field of 'fullPath's metadata
+# Returns 1 on success, 0 on error.
+proc ::img_proc::get_image_comment_by_imagemagick {fullPath comment} {
+  upvar $comment cm
+  return  [get_image_attributes_by_imagemagick $fullPath width height cm 1]
+}
+
+
+# (this proc is a derivative from LazyConv - same name under ::imageproc:: -
 # except for executable path not enclosed in extra curved brackets)
 # Puts into 'width' and 'height' horizontal and vertical sizes of 'fullPath'
 # Returns 1 on success, 0 on error.
 # Imagemagick "identify" invocation: identify -ping -format "%w %h" <filename>
-proc ::img_proc::get_image_dimensions_by_imagemagick {fullPath width height} {
+proc ::img_proc::get_image_attributes_by_imagemagick {fullPath \
+        width height comment {priErr 1}} {
   upvar $width wd
   upvar $height ht
+  upvar $comment cm
   if { ![file exists $fullPath] || ![file isfile $fullPath] } {
-    ok_err_msg "Invalid image path '$fullPath'"
+    ok_err_msg "Invalid image path '$fullPath'"; # always print unexpected error
 	  return  0
   }
   set tclExecResult [catch {
     # Open a pipe to the program
     #   set io [open "|identify -format \"%w %h\" $fullPath" r]
-    set io [eval [list open [format {|%s -ping -format "%%w %%h" %s} \
-               $::_IMIDENTIFY $fullPath] r]]
+    set io [eval [list open \
+        [format {|%s -ping -format "%%w_/_/_%%h_/_/_%%c" %s} \
+                  $::_IMIDENTIFY $fullPath] r]]
     set len [gets $io line];	# Get the reply
     close $io
   } execResult]
   if { $tclExecResult != 0 } {
-    ok_err_msg "$execResult!"
-    ok_err_msg "Cannot get width/height of '$fullPath'"
+    if { $priErr == 1 }  {
+      ok_err_msg "$execResult!"
+      ok_err_msg "Cannot get width/height/comment of '$fullPath'"
+    }
     return  0
   }
   # $line should be: "<width> <height>"
   if { $len == -1 } {
-    ok_err_msg "Cannot get width/height of '$fullPath'"
+    if { $priErr == 1 }  {
+      ok_err_msg "Cannot get width/height/comment of '$fullPath'"
+    }
     return  0
   }
   # ok_trace_msg "{W H} of $fullPath = $line"
-  set whList [split $line " "]
-  if { [llength $whList] != 2 } {
-    ok_err_msg "Cannot get width/height of '$fullPath'"
+  set whList [ok_split_string_by_substring $line "_/_/_"]
+  if { [llength $whList] != 3 } {
+    if { $priErr == 1 }  {
+      ok_err_msg "Cannot get width/height/comment of '$fullPath'"
+    }
 	  return  0
   }
   set wd [lindex $whList 0];    set ht [lindex $whList 1]
+  set cm [lindex $whList 2]
   ok_trace_msg "Dimensions of $fullPath: width=$wd, height=$ht"
+  ok_trace_msg "Comment of $fullPath: '$cm'"
   return  1
 }
 
