@@ -1,5 +1,7 @@
 # run__make_stereocards.tcl - a "sourceable" file that runs make_stereocards.tcl on final images' subdirectory
 
+set CARD_WIDTH_CM 6.2 ;   # intended width of an individual printed pair (cm)
+
 set g_jpegQuality 99;  # 1..100 forces given JPEG quality; 0 leaves to default
 
 ################################################################################
@@ -93,7 +95,7 @@ ok_info_msg "Success changing work directory to '$subDirFinal'"
 # (the make_stereocards.tcl script knows location of tool-path file in Dualcam-Companion software)
 set anyExtDone 0
 foreach ext {tif jpg} {
-  incr anyExtDone [make_cards_in_current_dir $ext 6.4 $sidesRatio]
+  incr anyExtDone [make_cards_in_current_dir $ext $CARD_WIDTH_CM $sidesRatio]
 }
 
 # (6) Return to work-area root directory
