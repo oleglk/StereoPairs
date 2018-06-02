@@ -18,7 +18,7 @@ You need to rename freewrap.exe into any name you like in order to use it as a p
 
 Setting up DualCam-Companion
 ============================
-- Unpack the archive into the directory where you want to run it from
+- Unpack the StereoPairs.zip archive into the directory where you want to run it from
 - Now you need to change one text file located in the root directory of the installation
   (In the example here the above-mentioned root directory is "D:\Work\StereoPairs\")
 -- Edit the excutable- and TCL-code paths in "StereoPairs" shortcut :
@@ -31,7 +31,7 @@ Setting up DualCam-Companion
 
 Invocation of DualCam-Companion: from now on just double-click on the "StereoPairs" shortcut.
 
-If the above fails (unlikely), you need to see startup diagnostics. In order to obtain it, invoke DualCam-Companion from TCL console (as opposed to the shortcut):
+If the above fails (unlikely), please see the startup diagnostics. In order to obtain it, invoke DualCam-Companion from TCL console (as opposed to the shortcut):
 - start your TCL interpreter executable without command-line parameter (you can just double-click it)
 - the console window opens and gives you the command prompt
 - type the following command at the prompt, then press <Enter>:
@@ -43,9 +43,9 @@ If the above fails (unlikely), you need to see startup diagnostics. In order to 
 
 Configuring DualCam-Companion
 =============================
-This applies to making DualCam-Companion fit your workflow. The idea is that you configure your preferences one time, and then don't have to change any option during the normal use. Unless your workflow varies, of course.
+This applies to making DualCam-Companion fit your computer environment and workflow. The idea is that you configure your preferences one time, and then don't have to change any option during the normal use. Unless your workflow varies, of course.
 
-First you need to specify the location of external tools used by DualCam-Companion.
+First specify the location of external tools used by DualCam-Companion.
 Start DualCam-Companion, open Preferences window, press "Tools..." button. You are presented with a form to enter three tool paths. For each one there's a button that brings a standard dialog to choose the path on your disk. out of the three paths only the first one is essential for mainstream functionality of DualCam-Companion; others are used for optional custom utilities; leave them blank if not needed.
 - ImageMagick folder - the directory of ImageMagick executables - mandatory.
 - Dcraw path - though ImageMagick includes dcraw, the included version may produce bad output from RAW files of your camera. If this is the case AND you are using RAW conversion custom command, point "Dcraw path" at the suitable dcraw version.
@@ -53,12 +53,15 @@ Start DualCam-Companion, open Preferences window, press "Tools..." button. You a
 Press "Save" when you are done with the paths.
 
 The tool paths you entered are saved in dualcam_ext_tool_dirs.csv file in your home directory.
+On my Windows10 computer this file is "C:/Users/Oleg/dualcam_ext_tool_dirs.csv"
     Example:
-      ###################################################
-      # dualcam_ext_tool_dirs.csv
-      Environment-variable-name,Path
-      _IM_DIR,C:/Program Files (x86)/ImageMagick-6.8.7-3
-    Note 1: lines starting from # are comments; there are two non-comment lines in the example: header line and one data line.
+###################################################
+# dualcam_ext_tool_dirs.csv
+Environment-variable-name,Path,
+_IM_DIR,C:/Program Files/Imagemagick_707_26,
+_ENFUSE_DIR,C:/Program Files/Enfuse_41/bin,
+###################################################
+    Note 1: lines starting from # are comments; there are three non-comment lines in the example: header line and two data lines.
     Note 2: in the data line, _IM_DIR is a hardcoded keyword; the user changes only directory path after ",".
     Note 3: no quotes are needed in ext_tool_dirs.csv even if the path has spaces
 
@@ -69,7 +72,7 @@ So, start DualCam-Companion, open Preferences window and do the folllowing chang
 - if you tend to keep your per-shooting-session work areas under one root directory, set -INITIAL_WORK_DIR to this directory
 - define by -name_format_left/-name_format_right the left/right image name formats as accepted by your stereo-photo editor
 -- see the help on the right side in the preferences window
--- for StereoPhotoMaker the formats are [LeftName]-[RightId]_l / [LeftName]-[RightId]_r
+-- the default formats are for StereoPhotoMaker: [LeftName]-[RightId]_l / [LeftName]-[RightId]_r
 - if your RAW converter stores all conversion-settings files in one directory, assign its path to -global_img_settings_dir
 - if the clocks on your cameras are stable (it should be the case for anything other than smartphone-driven camera), set time difference (in seconds) between right and left cameras in -time_diff
 -- see the User-Guide for how to determine the proper difference value
@@ -80,8 +83,15 @@ So, start DualCam-Companion, open Preferences window and do the folllowing chang
 - set -max_frame_gap to Exif resolution (on Sony cameras it's 1 (sec)) if your cameras are electrically synchronized; use 2 (sec) for "simultaneous" pressing of two shutter buttons; use larger value for "cha-cha-cha" method
 - for now set -left_img_subdir to "L" and -right_img_subdir - to "R"; these options currently affect only color-analyzer, while the pair-matcher has its left/right image subdirectory names hardcoded to "L"/"R"
 -- this dictates you the choice of left/right image subdirectory names in your workarea, of course
+-- the included RAW conversion utility by default creates the images under "L/OUT", "R/OUT", so set these values if you are going to use this utility
 - set in -final_img_dir the name of subdirectory where you put the final stereo images
 
 - it's recommended to keep other options at their original values 
+
+
+Setting-up DualCam-Companion custom commands
+================================
+
+Please refer to Doc/DualCam_custom_commands.txt .
 
 
