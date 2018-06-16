@@ -24,7 +24,6 @@ source [file join $SCRIPT_DIR__cards ".." "ext_tools.tcl"]
 #~ @REM Offset for straight 1280x720 picture would be 100 pixels
 #~ set WIDTH=2560
 #~ set HEIGHT=1440
-#~ set LEVEL=0.8
 #~ md CANV_L
 #~ md CANV_R
 #~ set "_CROP_LEFT=-gravity west -crop 50%x100%+0+0"
@@ -48,14 +47,17 @@ source [file join $SCRIPT_DIR__cards ".." "ext_tools.tcl"]
 ################################################################################
 
 
+set ::g_dirL CANV_L
 
+# extList - list of originals' extensions (typical: {TIF BMP})
 # canvWd/canvHt (pix) = canvas width/height - multiple of projector resolutiuon
-# 
-proc make_offset_lr_in_current_dir {ext canvWd canvHt}  {
+# offset (pix) - horizontal shift of L|R image - left rightwards, right leftwards
+# gamma - gamma correction value (typical: 0.8)
+proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
   if { 0 == [_read_and_check_ext_tool_paths] }  {
     return  0;   # error already printed
   }
-  if { 0 == [set listOfQuads [_sort_cards_in_current_dir $ext]] }  {
+  if { 0 == [set origPathList [_find_originals_in_current_dir $ext]] }  {
     return  0;   # error already printed
   }
   set geomDict [_compute_layout $::g_dpi $pairWidthCm $origWhRatio]
@@ -79,52 +81,21 @@ proc _read_and_check_ext_tool_paths {}  {
 }
 
 
-# Builds and returns list of file-path quadruples - we need 4 images per a card
-# Each quadruple is a list by itself
-proc _sort_cards_in_current_dir {ext}  {
-  set listOfQuads [list]
-  set imgPattern  [file join [pwd] "*.$ext"]
-  if { 0 == [set imgFiles [glob -nocomplain $imgPattern]] }  {
-    ok_err_msg "No input images to match '$imgPattern'"
-    return  0
-  }
-  set cardCnt 1;  # counts cards already with images allocated
-  set quadCnt 0;  # counts images for one quadruple
-  foreach inpImgPath $imgFiles {
-    if { $quadCnt == 4 }  { ;   # switch to the next card
-      incr cardCnt 1
-      set quadCnt 0
-      lappend listOfQuads $lastQuadList
-      set lastQuadList [list]
+# Builds and returns list of original image file-paths
+proc _find_originals_in_current_dir {extList}  {
+  set origPathList [list]
+  foreach ext $extList {
+    set imgPattern  [file join [pwd] "*.$ext"]
+    if { 0 == [set imgFiles [glob -nocomplain $imgPattern]] }  {
+      ok_info_msg "No input images to match '$imgPattern'";    continue
     }
-    incr quadCnt 1
-    lappend lastQuadList $inpImgPath
+    set origPathList [concat $origPathList $imgFiles]
   }
-  # all input images are distributed; make the last quadruple complete
-  if { ($quadCnt > 0) && ($quadCnt < 4) }  {
-    # use images from the tail of 'imgFiles'
-    while { $quadCnt < 4 }  { ;  # loop in case there are too few input images
-      foreach inpImgPath [lreverse $imgFiles] {
-        incr quadCnt 1
-        lappend lastQuadList $inpImgPath
-        if { $quadCnt == 4 }  { ;   # done
-          incr cardCnt 1
-          lappend listOfQuads $lastQuadList
-          break
-        }
-      }; #foreach
-    }; #while
+  if { 0 == [llength $origPathList] }  {
+    ok_err_msg "No input images found in directory '[pwd]'"
   }
-  if { 0 < [llength $imgFiles] }  {
-    ok_info_msg "Distributed [llength $imgFiles] '*.$ext' input image(s) into $cardCnt card(s) of 4"
-    ok_trace_msg "Image distribution:"
-    foreach line [_format_card_spec $listOfQuads]  {
-      ok_trace_msg $line
-    }
-  } else {
-    ok_info_msg "No '*.$ext' input images found"
-  }
-  return  $listOfQuads
+  ok_err_msg "Found [llength $origPathList] input image(s)  in directory '[pwd]'"
+  return  $origPathList
 }
 
 
