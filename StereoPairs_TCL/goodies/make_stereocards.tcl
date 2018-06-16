@@ -62,6 +62,7 @@ proc _read_and_check_ext_tool_paths {}  {
     return  0;  # error already printed
   }
   if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
+    return  1
 }
 
 

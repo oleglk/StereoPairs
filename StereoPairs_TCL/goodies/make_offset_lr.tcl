@@ -48,6 +48,7 @@ source [file join $SCRIPT_DIR__cards ".." "ext_tools.tcl"]
 
 
 set ::g_dirL CANV_L
+set ::g_dirR CANV_R
 
 # extList - list of originals' extensions (typical: {TIF BMP})
 # canvWd/canvHt (pix) = canvas width/height - multiple of projector resolutiuon
@@ -78,6 +79,7 @@ proc _read_and_check_ext_tool_paths {}  {
     return  0;  # error already printed
   }
   if { 0 == [verify_external_tools] }  { return  0  };  # error already printed
+  return  1
 }
 
 
@@ -98,6 +100,39 @@ proc _find_originals_in_current_dir {extList}  {
   return  $origPathList
 }
 
+
+proc _make_geometry_command_for_one_side {lOrR canvWd canvHt offset}  {
+  set lOrR [string toupper $lOrR]
+  if { ($lOrR != "L") && ($lOrR != "R") } {
+    ok_err_msg "Side is L or R; got '$lOrR'";    return  0
+  }
+  set cropDict [dict create \
+    "L"   "-gravity west -crop 50%x100%+0+0"  \
+    "R"   "-gravity east -crop 50%x100%+0+0"  ]
+  set offsetBase [format                                                      \
+              "-resize %dx%d -background black -gravity center -extent %dx%d" \
+              $canvHt $canvHt $canvWd $canvHt]
+  set offsetDict [dict create \
+    "L"   "$offsetBase-$offset-0"  \
+    "R"   "$offsetBase+$offset+0"  ]
+  set geomCmd [format "%s  %s"  \
+                        [dict get $cropDict $lOrR] [dict get $offsetDict $lOrR]]
+  return  $geomCmd
+}
+
+
+proc _make_color_correction_command_for_one_side {lOrR gamma}  {
+  set lOrR [string toupper $lOrR]
+  if { ($lOrR != "L") && ($lOrR != "R") } {
+    ok_err_msg "Side is L or R; got '$lOrR'";    return  0
+  }
+  set levelBase "-level 0%,100%"
+  set levelDict [dict create    \
+    "L"   "$levelBase,%gamma"   \
+    "R"   "$levelBase,%gamma"   ]
+  set colorCmd [dict get $levelDict $lOrR]
+  return  $colorCmd
+}
 
 # Returns description of photo-cards' contents as a list of stings
 proc _format_card_spec {listOfQuads}  {
