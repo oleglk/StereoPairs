@@ -50,7 +50,7 @@ source [file join $SCRIPT_DIR__cards ".." "ext_tools.tcl"]
 set ::g_dirL CANV_L
 set ::g_dirR CANV_R
 
-# extList - list of originals' extensions (typical: {TIF BMP})
+# extList - list of originals' extensions (typical: {TIF BMP JPG})
 # canvWd/canvHt (pix) = canvas width/height - multiple of projector resolutiuon
 # offset (pix) - horizontal shift of L|R image - left rightwards, right leftwards
 # gamma - gamma correction value (typical: 0.8)
@@ -61,8 +61,15 @@ proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
   if { 0 == [set origPathList [_find_originals_in_current_dir $ext]] }  {
     return  0;   # error already printed
   }
-  set geomDict [_compute_layout $::g_dpi $pairWidthCm $origWhRatio]
-  if { 0 == [_generate_cards_by_spec $listOfQuads "Cards" $geomDict] }  {
+  if { 0 == [set geomL [_make_geometry_command_for_one_side "L"   \
+            $canvWd $canvHt $offset]] }  { return  0 };  # error already printed
+  if { 0 == [set geomR [_make_geometry_command_for_one_side "R"   \
+            $canvWd $canvHt $offset]] }  { return  0 };  # error already printed
+  if { 0 == [set colorL [_make_color_correction_command_for_one_side "L"   \
+            $gamma]] }                   { return  0 };  # error already printed
+  if { 0 == [set colorR [_make_color_correction_command_for_one_side "R"   \
+            $gamma]] }                   { return  0 };  # error already printed
+  if { 0 == [_prepare_output_dirs leftDirPath rightDirPath] }  {
     return  0;   # error already printed
   }
   return  1
@@ -101,6 +108,21 @@ proc _find_originals_in_current_dir {extList}  {
 }
 
 
+proc _prepare_output_dirs {leftDirPath rightDirPath}  {
+  upvar $leftDirPath  dirL
+  upvar $rightDirPath dirR
+  if { 0 == [ok_create_absdirs_in_list \
+        [list $::g_dirL $::g_dirR] \
+        {"folder-for-left-images" "folder-for-right-images"}] }  {
+  return  0
+  }
+  set dirL $::g_dirL;   set dirR $::g_dirR
+  return  1
+}
+
+
+# Builds and returns Imagemagick geometry-related arguments
+# for left- or right-side image. On error returns 0.
 proc _make_geometry_command_for_one_side {lOrR canvWd canvHt offset}  {
   set lOrR [string toupper $lOrR]
   if { ($lOrR != "L") && ($lOrR != "R") } {
@@ -133,6 +155,40 @@ proc _make_color_correction_command_for_one_side {lOrR gamma}  {
   set colorCmd [dict get $levelDict $lOrR]
   return  $colorCmd
 }
+
+
+proc _split_offset_listed_stereopairs {origPathList geomL geomR colorL colorR \
+                                        leftDirPath rightDirPath} {
+  set cntErr 0
+  foreach imgPath $origPathList {
+    if { 0 == [_make_image_for_one_side  \
+            $imgPath $geomL $colorL $leftDirPath]] }  { incr cntErr 1 }
+    if { 0 == [_make_image_for_one_side  \
+            $imgPath $geomR $colorR $rightDirPath]] }  { incr cntErr 1 }
+    #TODO
+  }
+}
+
+
+proc _make_image_for_one_side {imgPath geomCmd colorCmd outDirPath} {
+    #~ set outImg [file join $tmpDir \
+                    #~ [ok_insert_suffix_into_filename [file tail $imgPath] "_sm"]]
+    #~ set nv_inpImg [format "{%s}" [file nativename $imgPath]]
+    #~ set nv_outImg [format "{%s}" [file nativename $outImg]]
+    #~ lappend nv_smallImagesAsList $nv_outImg
+    #~ set cmdList [concat $::_IMCONVERT $nv_inpImg -density $dpi \
+                  #~ -adaptive-resize [format "%dx%d" $pairWidthPx $pairHeightPx] \
+                  #~ -depth 8 -compress LZW $nv_outImg]
+    #~ if { 0 == [ok_run_silent_os_cmd $cmdList] }  {
+      #~ ok_err_msg "Failed resizing input images for card '$cardFilePath'"
+      #~ return  0
+    #~ }
+    #~ if { 0 == [get_image_dimensions_by_imagemagick $outImg width height] }  {
+      #~ return  0;  # error already printed
+    #~ }
+    #~ if { $maxPairHeight < $height }  { set maxPairHeight $height }
+}
+
 
 # Returns description of photo-cards' contents as a list of stings
 proc _format_card_spec {listOfQuads}  {
