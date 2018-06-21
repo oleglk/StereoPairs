@@ -68,10 +68,14 @@ proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
   if { 0 == [set colorL [_make_color_correction_command_for_one_side "L"   \
             $gamma]] }                   { return  0 };  # error already printed
   if { 0 == [set colorR [_make_color_correction_command_for_one_side "R"   \
-            $gamma]] }                   { return  0 };  # error already printed
+              $gamma]] }                   { return  0 };  # error already printed
+  # everything is ready; now start making changes on the disk
   if { 0 == [_prepare_output_dirs leftDirPath rightDirPath] }  {
     return  0;   # error already printed
   }
+  set nGood [_split_offset_listed_stereopairs $origPathList $geomL $geomR \
+                          $colorL $colorR $leftDirPath $rightDirPath]
+  #OK_TODO
   return  1
 }
 
@@ -157,6 +161,9 @@ proc _make_color_correction_command_for_one_side {lOrR gamma}  {
 }
 
 
+# Makes separate left-and right images for each original in 'origPathList'.
+# Applies to output images geometrical-transform and color-correction commands.
+# Returns the number of succesfully processed images.
 proc _split_offset_listed_stereopairs {origPathList geomL geomR colorL colorR \
                                         leftDirPath rightDirPath} {
   set cntErr 0
@@ -165,8 +172,14 @@ proc _split_offset_listed_stereopairs {origPathList geomL geomR colorL colorR \
             $imgPath $geomL $colorL $leftDirPath]] }  { incr cntErr 1 }
     if { 0 == [_make_image_for_one_side  \
             $imgPath $geomR $colorR $rightDirPath]] }  { incr cntErr 1 }
-    #TODO
   }
+  set n [llength $origPathList];  set nGood [expr $n - $cntErr]
+  if { $cntErr == 0 }   {
+    ok_info_msg "Processed all $n stereopairs; no errors occured"
+  } else                {
+    ok_info_msg "Processed [llength $origPathList] stereopair(s); $cntErr error(s) occured"
+  }
+  return  $nGood
 }
 
 
