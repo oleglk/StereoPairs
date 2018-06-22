@@ -1,16 +1,17 @@
 # make_offset_lr.tcl - offset separate L/R images onto fixed size canvas for POLARIZED projection
 
-set SCRIPT_DIR__cards [file dirname [info script]]
+set SCRIPT_DIR__offset [file dirname [info script]]
 
 # TODO: make locally arrangements to find the package(s) instead
 # TODO: for instance use the setup file from StereoPairs if found in ../
-source [file join $SCRIPT_DIR__cards "setup_goodies.tcl"]
+source [file join $SCRIPT_DIR__offset "setup_goodies.tcl"]
 
 package require ok_utils;   namespace import -force ::ok_utils::*
 package require img_proc;   namespace import -force ::img_proc::*
 
-ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR__cards' ----"
-source [file join $SCRIPT_DIR__cards ".." "ext_tools.tcl"]
+ok_trace_msg "---- Sourcing '[info script]' in '$SCRIPT_DIR__offset' ----"
+source [file join $SCRIPT_DIR__offset ".." "ext_tools.tcl"]
+source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 
 
 ################################################################################
@@ -50,10 +51,14 @@ source [file join $SCRIPT_DIR__cards ".." "ext_tools.tcl"]
 set ::g_dirL CANV_L
 set ::g_dirR CANV_R
 
+# TODO: wrap into command-line based top function
+
+
 # extList - list of originals' extensions (typical: {TIF BMP JPG})
 # canvWd/canvHt (pix) = canvas width/height - multiple of projector resolutiuon
 # offset (pix) - horizontal shift of L|R image - left rightwards, right leftwards
 # gamma - gamma correction value (typical: 0.8)
+# Example:  cd e:/Photo_Publish/Stereo/TMP/;  make_offset_lr_in_current_dir {TIF JPG} 2560 1440 200 0.8
 proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
   if { 0 == [_read_and_check_ext_tool_paths] }  {
     return  0;   # error already printed
@@ -83,7 +88,7 @@ proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
 proc _read_and_check_ext_tool_paths {}  {
   if { 0 == [set extToolPathsFilePath [dualcam_find_toolpaths_file 0]] }   {
     #standalone invocaion
-    set extToolPathsFilePath [file join $::SCRIPT_DIR__cards \
+    set extToolPathsFilePath [file join $::SCRIPT_DIR__offset \
                                         ".." "ext_tool_dirs.csv"]
   }
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
@@ -169,200 +174,37 @@ proc _split_offset_listed_stereopairs {origPathList geomL geomR colorL colorR \
   set cntErr 0
   foreach imgPath $origPathList {
     if { 0 == [_make_image_for_one_side  \
-            $imgPath $geomL $colorL $leftDirPath]] }  { incr cntErr 1 }
+            $imgPath $geomL $colorL $leftDirPath  "_l"]] }  { incr cntErr 1 }
     if { 0 == [_make_image_for_one_side  \
-            $imgPath $geomR $colorR $rightDirPath]] }  { incr cntErr 1 }
+            $imgPath $geomR $colorR $rightDirPath "_r"]] }  { incr cntErr 1 }
   }
   set n [llength $origPathList];  set nGood [expr $n - $cntErr]
   if { $cntErr == 0 }   {
     ok_info_msg "Processed all $n stereopairs; no errors occured"
   } else                {
-    ok_info_msg "Processed [llength $origPathList] stereopair(s); $cntErr error(s) occured"
+    set msg "Processed $n stereopair(s); $cntErr error(s) occured"
+    if { $cntErr == $n }  { ok_err_msg $msg } else { ok_warn_msg $msg }
   }
   return  $nGood
 }
 
 
-proc _make_image_for_one_side {imgPath geomCmd colorCmd outDirPath} {
-    #~ set outImg [file join $tmpDir \
-                    #~ [ok_insert_suffix_into_filename [file tail $imgPath] "_sm"]]
-    #~ set nv_inpImg [format "{%s}" [file nativename $imgPath]]
-    #~ set nv_outImg [format "{%s}" [file nativename $outImg]]
-    #~ lappend nv_smallImagesAsList $nv_outImg
-    #~ set cmdList [concat $::_IMCONVERT $nv_inpImg -density $dpi \
-                  #~ -adaptive-resize [format "%dx%d" $pairWidthPx $pairHeightPx] \
-                  #~ -depth 8 -compress LZW $nv_outImg]
-    #~ if { 0 == [ok_run_silent_os_cmd $cmdList] }  {
-      #~ ok_err_msg "Failed resizing input images for card '$cardFilePath'"
-      #~ return  0
-    #~ }
-    #~ if { 0 == [get_image_dimensions_by_imagemagick $outImg width height] }  {
-      #~ return  0;  # error already printed
-    #~ }
-    #~ if { $maxPairHeight < $height }  { set maxPairHeight $height }
-}
-
-
-# Returns description of photo-cards' contents as a list of stings
-proc _format_card_spec {listOfQuads}  {
-  set textList [list]
-  set cardCnt 0
-  foreach cardImgList $listOfQuads {
-    incr cardCnt 1
-    lappend textList "=== Begin card $cardCnt ==="
-    foreach imgPath $cardImgList {
-      lappend textList "  '$imgPath'"
-    }
-    lappend textList "=== End   card $cardCnt ==="
-  }
-  return  $textList
-}
-
-
-# Builds cards' images according to list of file-path quadruples in 'listOfQuads'
-# Returns number of successfully generated cards.
-proc _generate_cards_by_spec {listOfQuads outDir geomDict}  {
-  file mkdir $outDir;  # if directory exists, no action and no error returned
-  set cardCnt 0;  set errCnt 0
-  foreach cardImgList $listOfQuads {
-    incr cardCnt 1
-    set cardFilePath [file join $outDir [format "%s%s.%s" \
-                                        $::CARD_NAME_PREFFIX $cardCnt "TIF"]]
-    ok_info_msg "Making card $cardCnt out of [llength $listOfQuads]; path '$cardFilePath'"
-    if { 0 == [_generate_one_card $cardImgList $cardFilePath $geomDict] }  {
-      incr errCnt 1;  # error already printed
-    }
-  }
-  if { $cardCnt > $errCnt }  {
-    ok_info_msg "Generated [expr $cardCnt-$errCnt] card(s) under '$outDir'"
-  }
-  if { $errCnt > 0 }  {
-    ok_err_msg "Failed to generate $errCnt card(s) under '$outDir'"
-  }
-  return  [expr $cardCnt-$errCnt]
-}
-
-
-## Inputs for layout computing:
-## - dpi = output device linear resolution (300..350 dpi for printing)
-## - pairWidthCm (cm) = width (of one stereopair) - up to 6.4cm
-## - origWhRatio = out-of-camera width/height ratio for single image
-## - ::g_canvasWidthCm (cm)
-## - ::g_canvasHeightCm (cm)
-## - ::g_gapCm (cm) = distance between two pairs on the canvas == 1.0
-################################################################################
-#             |<--------------canvasWidth--------------------->|
-#        -    +------------------------------------------------+
-#        ^    |                                                |
-#        |    |         pairWidth                              |
-#        |    |     - +-------------+       +-------------+    |
-#        |    | pair^ |             |<-gap->|             |    |
-# canvasHeight| Height|             |       |             |    |
-#        |    |     v |             |       |             |    |
-#        |    |     - +-------------+       +-------------+    |
-#        |    |          ^                                     |
-#        |    |         gap                                    |
-#        |    |          v                                     |
-#        |    |       +-------------+       +-------------+    |
-#        |    |       |             |       |             |    |
-#        |    |       |             |       |             |    |
-#        |    |       |             |       |             |    |
-#        |    |       +-------------+       +-------------+    |
-#        |    |                                                |
-#        v    |                                                |
-#        -    +------------------------------------------------+
-################################################################################
-################################################################################
-# Returns dictionary with the following keys:
-#### canvasWidthPx, canvasHeightPx, pairWidthPx, pairHeightPx, gapPx,
-#### blankColWidth, blankRowHeight, borderThick
-proc _compute_layout {dpi pairWidthCm origWhRatio}  {
-  set pairWidthPx    [expr round(1.0 * $pairWidthCm * $dpi / 2.54)]
-  set pairHeightPx   [expr round(1.0 * $pairWidthPx / 2.0 / $origWhRatio)]
-  set canvasWidthPx  [expr round(1.0 * $::g_canvasWidthCm * $dpi / 2.54)]
-  set canvasHeightPx [expr round(1.0 * $::g_canvasHeightCm * $dpi / 2.54)]
-  set gapPx          [expr round(1.0 * $::g_gapCm * $dpi / 2.54)]
-  # from now on all dimensions are in pixels; new variables have no Px suffixes
-  set tileBorder [expr round($gapPx / 2.0)]
-  set widthLeft [expr $canvasWidthPx - 2*$pairWidthPx - 4*$tileBorder]
-  # remaining pixels go for (1) blank column on the left, (2) the border; ratio 10:1
-  set blankColWidth [expr round($widthLeft * 0.9)]
-  # border thickness below is for both vertical and horizontal dimensions
-  set borderThick [expr round(($widthLeft - $blankColWidth) / 2.0)]
-  # remaining pixels (if any) go for blank row on the top
-  set blankRowHeight [expr $canvasHeightPx - 2*$pairHeightPx - 4*$tileBorder - 2*$borderThick]
-  if { $blankRowHeight < 0 }  { set blankRowHeight 0 }
-  set res [dict create  \
-            dpi             $dpi                                               \
-            canvasWidthPx   $canvasWidthPx  canvasHeightPx     $canvasHeightPx \
-            pairWidthPx     $pairWidthPx    pairHeightPx       $pairHeightPx   \
-            tileBorderPx    $tileBorder     borderThickPx      $borderThick    \
-            blankColWidthPx $blankColWidth  blankRowHeightPx   $blankRowHeight ]
-  return $res
-}
-
-
-
-
-# TODO: pair-width should be kept precise, height less important
-proc _generate_one_card {cardImgList cardFilePath geomDict}  {
-  set tmpDir [file join [file dirname $cardFilePath] "TMP"]
-  file mkdir $tmpDir;  # if directory exists, no action and no error returned
-  #~ for %f in (*.tif) DO  %CNV% %f -density 300 -adaptive-resize 709x473 -depth 8 -compress LZW Small\%~nf_sm.tif 
-  #~ %MNT% Small\*_sm.tif -background black -bordercolor black -tile 2x2 -geometry +80+80 -density 300 ppm: | %CNV%  ppm: -background black -bordercolor black -border 17x17 -splice 210x0 -quality 98 Ready\ToPri_%d_2x2_b.jpg 
-  # retrieve geometrical parameters from 'geomDict'
-  set dpi              [dict get $geomDict dpi]
-  set canvasWidthPx    [dict get $geomDict canvasWidthPx]
-  set canvasHeightPx   [dict get $geomDict canvasHeightPx]
-  set pairWidthPx      [dict get $geomDict pairWidthPx]
-  set pairHeightPx     [dict get $geomDict pairHeightPx]
-  set tileBorderPx     [dict get $geomDict tileBorderPx]
-  set borderThickPx    [dict get $geomDict borderThickPx]
-  set blankColWidthPx  [dict get $geomDict blankColWidthPx]
-  set blankRowHeightPx [dict get $geomDict blankRowHeightPx]
-  # resize individual image files and build list of small images
-  # choose actual max height and adjust the geometry; avoid resizing by "montage"
-  set nv_smallImagesAsList [list]
-  set maxPairHeight 0
-  foreach imgPath $cardImgList {
-    set outImg [file join $tmpDir \
-                    [ok_insert_suffix_into_filename [file tail $imgPath] "_sm"]]
+# Extracts one side of stereopair using 'geomCmd',
+#   applies processing in 'colorCmd', saves as JPEG in directory 'outDirPath'.
+# Returns 1 on success, 0 on error.
+proc _make_image_for_one_side {imgPath geomCmd colorCmd outDirPath suffix} {
+    set imgNameNoExt    [file rootname [file tail $imgPath]]
+    set outImgNameNoExt [ok_insert_suffix_into_filename $imgNameNoExt $suffix]
+    set outImgPath [file join $outDirPath "$outImgNameNoExt.JPG"]
+    set descr "extracting one side from stereopair '$imgPath' into '$outImgPath'"
     set nv_inpImg [format "{%s}" [file nativename $imgPath]]
-    set nv_outImg [format "{%s}" [file nativename $outImg]]
-    lappend nv_smallImagesAsList $nv_outImg
-    set cmdList [concat $::_IMCONVERT $nv_inpImg -density $dpi \
-                  -adaptive-resize [format "%dx%d" $pairWidthPx $pairHeightPx] \
-                  -depth 8 -compress LZW $nv_outImg]
+    set nv_outImg [format "{%s}" [file nativename $outImgPath]]
+    lappend nv_outImagesAsList $nv_outImg
+    set cmdList [concat $::_IMCONVERT $nv_inpImg $geomCmd $colorCmd \
+                   -density 300 -depth 8 -quality 98 $nv_outImg]
     if { 0 == [ok_run_silent_os_cmd $cmdList] }  {
-      ok_err_msg "Failed resizing input images for card '$cardFilePath'"
-      return  0
+      ok_err_msg "Failed $descr";      return  0
     }
-    if { 0 == [get_image_dimensions_by_imagemagick $outImg width height] }  {
-      return  0;  # error already printed
-    }
-    if { $maxPairHeight < $height }  { set maxPairHeight $height }
-  }
-  ok_info_msg "Resized [llength $cardImgList] input image(s) for card '$cardFilePath'"
-  if { $pairHeightPx != $maxPairHeight }  {
-    set blankRowHeightPx [expr $blankRowHeightPx + 2*$pairHeightPx - 2*$maxPairHeight]
-    if { $blankRowHeightPx < 0 }  { set blankRowHeightPx 0 }
-    ok_trace_msg "blankRowHeightPx adjusted from [dict get $geomDict blankRowHeightPx] to $blankRowHeightPx"
-  }
-  set nv_cardFilePath [format "{%s}" [file nativename $cardFilePath]]
-  # convert from list to string to preserve separators while dropping curved braces
-  set nv_smallImagesAsStr [join $nv_smallImagesAsList " "]
-  set cmdList [concat $::_IMMONTAGE $nv_smallImagesAsStr                    \
-          -background black -bordercolor black -tile 2x2                    \
-          -geometry [format "+%d+%d" $tileBorderPx $tileBorderPx]           \
-          -density $dpi ppm:                                                \
-              | $::_IMCONVERT ppm: -background black -bordercolor black       \
-                  -border [format "%dx%d" $borderThickPx $borderThickPx]      \
-                  -splice [format "%dx%d" $blankColWidthPx $blankRowHeightPx] \
-                  -compress LZW $nv_cardFilePath                              ]
-  if { 0 == [ok_run_silent_os_cmd $cmdList] }  {
-    ok_err_msg "Failed generating card '$cardFilePath'"
-    return  0
-  }
-  ok_info_msg "Generated card '$cardFilePath'"
-  return  1
+    ok_info_msg "Success $descr"
+    return  1
 }
