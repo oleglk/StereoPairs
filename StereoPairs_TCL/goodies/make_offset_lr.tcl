@@ -63,8 +63,9 @@ proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
   if { 0 == [_read_and_check_ext_tool_paths] }  {
     return  0;   # error already printed
   }
-  if { 0 == [set origPathList [_find_originals_in_current_dir $ext]] }  {
-    return  0;   # error already printed
+  set origPathList [_find_originals_in_current_dir $extList]
+  if { 0 == [llength $origPathList] }  {
+    return  0;  # error already printed
   }
   if { 0 == [set geomL [_make_geometry_command_for_one_side "L"   \
             $canvWd $canvHt $offset]] }  { return  0 };  # error already printed
@@ -110,9 +111,10 @@ proc _find_originals_in_current_dir {extList}  {
     set origPathList [concat $origPathList $imgFiles]
   }
   if { 0 == [llength $origPathList] }  {
-    ok_err_msg "No input images found in directory '[pwd]'"
+    ok_err_msg "No input images ($extList) found in directory '[pwd]'"
+  } else {
+    ok_info_msg "Found [llength $origPathList] input image(s) in directory '[pwd]'"
   }
-  ok_err_msg "Found [llength $origPathList] input image(s)  in directory '[pwd]'"
   return  $origPathList
 }
 
@@ -174,13 +176,13 @@ proc _split_offset_listed_stereopairs {origPathList geomL geomR colorL colorR \
   set cntErr 0
   foreach imgPath $origPathList {
     if { 0 == [_make_image_for_one_side  \
-            $imgPath $geomL $colorL $leftDirPath  "_l"]] }  { incr cntErr 1 }
+            $imgPath $geomL $colorL $leftDirPath  "_l"] }  { incr cntErr 1 }
     if { 0 == [_make_image_for_one_side  \
-            $imgPath $geomR $colorR $rightDirPath "_r"]] }  { incr cntErr 1 }
+            $imgPath $geomR $colorR $rightDirPath "_r"] }  { incr cntErr 1 }
   }
   set n [llength $origPathList];  set nGood [expr $n - $cntErr]
   if { $cntErr == 0 }   {
-    ok_info_msg "Processed all $n stereopairs; no errors occured"
+    ok_info_msg "Processed all $n stereopair(s); no errors occured"
   } else                {
     set msg "Processed $n stereopair(s); $cntErr error(s) occured"
     if { $cntErr == $n }  { ok_err_msg $msg } else { ok_warn_msg $msg }
