@@ -50,6 +50,8 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 
 set ::g_dirL CANV_L
 set ::g_dirR CANV_R
+set ::g_suffixL "_L"
+set ::g_suffixR "_R"
 
 # TODO: wrap into command-line based top function
 
@@ -176,9 +178,9 @@ proc _split_offset_listed_stereopairs {origPathList geomL geomR colorL colorR \
   set cntErr 0
   foreach imgPath $origPathList {
     if { 0 == [_make_image_for_one_side  \
-            $imgPath $geomL $colorL $leftDirPath  "_l"] }  { incr cntErr 1 }
+        $imgPath $geomL $colorL $leftDirPath  $::g_suffixL] }  { incr cntErr 1 }
     if { 0 == [_make_image_for_one_side  \
-            $imgPath $geomR $colorR $rightDirPath "_r"] }  { incr cntErr 1 }
+        $imgPath $geomR $colorR $rightDirPath $::g_suffixR] }  { incr cntErr 1 }
   }
   set n [llength $origPathList];  set nGood [expr $n - $cntErr]
   if { $cntErr == 0 }   {
