@@ -48,13 +48,32 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 ################################################################################
 
 
-set ::g_dirL CANV_L
-set ::g_dirR CANV_R
-set ::g_suffixL "_L"
-set ::g_suffixR "_R"
+#~ set ::STS(dirL) CANV_L
+#~ set ::STS(dirR) CANV_R
+#~ set ::STS(suffixL) "_L"
+#~ set ::STS(suffixR) "_R"
 
 # TODO: wrap into command-line based top function
+################################################################################
 
+proc _make_offset_lr_set_defaults {}  {
+  set ::STS(dirL) "CANV_L"
+  set ::STS(dirR) "CANV_R"
+  set ::STS(suffixL) "_L"
+  set ::STS(suffixR) "_R"
+}
+################################################################################
+_make_offset_lr_set_defaults ;  # load only;  do call it in a function for repeated invocations
+################################################################################
+
+proc make_offset_lr_main {cmdLineAsStr}  {
+  global SCRIPT_DIR
+  _make_offset_lr_set_defaults ;  # calling it in a function for repeated invocations
+  
+  if { 0 == [make_offset_lr_cmd_line $cmdLineAsStr cml] }  {
+    return  0;  # error or help already printed
+  }
+}
 
 # extList - list of originals' extensions (typical: {TIF BMP JPG})
 # canvWd/canvHt (pix) = canvas width/height - multiple of projector resolutiuon
@@ -125,11 +144,11 @@ proc _prepare_output_dirs {leftDirPath rightDirPath}  {
   upvar $leftDirPath  dirL
   upvar $rightDirPath dirR
   if { 0 == [ok_create_absdirs_in_list \
-        [list $::g_dirL $::g_dirR] \
+        [list $::STS(dirL) $::STS(dirR)] \
         {"folder-for-left-images" "folder-for-right-images"}] }  {
   return  0
   }
-  set dirL $::g_dirL;   set dirR $::g_dirR
+  set dirL $::STS(dirL);   set dirR $::STS(dirR)
   return  1
 }
 
@@ -178,9 +197,9 @@ proc _split_offset_listed_stereopairs {origPathList geomL geomR colorL colorR \
   set cntErr 0
   foreach imgPath $origPathList {
     if { 0 == [_make_image_for_one_side  \
-        $imgPath $geomL $colorL $leftDirPath  $::g_suffixL] }  { incr cntErr 1 }
+        $imgPath $geomL $colorL $leftDirPath  $::STS(suffixL)] }  { incr cntErr 1 }
     if { 0 == [_make_image_for_one_side  \
-        $imgPath $geomR $colorR $rightDirPath $::g_suffixR] }  { incr cntErr 1 }
+        $imgPath $geomR $colorR $rightDirPath $::STS(suffixR)] }  { incr cntErr 1 }
   }
   set n [llength $origPathList];  set nGood [expr $n - $cntErr]
   if { $cntErr == 0 }   {
