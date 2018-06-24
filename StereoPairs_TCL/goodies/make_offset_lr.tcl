@@ -57,10 +57,17 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 ################################################################################
 
 proc _make_offset_lr_set_defaults {}  {
-  set ::STS(dirL) "CANV_L"
-  set ::STS(dirR) "CANV_R"
+  set ::STS(dirL)    "CANV_L"
+  set ::STS(dirR)    "CANV_R"
   set ::STS(suffixL) "_L"
   set ::STS(suffixR) "_R"
+  set ::STS(extList) ""
+  set ::STS(canvWd)  ""
+  set ::STS(canvHt)  ""
+  set ::STS(offset)  ""
+  set ::STS(gamma)   ""
+  #set ::STS() ""
+  #set ::STS() ""
 }
 ################################################################################
 _make_offset_lr_set_defaults ;  # load only;  do call it in a function for repeated invocations
@@ -70,7 +77,7 @@ proc make_offset_lr_main {cmdLineAsStr}  {
   global SCRIPT_DIR
   _make_offset_lr_set_defaults ;  # calling it in a function for repeated invocations
   
-  if { 0 == [make_offset_lr_cmd_line $cmdLineAsStr cml] }  {
+  if { 0 == [offset_lr_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
   }
 }
@@ -103,6 +110,81 @@ proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
   set nGood [_split_offset_listed_stereopairs $origPathList $geomL $geomR \
                           $colorL $colorR $leftDirPath $rightDirPath]
   #OK_TODO
+  return  1
+}
+
+
+  #~ set ::STS(dirL)    "CANV_L"
+  #~ set ::STS(dirR)    "CANV_R"
+  #~ set ::STS(suffixL) "_L"
+  #~ set ::STS(suffixR) "_R"
+  #~ set ::STS(extList) ""
+  #~ set ::STS(canvWd)  ""
+  #~ set ::STS(canvHt)  ""
+  #~ set ::STS(offset)  ""
+  #~ set ::STS(gamma)   ""
+proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
+  upvar $cmlArrName      cml
+  # create the command-line description
+  set descrList \
+[list \
+  -help {"" "print help"}                                        outout             \
+  -subdir_left {val	"name of subdirectory for output left images"} \
+  -subdir_right {val	"name of subdirectory for output right images"} \
+  -final_depth {val	"color-depth of the final images (bit); 8 or 16"}         \
+  -img_extensions {list "list of extensions of image files; example: {jpg bmp}"}                      \
+  -inp_dir {val "input directory path; absolute or relative to the current directory"} \
+  -bu_subdir_name {val	"name of backup directory (for original images); created under the input directory; empty string means no backup"} \
+  -rot_angle   {val "rotation angle - clockwise"}  \
+  -pad_x   {val "horizontal padding in % - after rotate"}  \
+  -pad_y   {val "vertical   padding in % - after rotate"}  \
+  -crop_ratio  {val "width-to-height ratio AFTER rotation; 0 means do not crop"} \
+  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"} \
+ ]
+  array unset cmlD
+  ok_new_cmd_line_descr cmlD $descrList
+  # create dummy command line with the default parameters and copy it
+  # (if an argument inexistent by default, don't provide dummy value)
+  array unset defCml
+  ok_set_cmd_line_params defCml cmlD { \
+    {-final_depth "8"} {-rot_angle "0"} {-pad_x "0"} {-pad_y "0"} \
+    {-crop_ratio "0"}  {-jpeg_quality "0"}  {-bu_subdir_name "Orig"} }
+  ok_copy_array defCml cml;    # to preset default parameters
+  # now parse the user's command line
+  if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
+    ok_err_msg "Aborted because of invalid command line";	return  0
+  }
+  if { [info exists cml(-help)] } {
+    set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
+    ok_info_msg "================================================================"
+    ok_info_msg "    Rotation and cropping of images."
+    ok_info_msg "========= Command line parameters (in random order): =============="
+    ok_info_msg $cmdHelp
+    ok_info_msg "================================================================"
+    ok_info_msg "========= Example 1 - rotation only (note TCL-style directory separators): ======="
+    ok_info_msg " offset_lr_main \"-rot_angle 90 -crop_ratio 0 -final_depth 8 -inp_dir L -bu_subdir_name {} -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "================================================================"
+    ok_info_msg "========= Example 2 - rotate and crop: ======="
+    ok_info_msg " offset_lr_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality 99 -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "================================================================"
+    return  0
+  }
+  if { 0 == [_offset_lr_parse_cmdline cml] }  {
+    ok_err_msg "Error(s) in command parameters. Aborting..."
+    return  0
+  }
+  set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
+  set ::STS(imSaveParams) [dict create];  # early check of image types
+  foreach ext $::STS(imgExts)  {
+    if { "-ERROR-" == [set saveParamsForType [choose_im_img_save_params \
+                        $ext $::STS(finalDepth) $::STS(forceJpegQuality)]] }  {
+      return  0;  # error already printed
+    }
+    dict set ::STS(imSaveParams) $ext $saveParamsForType
+  }
+
+  ok_info_msg "==== Now run rotate-and-crop by the following spec: ===="
+  ok_info_msg "==== \n$cmdStrNoHelp\n===="
   return  1
 }
 
