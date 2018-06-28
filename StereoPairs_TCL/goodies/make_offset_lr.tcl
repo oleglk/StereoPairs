@@ -129,17 +129,16 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   set descrList \
 [list \
   -help {"" "print help"}                                        outout             \
-  -subdir_left {val	"name of subdirectory for output left images"} \
+  -subdir_left  {val	"name of subdirectory for output left images"} \
   -subdir_right {val	"name of subdirectory for output right images"} \
-  -final_depth {val	"color-depth of the final images (bit); 8 or 16"}         \
-  -img_extensions {list "list of extensions of image files; example: {jpg bmp}"}                      \
-  -inp_dir {val "input directory path; absolute or relative to the current directory"} \
-  -bu_subdir_name {val	"name of backup directory (for original images); created under the input directory; empty string means no backup"} \
-  -rot_angle   {val "rotation angle - clockwise"}  \
-  -pad_x   {val "horizontal padding in % - after rotate"}  \
-  -pad_y   {val "vertical   padding in % - after rotate"}  \
-  -crop_ratio  {val "width-to-height ratio AFTER rotation; 0 means do not crop"} \
-  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"} \
+  -suffix_left  {val	"suffix for output left  images' names"} \
+  -suffix_right {val	"suffix for output right images' names"} \
+  -img_extensions {list "list of extensions of input image files; example: {jpg bmp}"}                      \
+  -screen_width  {val "image width  with border - in pixels - multiple of projector's horizontal resolution"} \
+  -screen_height {val "image height with border - in pixels - multiple of projector's vertical   resolution"} \
+  -offset {val	"offset of each image from the screen center - in pixels"} \
+  -gamma   {val "gamma correction to apply"}  \
+s  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"} \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -147,8 +146,8 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-    {-final_depth "8"} {-rot_angle "0"} {-pad_x "0"} {-pad_y "0"} \
-    {-crop_ratio "0"}  {-jpeg_quality "0"}  {-bu_subdir_name "Orig"} }
+    {-subdir_left "CANV_L"} {-subdir_right "CANV_R"}                          \
+    {-suffix_left "_L"} {-suffix_right "_R"} {-jpeg_quality "0"}              }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -156,6 +155,7 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   }
   if { [info exists cml(-help)] } {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
+    # OK_TODO
     ok_info_msg "================================================================"
     ok_info_msg "    Rotation and cropping of images."
     ok_info_msg "========= Command line parameters (in random order): =============="
