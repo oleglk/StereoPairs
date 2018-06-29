@@ -57,6 +57,7 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 ################################################################################
 
 proc _make_offset_lr_set_defaults {}  {
+  set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
   set ::STS(dirL)    "CANV_L"
   set ::STS(dirR)    "CANV_R"
   set ::STS(suffixL) "_L"
@@ -114,21 +115,13 @@ proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
 }
 
 
-  #~ set ::STS(dirL)    "CANV_L"
-  #~ set ::STS(dirR)    "CANV_R"
-  #~ set ::STS(suffixL) "_L"
-  #~ set ::STS(suffixR) "_R"
-  #~ set ::STS(extList) ""
-  #~ set ::STS(canvWd)  ""
-  #~ set ::STS(canvHt)  ""
-  #~ set ::STS(offset)  ""
-  #~ set ::STS(gamma)   ""
 proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   upvar $cmlArrName      cml
   # create the command-line description
   set descrList \
 [list \
-  -help {"" "print help"}                                        outout             \
+  -help {"" "print help"}                                                      \
+  -tools_paths_file {val	"(for standalone run) path of CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
   -subdir_left  {val	"name of subdirectory for output left images"} \
   -subdir_right {val	"name of subdirectory for output right images"} \
   -suffix_left  {val	"suffix for output left  images' names"} \
@@ -138,7 +131,7 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   -screen_height {val "image height with border - in pixels - multiple of projector's vertical   resolution"} \
   -offset {val	"offset of each image from the screen center - in pixels"} \
   -gamma   {val "gamma correction to apply"}  \
-s  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"} \
+  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"} \
  ]
   array unset cmlD
   ok_new_cmd_line_descr cmlD $descrList
@@ -147,7 +140,7 @@ s  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
     {-subdir_left "CANV_L"} {-subdir_right "CANV_R"}                          \
-    {-suffix_left "_L"} {-suffix_right "_R"} {-jpeg_quality "0"}              }
+    {-suffix_left "_L"} {-suffix_right "_R"} {-jpeg_quality "98"}              }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -155,17 +148,18 @@ s  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto
   }
   if { [info exists cml(-help)] } {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
-    # OK_TODO
     ok_info_msg "================================================================"
-    ok_info_msg "    Rotation and cropping of images."
-    ok_info_msg "========= Command line parameters (in random order): =============="
+    ok_info_msg "Splitting stereopairs into L/R images with horizontal offfset."
+    ok_info_msg " (intended for passive 3D polarized projection)"
+    ok_info_msg "========= Command line parameters (in random order): ==========="
     ok_info_msg $cmdHelp
     ok_info_msg "================================================================"
-    ok_info_msg "========= Example 1 - rotation only (note TCL-style directory separators): ======="
-    ok_info_msg " offset_lr_main \"-rot_angle 90 -crop_ratio 0 -final_depth 8 -inp_dir L -bu_subdir_name {} -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "  (note TCL-style directory separators in the examples below)"
+    ok_info_msg "================= Example 1 - short: ==========================="
+    ok_info_msg " offset_lr_main \"-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.8 -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
-    ok_info_msg "========= Example 2 - rotate and crop: ======="
-    ok_info_msg " offset_lr_main \"-rot_angle 90 -crop_ratio 1 -final_depth 8 -inp_dir R -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality 99 -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "================= Example 2 - full: ============================"
+    ok_info_msg " offset_lr_main \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.8 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -174,16 +168,8 @@ s  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto
     return  0
   }
   set cmdStrNoHelp [ok_cmd_line_str cml cmlD "\n" 0]
-  set ::STS(imSaveParams) [dict create];  # early check of image types
-  foreach ext $::STS(imgExts)  {
-    if { "-ERROR-" == [set saveParamsForType [choose_im_img_save_params \
-                        $ext $::STS(finalDepth) $::STS(forceJpegQuality)]] }  {
-      return  0;  # error already printed
-    }
-    dict set ::STS(imSaveParams) $ext $saveParamsForType
-  }
 
-  ok_info_msg "==== Now run rotate-and-crop by the following spec: ===="
+  ok_info_msg "==== Now run offset-lr by the following spec: ===="
   ok_info_msg "==== \n$cmdStrNoHelp\n===="
   return  1
 }
@@ -192,8 +178,7 @@ s  -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto
 proc _read_and_check_ext_tool_paths {}  {
   if { 0 == [set extToolPathsFilePath [dualcam_find_toolpaths_file 0]] }   {
     #standalone invocaion
-    set extToolPathsFilePath [file join $::SCRIPT_DIR__offset \
-                                        ".." "ext_tool_dirs.csv"]
+    set extToolPathsFilePath $::STS(toolsPathsFile)
   }
   if { 0 == [set_ext_tool_paths_from_csv $extToolPathsFilePath] }  {
     return  0;  # error already printed
@@ -312,4 +297,132 @@ proc _make_image_for_one_side {imgPath geomCmd colorCmd outDirPath suffix} {
     }
     ok_info_msg "Success $descr"
     return  1
+}
+
+
+  #~ set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
+  #~ set ::STS(dirL)    "CANV_L"
+  #~ set ::STS(dirR)    "CANV_R"
+  #~ set ::STS(suffixL) "_L"
+  #~ set ::STS(suffixR) "_R"
+  #~ set ::STS(extList) ""
+  #~ set ::STS(canvWd)  ""
+  #~ set ::STS(canvHt)  ""
+  #~ set ::STS(offset)  ""
+  #~ set ::STS(gamma)   ""
+  #~ -tools_paths_file {val	"(for standalone run) path of CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
+  #~ -subdir_left  {val	"name of subdirectory for output left images"} \
+  #~ -subdir_right {val	"name of subdirectory for output right images"} \
+  #~ -suffix_left  {val	"suffix for output left  images' names"} \
+  #~ -suffix_right {val	"suffix for output right images' names"} \
+  #~ -img_extensions {list "list of extensions of input image files; example: {jpg bmp}"}                      \
+  #~ -screen_width  {val "image width  with border - in pixels - multiple of projector's horizontal resolution"} \
+  #~ -screen_height {val "image height with border - in pixels - multiple of projector's vertical   resolution"} \
+  #~ -offset {val	"offset of each image from the screen center - in pixels"} \
+  #~ -gamma   {val "gamma correction to apply"}  \
+  #~ -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"}
+proc _offset_lr_parse_cmdline {cmlArrName}  {
+  upvar $cmlArrName      cml
+  set errCnt 0
+  if { 0 == [info exists cml(-tools_paths_file)] }  {
+    ok_info_msg "No explicit path of CSV file with external tool locations given; assume running from DualCam-Companion"
+    incr errCnt 1
+  } elseif { 0 == [ok_filepath_is_readable $cml(-tools_paths_file)] }  {
+    ok_err_msg "Inexistent or invalid file '$cml(-tools_paths_file)' specified as file with external tool locations"
+    incr errCnt 1
+  } else {
+    set ::STS(toolsPathsFile) $cml(-tools_paths_file)
+  }
+  if { [info exists cml(-subdir_left)] }  {
+    set ::STS(dirL) $cml(-subdir_left)
+  } ;   # otherwise use the default
+  if { [info exists cml(-subdir_right)] }  {
+    set ::STS(dirR) $cml(-subdir_right)
+  } ;   # otherwise use the default
+  if { [info exists cml(-suffix_left)] }  {
+    set ::STS(suffixL) $cml(-suffix_left)
+  } ;   # otherwise use the default
+  if { [info exists cml(-suffix_right)] }  {
+    set ::STS(suffixR) $cml(-suffix_right)
+  } ;   # otherwise use the default
+  if { [info exists cml(-img_extensions)] }  {
+    set ::STS(imgExts) $cml(-img_extensions)
+  } else {
+    ok_err_msg "Please specify extensions for image files; example: -img_extensions {TIF jpg}"
+    incr errCnt 1
+  } 
+    # OK_TODO
+  if { 0 == [info exists cml(-screen_width)] }  {
+    ok_err_msg "Please specify the image width; example: -screen_width 2560"
+    incr errCnt 1
+  } else {
+    set canvWd $cml(-screen_width)
+    if { 0 == [TODO__isInteger $cml(-screen_width)] }  {
+      ok_err_msg "Non-integer '$cml(-screen_width)' specified as the image width"
+      incr errCnt 1
+    } else {
+      set ::STS(canvWd) $cml(-screen_width)
+    }
+  }
+  if { 1 == [info exists cml(-bu_subdir_name)] }  {
+    if { (1 == [file exists $cml(-bu_subdir_name)]) && \
+             (0 == [file isdirectory $cml(-bu_subdir_name)]) }  {
+      ok_err_msg "Non-directory '$cml(-bu_subdir_name)' specified as backup directory"
+      incr errCnt 1
+    } else {
+      set ::STS(buDirName)      $cml(-bu_subdir_name)
+    }
+  }
+  if { 0 != $cml(-rot_angle) }  { ;  # =0 (default) if not given
+    if { ($cml(-rot_angle) == 0)   || ($cml(-rot_angle) == 90) || \
+         ($cml(-rot_angle) == 180) || ($cml(-rot_angle) == 270) }  {
+      set ::STS(rotAngle) $cml(-rot_angle)
+    } else {
+      ok_err_msg "Parameter telling clock-wise rotation angle (-rot_angle); should 0, 90, 180 or 270"
+      incr errCnt 1
+    }
+  } else {  ok_info_msg "Rotation not requested"  }
+  if { 0 != $cml(-pad_x) }  { ;  # =0 (default) if not given
+    if { ([ok_isnumeric $cml(-pad_x)]) && ($cml(-pad_x) >= 0) }  {
+      set ::STS(padX) $cml(-pad_x)
+    } else {
+      ok_err_msg "Parameter telling horizontal padding (-pad_x); should be non-negative number"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Horizontal padding not requested"  }
+  if { 0 != $cml(-pad_y) }  { ;  # =0 (default) if not given
+    if { ([ok_isnumeric $cml(-pad_y)]) && ($cml(-pad_y) >= 0) }  {
+      set ::STS(padY) $cml(-pad_y)
+    } else {
+      ok_err_msg "Parameter telling vertical padding (-pad_y); should be non-negative number"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Vertical padding not requested"  }
+  if { 0 != $cml(-crop_ratio) }  { ;  # =0 (default) if not given
+    if { [ok_isnumeric $cml(-crop_ratio)] }  {
+      set ::STS(cropRatio) $cml(-crop_ratio)
+    } else {
+      ok_err_msg "Parameter telling crop ratio (-crop_ratio); should be numeric"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Cropping not requested"  }
+  if { (0 == $cml(-rot_angle)) && (0 == $cml(-crop_ratio)) }  { 
+    ok_info_msg "Please specify rotation angle and/or crop ratio; example: -rot_angle 270 -crop_ratio 1"
+    incr errCnt 1
+  }
+  if { 0 != $cml(-jpeg_quality) }  { ;  # =0 (default) if not given
+    if { ([string is integer $cml(-jpeg_quality)]) && \
+          ($cml(-jpeg_quality) >= 0) && ($cml(-jpeg_quality) <= 100) }  {
+      set ::STS(forceJpegQuality) $cml(-jpeg_quality)
+    } else {
+      ok_err_msg "Parameter telling JPEG file-save quality (-jpeg_quality); should be 0..100"
+      incr errCnt 1
+    }
+  }
+  if { $errCnt > 0 }  {
+    #ok_err_msg "Error(s) in command parameters!"
+    return  0
+  }
+  #ok_info_msg "Command parameters are valid"
+  return  1
 }
