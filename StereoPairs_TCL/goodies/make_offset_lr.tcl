@@ -1,5 +1,9 @@
 # make_offset_lr.tcl - offset separate L/R images onto fixed size canvas for POLARIZED projection
 
+# TODO: have dir-name-base parameter
+
+
+
 set SCRIPT_DIR__offset [file dirname [info script]]
 
 # TODO: make locally arrangements to find the package(s) instead
@@ -58,40 +62,53 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 
 proc _make_offset_lr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
-  set ::STS(dirL)    "CANV_L"
-  set ::STS(dirR)    "CANV_R"
-  set ::STS(suffixL) "_L"
-  set ::STS(suffixR) "_R"
-  set ::STS(extList) ""
-  set ::STS(canvWd)  ""
-  set ::STS(canvHt)  ""
-  set ::STS(offset)  ""
-  set ::STS(gamma)   ""
-  #set ::STS() ""
+  set ::STS(dirL)             "CANV_L"
+  set ::STS(dirR)             "CANV_R"
+  set ::STS(suffixL)          "_L"
+  set ::STS(suffixR)          "_R"
+  set ::STS(extList)          ""
+  set ::STS(canvWd)           ""
+  set ::STS(canvHt)           ""
+  set ::STS(offset)           ""
+  set ::STS(gamma)            ""
+  set ::STS(forceJpegQuality) 100
   #set ::STS() ""
 }
 ################################################################################
 _make_offset_lr_set_defaults ;  # load only;  do call it in a function for repeated invocations
 ################################################################################
 
+
+# Splits all stereopairs in the current working directory
+# into left- and right images, each horizontally offset on its canvas
+# (left images are offset to the right, right images are offset to the left)
+# On success returns number of processed stereopairs, on error returns 0.
+## Example:
+##  cd e:/Photo_Publish/Stereo/TMP/;  make_offset_lr_main "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.9 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95"
 proc make_offset_lr_main {cmdLineAsStr}  {
   global SCRIPT_DIR
   _make_offset_lr_set_defaults ;  # calling it in a function for repeated invocations
-  
   if { 0 == [offset_lr_cmd_line $cmdLineAsStr cml] }  {
     return  0;  # error or help already printed
+  }  
+  if { 0 == [_read_and_check_ext_tool_paths] }  {
+    return  0;   # error already printed
   }
+  if { 0 == [set nGood [make_offset_lr_in_current_dir $::STS(extList) \
+                $::STS(canvWd) $::STS(canvHt) $::STS(offset) $::STS(gamma)]] } {
+    return  0;  # error already printed
+  }
+  return  $nGood
 }
+
 
 # extList - list of originals' extensions (typical: {TIF BMP JPG})
 # canvWd/canvHt (pix) = canvas width/height - multiple of projector resolutiuon
 # offset (pix) - horizontal shift of L|R image - left rightwards, right leftwards
-# gamma - gamma correction value (typical: 0.8)
+# gamma - gamma correction value (typical: 0.8).
+# On success returns number of processed stereopairs, on error returns 0.
 # Example:  cd e:/Photo_Publish/Stereo/TMP/;  make_offset_lr_in_current_dir {TIF JPG} 2560 1440 200 0.8
 proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
-  if { 0 == [_read_and_check_ext_tool_paths] }  {
-    return  0;   # error already printed
-  }
   set origPathList [_find_originals_in_current_dir $extList]
   if { 0 == [llength $origPathList] }  {
     return  0;  # error already printed
@@ -103,15 +120,14 @@ proc make_offset_lr_in_current_dir {extList canvWd canvHt offset gamma}  {
   if { 0 == [set colorL [_make_color_correction_command_for_one_side "L"   \
             $gamma]] }                   { return  0 };  # error already printed
   if { 0 == [set colorR [_make_color_correction_command_for_one_side "R"   \
-              $gamma]] }                   { return  0 };  # error already printed
+            $gamma]] }                   { return  0 };  # error already printed
   # everything is ready; now start making changes on the disk
   if { 0 == [_prepare_output_dirs leftDirPath rightDirPath] }  {
     return  0;   # error already printed
   }
   set nGood [_split_offset_listed_stereopairs $origPathList $geomL $geomR \
                           $colorL $colorR $leftDirPath $rightDirPath]
-  #OK_TODO
-  return  1
+  return  $nGood
 }
 
 
@@ -139,8 +155,8 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD { \
-    {-subdir_left "CANV_L"} {-subdir_right "CANV_R"}                          \
-    {-suffix_left "_L"} {-suffix_right "_R"} {-jpeg_quality "98"}              }
+    {-subdir_left "CANV_L"} {-subdir_right "CANV_R"}                           \
+    {-suffix_left "_L"} {-suffix_right "_R"} {-gamma 1.0} {-jpeg_quality "98"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -156,10 +172,10 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "================================================================"
     ok_info_msg "  (note TCL-style directory separators in the examples below)"
     ok_info_msg "================= Example 1 - short: ==========================="
-    ok_info_msg " offset_lr_main \"-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.8 -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " offset_lr_main \"-screen_width 2560 -screen_height 1440 -offset 200 -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     ok_info_msg "================= Example 2 - full: ============================"
-    ok_info_msg " offset_lr_main \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.8 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95\""
+    ok_info_msg " offset_lr_main \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.9 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -249,8 +265,8 @@ proc _make_color_correction_command_for_one_side {lOrR gamma}  {
   }
   set levelBase "-level 0%,100%"
   set levelDict [dict create    \
-    "L"   "$levelBase,%gamma"   \
-    "R"   "$levelBase,%gamma"   ]
+    "L"   "$levelBase,$gamma"   \
+    "R"   "$levelBase,$gamma"   ]
   set colorCmd [dict get $levelDict $lOrR]
   return  $colorCmd
 }
@@ -292,6 +308,7 @@ proc _make_image_for_one_side {imgPath geomCmd colorCmd outDirPath suffix} {
     lappend nv_outImagesAsList $nv_outImg
     set cmdList [concat $::_IMCONVERT $nv_inpImg $geomCmd $colorCmd \
                    -density 300 -depth 8 -quality 98 $nv_outImg]
+    ok_info_msg "Next command: '$cmdList'"
     if { 0 == [ok_run_silent_os_cmd $cmdList] }  {
       ok_err_msg "Failed $descr";      return  0
     }
@@ -300,27 +317,6 @@ proc _make_image_for_one_side {imgPath geomCmd colorCmd outDirPath suffix} {
 }
 
 
-  #~ set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
-  #~ set ::STS(dirL)    "CANV_L"
-  #~ set ::STS(dirR)    "CANV_R"
-  #~ set ::STS(suffixL) "_L"
-  #~ set ::STS(suffixR) "_R"
-  #~ set ::STS(extList) ""
-  #~ set ::STS(canvWd)  ""
-  #~ set ::STS(canvHt)  ""
-  #~ set ::STS(offset)  ""
-  #~ set ::STS(gamma)   ""
-  #~ -tools_paths_file {val	"(for standalone run) path of CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
-  #~ -subdir_left  {val	"name of subdirectory for output left images"} \
-  #~ -subdir_right {val	"name of subdirectory for output right images"} \
-  #~ -suffix_left  {val	"suffix for output left  images' names"} \
-  #~ -suffix_right {val	"suffix for output right images' names"} \
-  #~ -img_extensions {list "list of extensions of input image files; example: {jpg bmp}"}                      \
-  #~ -screen_width  {val "image width  with border - in pixels - multiple of projector's horizontal resolution"} \
-  #~ -screen_height {val "image height with border - in pixels - multiple of projector's vertical   resolution"} \
-  #~ -offset {val	"offset of each image from the screen center - in pixels"} \
-  #~ -gamma   {val "gamma correction to apply"}  \
-  #~ -jpeg_quality {val "JPEG file-saving quality (1..100); 0 (default) means auto"}
 proc _offset_lr_parse_cmdline {cmlArrName}  {
   upvar $cmlArrName      cml
   set errCnt 0
@@ -346,70 +342,55 @@ proc _offset_lr_parse_cmdline {cmlArrName}  {
     set ::STS(suffixR) $cml(-suffix_right)
   } ;   # otherwise use the default
   if { [info exists cml(-img_extensions)] }  {
-    set ::STS(imgExts) $cml(-img_extensions)
+    set ::STS(extList) $cml(-img_extensions)
   } else {
     ok_err_msg "Please specify extensions for image files; example: -img_extensions {TIF jpg}"
     incr errCnt 1
   } 
-    # OK_TODO
   if { 0 == [info exists cml(-screen_width)] }  {
     ok_err_msg "Please specify the image width; example: -screen_width 2560"
     incr errCnt 1
   } else {
-    set canvWd $cml(-screen_width)
-    if { 0 == [TODO__isInteger $cml(-screen_width)] }  {
+    if { ![string is integer $cml(-screen_width)] || \
+          ($cml(-screen_width) <= 0) }  {
       ok_err_msg "Non-integer '$cml(-screen_width)' specified as the image width"
       incr errCnt 1
     } else {
       set ::STS(canvWd) $cml(-screen_width)
     }
   }
-  if { 1 == [info exists cml(-bu_subdir_name)] }  {
-    if { (1 == [file exists $cml(-bu_subdir_name)]) && \
-             (0 == [file isdirectory $cml(-bu_subdir_name)]) }  {
-      ok_err_msg "Non-directory '$cml(-bu_subdir_name)' specified as backup directory"
-      incr errCnt 1
-    } else {
-      set ::STS(buDirName)      $cml(-bu_subdir_name)
-    }
-  }
-  if { 0 != $cml(-rot_angle) }  { ;  # =0 (default) if not given
-    if { ($cml(-rot_angle) == 0)   || ($cml(-rot_angle) == 90) || \
-         ($cml(-rot_angle) == 180) || ($cml(-rot_angle) == 270) }  {
-      set ::STS(rotAngle) $cml(-rot_angle)
-    } else {
-      ok_err_msg "Parameter telling clock-wise rotation angle (-rot_angle); should 0, 90, 180 or 270"
-      incr errCnt 1
-    }
-  } else {  ok_info_msg "Rotation not requested"  }
-  if { 0 != $cml(-pad_x) }  { ;  # =0 (default) if not given
-    if { ([ok_isnumeric $cml(-pad_x)]) && ($cml(-pad_x) >= 0) }  {
-      set ::STS(padX) $cml(-pad_x)
-    } else {
-      ok_err_msg "Parameter telling horizontal padding (-pad_x); should be non-negative number"
-      incr errCnt 1
-    }
-  }  else {  ok_info_msg "Horizontal padding not requested"  }
-  if { 0 != $cml(-pad_y) }  { ;  # =0 (default) if not given
-    if { ([ok_isnumeric $cml(-pad_y)]) && ($cml(-pad_y) >= 0) }  {
-      set ::STS(padY) $cml(-pad_y)
-    } else {
-      ok_err_msg "Parameter telling vertical padding (-pad_y); should be non-negative number"
-      incr errCnt 1
-    }
-  }  else {  ok_info_msg "Vertical padding not requested"  }
-  if { 0 != $cml(-crop_ratio) }  { ;  # =0 (default) if not given
-    if { [ok_isnumeric $cml(-crop_ratio)] }  {
-      set ::STS(cropRatio) $cml(-crop_ratio)
-    } else {
-      ok_err_msg "Parameter telling crop ratio (-crop_ratio); should be numeric"
-      incr errCnt 1
-    }
-  }  else {  ok_info_msg "Cropping not requested"  }
-  if { (0 == $cml(-rot_angle)) && (0 == $cml(-crop_ratio)) }  { 
-    ok_info_msg "Please specify rotation angle and/or crop ratio; example: -rot_angle 270 -crop_ratio 1"
+  if { 0 == [info exists cml(-screen_height)] }  {
+    ok_err_msg "Please specify the image height; example: -screen_height 1440"
     incr errCnt 1
+  } else {
+    if { ![string is integer $cml(-screen_height)] || \
+          ($cml(-screen_height) <= 0) }  {
+      ok_err_msg "Non-integer '$cml(-screen_height)' specified as the image height"
+      incr errCnt 1
+    } else {
+      set ::STS(canvHt) $cml(-screen_height)
+    }
   }
+  if { 0 == [info exists cml(-offset)] }  {
+    ok_err_msg "Please specify the offset of individual left/right image from the screen center - in pixels; example: -offset 200"
+    incr errCnt 1
+  } else {
+    if { ![string is integer $cml(-offset)] || \
+          ($cml(-offset) <= 0) }  {
+      ok_err_msg "Non-integer '$cml(-offset)' specified as the individual left/right image offset"
+      incr errCnt 1
+    } else {
+      set ::STS(offset) $cml(-offset)
+    }
+  }
+  if { 0 != $cml(-gamma) }  { ;  # =1.0 (default) if not given
+    if { ([ok_isnumeric $cml(-gamma)]) && ($cml(-gamma) >= 0) }  {
+      set ::STS(gamma) $cml(-gamma)
+    } else {
+      ok_err_msg "Parameter telling gamma correction (-gamma); should be non-negative number"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Gamma correction not requested"  }
   if { 0 != $cml(-jpeg_quality) }  { ;  # =0 (default) if not given
     if { ([string is integer $cml(-jpeg_quality)]) && \
           ($cml(-jpeg_quality) >= 0) && ($cml(-jpeg_quality) <= 100) }  {
