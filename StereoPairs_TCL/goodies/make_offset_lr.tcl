@@ -62,8 +62,9 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 
 proc _make_offset_lr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
-  set ::STS(dirL)             "CANV_L"
-  set ::STS(dirR)             "CANV_R"
+  set ::STS(outDirNamePrefix) "" ;  # if given, dirNameY=<dirNameBase><suffixY>
+  set ::STS(dirL)             "CANV_L" ;  # only used if dirNameBase not given
+  set ::STS(dirR)             "CANV_R" ;  # only used if dirNameBase not given
   set ::STS(suffixL)          "_L"
   set ::STS(suffixR)          "_R"
   set ::STS(extList)          ""
@@ -84,7 +85,7 @@ _make_offset_lr_set_defaults ;  # load only;  do call it in a function for repea
 # (left images are offset to the right, right images are offset to the left)
 # On success returns number of processed stereopairs, on error returns 0.
 ## Example:
-##  cd e:/Photo_Publish/Stereo/TMP/;  make_offset_lr_main "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.9 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95"
+##  cd e:/Photo_Publish/Stereo/TMP/;  make_offset_lr_main "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.9 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
 proc make_offset_lr_main {cmdLineAsStr}  {
   global SCRIPT_DIR
   _make_offset_lr_set_defaults ;  # calling it in a function for repeated invocations
@@ -138,8 +139,7 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
 [list \
   -help {"" "print help"}                                                      \
   -tools_paths_file {val	"(for standalone run) path of CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
-  -subdir_left  {val	"name of subdirectory for output left images"} \
-  -subdir_right {val	"name of subdirectory for output right images"} \
+  -outdir_name_prefix {val	"prefix for the names of subdirectories for output left/right images"} \
   -suffix_left  {val	"suffix for output left  images' names"} \
   -suffix_right {val	"suffix for output right images' names"} \
   -img_extensions {list "list of extensions of input image files; example: {jpg bmp}"}                      \
@@ -154,8 +154,8 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   # create dummy command line with the default parameters and copy it
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
-  ok_set_cmd_line_params defCml cmlD { \
-    {-subdir_left "CANV_L"} {-subdir_right "CANV_R"}                           \
+  ok_set_cmd_line_params defCml cmlD {                                        \
+    {-outdir_name_prefix "CANV"}                                              \
     {-suffix_left "_L"} {-suffix_right "_R"} {-gamma 1.0} {-jpeg_quality "98"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
@@ -329,18 +329,17 @@ proc _offset_lr_parse_cmdline {cmlArrName}  {
   } else {
     set ::STS(toolsPathsFile) $cml(-tools_paths_file)
   }
-  if { [info exists cml(-subdir_left)] }  {
-    set ::STS(dirL) $cml(-subdir_left)
-  } ;   # otherwise use the default
-  if { [info exists cml(-subdir_right)] }  {
-    set ::STS(dirR) $cml(-subdir_right)
-  } ;   # otherwise use the default
   if { [info exists cml(-suffix_left)] }  {
     set ::STS(suffixL) $cml(-suffix_left)
   } ;   # otherwise use the default
   if { [info exists cml(-suffix_right)] }  {
     set ::STS(suffixR) $cml(-suffix_right)
   } ;   # otherwise use the default
+  if { [info exists cml(-outdir_name_prefix)] }  {  ; # after the suffixes
+    set ::STS(outdirNamePrefix) $cml(-outdir_name_prefix)
+    set ::STS(dirL) "$::STS(outdirNamePrefix)$::STS(suffixL)"
+    set ::STS(dirR) "$::STS(outdirNamePrefix)$::STS(suffixR)"
+  } ;   # otherwise use the default dirL/dirR
   if { [info exists cml(-img_extensions)] }  {
     set ::STS(extList) $cml(-img_extensions)
   } else {
