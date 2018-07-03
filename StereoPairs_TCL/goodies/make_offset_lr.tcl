@@ -62,7 +62,7 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 
 proc _make_offset_lr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
-  set ::STS(outDirNamePrefix) "" ;  # if given, dirNameY=<dirNameBase><suffixY>
+  set ::STS(outDirNamePrefix) "" ;  # if given, dirNameY=<outDirNamePrefix><suffixY>
   set ::STS(dirL)             "CANV_L" ;  # only used if dirNameBase not given
   set ::STS(dirR)             "CANV_R" ;  # only used if dirNameBase not given
   set ::STS(suffixL)          "_L"
@@ -155,7 +155,6 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD {                                        \
-    {-outdir_name_prefix "CANV"}                                              \
     {-suffix_left "_L"} {-suffix_right "_R"} {-gamma 1.0} {-jpeg_quality "98"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
@@ -339,7 +338,9 @@ proc _offset_lr_parse_cmdline {cmlArrName}  {
     set ::STS(outdirNamePrefix) $cml(-outdir_name_prefix)
     set ::STS(dirL) "$::STS(outdirNamePrefix)$::STS(suffixL)"
     set ::STS(dirR) "$::STS(outdirNamePrefix)$::STS(suffixR)"
-  } ;   # otherwise use the default dirL/dirR
+  } else {  ;   # otherwise use the default dirL/dirR
+    ok_info_msg "Will use default output directory names ('$::STS(dirL)'/'$::STS(dirR)') since '-outdir_name_prefix' isn't provided"
+  }
   if { [info exists cml(-img_extensions)] }  {
     set ::STS(extList) $cml(-img_extensions)
   } else {
