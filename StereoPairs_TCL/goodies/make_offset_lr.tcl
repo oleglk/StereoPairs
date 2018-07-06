@@ -52,19 +52,13 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 ################################################################################
 
 
-#~ set ::STS(dirL) CANV_L
-#~ set ::STS(dirR) CANV_R
-#~ set ::STS(suffixL) "_L"
-#~ set ::STS(suffixR) "_R"
-
-# TODO: wrap into command-line based top function
 ################################################################################
 
 proc _make_offset_lr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
   set ::STS(outDirNamePrefix) "" ;  # if given, dirNameY=<outDirNamePrefix><suffixY>
-  set ::STS(dirL)             "CANV_L" ;  # only used if dirNameBase not given
-  set ::STS(dirR)             "CANV_R" ;  # only used if dirNameBase not given
+  set ::STS(dirL)             "CANV_L" ;  # only used if outDirNamePrefix not given
+  set ::STS(dirR)             "CANV_R" ;  # only used if outDirNamePrefix not given
   set ::STS(suffixL)          "_L"
   set ::STS(suffixR)          "_R"
   set ::STS(extList)          ""
