@@ -38,7 +38,7 @@ source [file join $SCRIPT_DIR__offset ".." "dir_file_mgr.tcl"]
 #~ @REM for /L %z IN (100,50,350) DO (
 #~ @REM for /L %z IN (100,100,200) DO (
 #~ set z=200
-#~ set g=0.9
+#~ set g=0.85
 #~ @REM for /L %g IN (0.8,0.1,1.0) DO (
   #~ md CANV_L\G%g%_OFF%z%
   #~ md CANV_R\G%g%_OFF%z%
@@ -79,8 +79,8 @@ _make_offset_lr_set_defaults ;  # load only;  do call it in a function for repea
 # (left images are offset to the right, right images are offset to the left)
 # On success returns number of processed stereopairs, on error returns 0.
 ## Example:
-##  cd e:/Photo_Publish/Stereo/TMP/;  make_offset_lr_main "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.9 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
-proc make_offset_lr_main {cmdLineAsStr}  {
+##  cd e:/Photo_Publish/Stereo/TMP/;  make_offset_lr "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
+proc make_offset_lr {cmdLineAsStr}  {
   global SCRIPT_DIR
   _make_offset_lr_set_defaults ;  # calling it in a function for repeated invocations
   if { 0 == [offset_lr_cmd_line $cmdLineAsStr cml] }  {
@@ -165,10 +165,10 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "================================================================"
     ok_info_msg "  (note TCL-style directory separators in the examples below)"
     ok_info_msg "================= Example 1 - short: ==========================="
-    ok_info_msg " offset_lr_main \"-screen_width 2560 -screen_height 1440 -offset 200 -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " make_offset_lr \"-screen_width 2560 -screen_height 1440 -offset 200 -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     ok_info_msg "================= Example 2 - full: ============================"
-    ok_info_msg " offset_lr_main \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.9 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95\""
+    ok_info_msg " make_offset_lr \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95\""
     ok_info_msg "================================================================"
     return  0
   }
