@@ -6,6 +6,12 @@ set g_jpegQuality 98;  # 1..100 forces given JPEG quality; 0 leaves to default
 ## Local procedures
 ################################################################################
 
+proc _offset_lr_cfg_init {}  {
+  #~ set ::OFFSET_LR_CFG [dict create]
+  #TODO
+}
+
+
 # Reads and applies relevant preferences from DualCam-Companion
 proc _set_projection_params_from_preferences {subDirFinal} {
   upvar $subDirFinal dirFinal
@@ -20,16 +26,9 @@ proc _set_projection_params_from_preferences {subDirFinal} {
     ok_info_msg "Preferences successfully loaded"
   }
   # perform initializations dependent on the saved or hardcoded preferences
-  if { 0 == [preferences_get_val -lr_cam_orient lrOrientSpec]} {
-    ok_err_msg "Missing preference for left- and right cameras' orientations"
-    set allApplied 0
-  }
   if { 0 == [preferences_get_val -final_img_dir dirFinal]} {
     ok_err_msg "Missing preference for final images subdirectory"
     set allApplied 0
-  }
-  if { 0 == [get_recommended_sides_ratio $lrOrientSpec ratio] }  {
-    set allApplied 0;  # error already printed; this one is fatal
   }
   if { $allApplied == 1 }  {
     ok_info_msg "Relevant preferences successfully loaded and applied"
@@ -77,7 +76,7 @@ ok_info_msg "Success changing work directory to '$subDirFinal'"
 
 
 # (5) Execute the main procedure of "make_offset_lr.tcl" script
-# TODO: ? where tool-path-file is expected: relative to script locatopm ?
+# TODO: ? where tool-path-file is expected: relative to script location ?
 make_offset_lr "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
 
 
