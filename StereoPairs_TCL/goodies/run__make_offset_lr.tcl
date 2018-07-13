@@ -6,13 +6,29 @@ set g_jpegQuality 98;  # 1..100 forces given JPEG quality; 0 leaves to default
 ## Local procedures
 ################################################################################
 
+# Configures geometrical, color, etc. parameters in ::OFFSET_LR_CFG dictionary
+# Key names match cmd-line switches of proc 'make_offset_lr' (with leading "-")
 proc _offset_lr_cfg_init {}  {
-  #~ set ::OFFSET_LR_CFG [dict create]
-  #TODO
+  set ::OFFSET_LR_CFG [dict create]
+  # "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
+  dict set ::OFFSET_LR_CFG "-screen_width" 2560
+  dict set ::OFFSET_LR_CFG "-screen_height" 1440
+  dict set ::OFFSET_LR_CFG "-offset" 200
+  dict set ::OFFSET_LR_CFG "-gamma" 0.85
+  dict set ::OFFSET_LR_CFG "-img_extensions" {TIF JPG}
+  dict set ::OFFSET_LR_CFG "-suffix_left" _L
+  dict set ::OFFSET_LR_CFG "-suffix_right" _R
+  dict set ::OFFSET_LR_CFG "-jpeg_quality" 95
+}
+_offset_lr_cfg_init
+
+
+proc _dict_to_cmd_line {theDict}  {
 }
 
 
 # Reads and applies relevant preferences from DualCam-Companion
+# Here we need only subdirectory with final images
 proc _set_projection_params_from_preferences {subDirFinal} {
   upvar $subDirFinal dirFinal
   upvar $sidesRatio ratio
