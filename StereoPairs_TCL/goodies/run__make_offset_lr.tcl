@@ -11,22 +11,38 @@ set g_jpegQuality 98;  # 1..100 forces given JPEG quality; 0 leaves to default
 proc _offset_lr_cfg_init {}  {
   set ::OFFSET_LR_CFG [dict create]
   # "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
-  dict set ::OFFSET_LR_CFG "-screen_width" 2560
-  dict set ::OFFSET_LR_CFG "-screen_height" 1440
-  dict set ::OFFSET_LR_CFG "-offset" 200
-  dict set ::OFFSET_LR_CFG "-gamma" 0.85
-  dict set ::OFFSET_LR_CFG "-img_extensions" {TIF JPG}
-  dict set ::OFFSET_LR_CFG "-suffix_left" _L
-  dict set ::OFFSET_LR_CFG "-suffix_right" _R
-  dict set ::OFFSET_LR_CFG "-jpeg_quality" 95
+  dict set ::OFFSET_LR_CFG "-screen_width"    2560
+  dict set ::OFFSET_LR_CFG "-screen_height"   1440
+  dict set ::OFFSET_LR_CFG "-offset"          200
+  dict set ::OFFSET_LR_CFG "-gamma"           0.85
+  dict set ::OFFSET_LR_CFG "-img_extensions"  {TIF JPG}
+  dict set ::OFFSET_LR_CFG "-suffix_left"     _L
+  dict set ::OFFSET_LR_CFG "-suffix_right"    _R
+  dict set ::OFFSET_LR_CFG "-jpeg_quality"    95
 }
 _offset_lr_cfg_init
 
 
 proc _dict_to_cmd_line {theDict}  {
+  set cmdStr ""
+  set nPairs [expr {[dict size $theDict] / 2.0}]
+  set isOK [expr {0 == ($nPairs % 2)}]
+  if { $isOK == 1 } {
+    dict for {k v} $theDict {
+      if { ($k == "") || ("-" != [string index $k 0]) {
+        set isOK 0;   break
+      }
+      append cmdStr $k " " $v
+    }
+  }
+  if { $isOK == 0 } {
+    ok_err_msg "Invalid dictionary for command line {$nPairs}";   return "ERROR"
+  }
+  return  $cmdStr
 }
 
 
+#TODO: study the issue of unsetting ::STS !!!
 # Reads and applies relevant preferences from DualCam-Companion
 # Here we need only subdirectory with final images
 proc _set_projection_params_from_preferences {subDirFinal} {
