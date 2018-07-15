@@ -1,45 +1,18 @@
 # run__make_offset_lr.tcl - a "sourceable" file that runs make_offset_lr.tcl on final images' subdirectory
 
-set g_jpegQuality 98;  # 1..100 forces given JPEG quality; 0 leaves to default
+################################################################################
+## Configuration parameters for 'make_offset_lr' command line
+################################################################################
+# Picture-related command-line parameters:
+set imgArgs "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85"
+# Image-file-related command-line parameters:
+set fileArgs "-img_extensions {TIF JPG} -suffix_left _L -suffix_right _R -jpeg_quality 95"
+################################################################################
+
 
 ################################################################################
 ## Local procedures
 ################################################################################
-
-# Configures geometrical, color, etc. parameters in ::OFFSET_LR_CFG dictionary
-# Key names match cmd-line switches of proc 'make_offset_lr' (with leading "-")
-proc _offset_lr_cfg_init {}  {
-  set ::OFFSET_LR_CFG [dict create]
-  # "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
-  dict set ::OFFSET_LR_CFG "-screen_width"    2560
-  dict set ::OFFSET_LR_CFG "-screen_height"   1440
-  dict set ::OFFSET_LR_CFG "-offset"          200
-  dict set ::OFFSET_LR_CFG "-gamma"           0.85
-  dict set ::OFFSET_LR_CFG "-img_extensions"  {TIF JPG}
-  dict set ::OFFSET_LR_CFG "-suffix_left"     _L
-  dict set ::OFFSET_LR_CFG "-suffix_right"    _R
-  dict set ::OFFSET_LR_CFG "-jpeg_quality"    95
-}
-_offset_lr_cfg_init
-
-
-proc _dict_to_cmd_line {theDict}  {
-  set cmdStr ""
-  set nPairs [expr {[dict size $theDict] / 2.0}]
-  set isOK [expr {0 == ($nPairs % 2)}]
-  if { $isOK == 1 } {
-    dict for {k v} $theDict {
-      if { ($k == "") || ("-" != [string index $k 0]) {
-        set isOK 0;   break
-      }
-      append cmdStr $k " " $v
-    }
-  }
-  if { $isOK == 0 } {
-    ok_err_msg "Invalid dictionary for command line {$nPairs}";   return "ERROR"
-  }
-  return  $cmdStr
-}
 
 
 #TODO: study the issue of unsetting ::STS !!!
@@ -97,7 +70,11 @@ if { 0 == [_set_projection_params_from_preferences subDirFinal] }  {
   return  0;  # error already printed
 }
 
-# (4) Change directory to that of the final images
+# (4) Take work-area root directory as the base for output directory names:
+############ "<work-area-root-directory>_L""<work-area-root-directory>_R"
+################ TODO #############################
+
+# (5) Change directory to that of the final images
 set _oldWD [pwd];  # save the old cwd, cd to 'subDirFinal', restore before return
 set _tclResult [catch { set _res [cd $subDirFinal] } _execResult]
 if { $_tclResult != 0 } {
@@ -107,12 +84,12 @@ if { $_tclResult != 0 } {
 ok_info_msg "Success changing work directory to '$subDirFinal'"
 
 
-# (5) Execute the main procedure of "make_offset_lr.tcl" script
+# (6) Execute the main procedure of "make_offset_lr.tcl" script
 # TODO: ? where tool-path-file is expected: relative to script location ?
-make_offset_lr "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
+make_offset_lr "$imgParams $fileParams -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
 
 
-# (6) Return to work-area root directory
+# (7) Return to work-area root directory
 set _tclResult [catch { set _res [cd $_oldWD] } _execResult]
 if { $_tclResult != 0 } {
   ok_err_msg "Failed restoring work directory to '$_oldWD': $_execResult!"
@@ -120,7 +97,7 @@ if { $_tclResult != 0 } {
 }
 
 
-# (7) The end - indicate faiure if needed
+# (8) The end - indicate faiure if needed
 if { $anyExtDone <= 0 }   {;  # error already printed
   ok_warn_msg "No stereocards created for neither image type"
   return  0
