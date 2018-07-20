@@ -1,12 +1,14 @@
 # run__make_offset_lr.tcl - a "sourceable" file that runs make_offset_lr.tcl on final images' subdirectory
 
+# TODO: move out-dir upwards - not under SBS/
+
 ################################################################################
 ## Configuration parameters for 'make_offset_lr' command line
 ################################################################################
 # Picture-related command-line parameters:
-set imgArgs "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85"
+set imgParams "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85"
 # Image-file-related command-line parameters:
-set fileArgs "-img_extensions {TIF JPG} -suffix_left _L -suffix_right _R -jpeg_quality 95"
+set fileParams "-img_extensions {TIF JPG} -suffix_left _L -suffix_right _R -jpeg_quality 95"
 ################################################################################
 
 
@@ -20,7 +22,6 @@ set fileArgs "-img_extensions {TIF JPG} -suffix_left _L -suffix_right _R -jpeg_q
 # Here we need only subdirectory with final images
 proc _set_projection_params_from_preferences {subDirFinal} {
   upvar $subDirFinal dirFinal
-  upvar $sidesRatio ratio
   array unset ::STS ;   # array for global settings ;  unset once per a project
   preferences_set_initial_values  ; # initializing the settings is mandatory
   # load default settings if possible
@@ -86,7 +87,7 @@ ok_info_msg "Success changing work directory to '$subDirFinal'"
 
 # (6) Execute the main procedure of "make_offset_lr.tcl" script
 # TODO: ? where tool-path-file is expected: relative to script location ?
-make_offset_lr "$imgParams $fileParams -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"
+set nProcessed [make_offset_lr "$imgParams $fileParams -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"]
 
 
 # (7) Return to work-area root directory
@@ -98,8 +99,8 @@ if { $_tclResult != 0 } {
 
 
 # (8) The end - indicate faiure if needed
-if { $anyExtDone <= 0 }   {;  # error already printed
-  ok_warn_msg "No stereocards created for neither image type"
+if { $nProcessed <= 0 }   {;  # error already printed
+  ok_warn_msg "No stereopairs processed for neither image type"
   return  0
 }
 ################################################################################
