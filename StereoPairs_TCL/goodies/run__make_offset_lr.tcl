@@ -87,7 +87,7 @@ ok_info_msg "Success changing work directory to '$subDirFinal'"
 
 # (6) Execute the main procedure of "make_offset_lr.tcl" script
 # TODO: ? where tool-path-file is expected: relative to script location ?
-set nProcessed [make_offset_lr "$imgParams $fileParams -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"]
+set nProcessed [make_offset_lr "$imgParams $fileParams -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix ../OFFSET_LR/OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"]
 
 
 # (7) Return to work-area root directory
