@@ -72,7 +72,12 @@ if { 0 == [_set_projection_params_from_preferences subDirFinal] }  {
 }
 
 # (4) Take work-area root directory as the base for output directory names:
-############ "<work-area-root-directory>_L""<work-area-root-directory>_R"
+###### <work-area-root>__OFFLR/CANV_L  and  <work-area-root>__OFFLR/CANV_R
+# Current dir should be the work-area root, but then we descend 1 level (into SBS)
+set workAreaRootDirName [lindex [file split [pwd]] end]
+ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
+set outDirRootName [format "%s__OFFLR" $workAreaRootDirName]
+set outdirPathPref [file join "../" $outDirRootName "CANV"]
 ################ TODO #############################
 
 # (5) Change directory to that of the final images
@@ -87,7 +92,10 @@ ok_info_msg "Success changing work directory to '$subDirFinal'"
 
 # (6) Execute the main procedure of "make_offset_lr.tcl" script
 # TODO: ? where tool-path-file is expected: relative to script location ?
-set nProcessed [make_offset_lr "$imgParams $fileParams -tools_paths_file [dualcam_find_toolpaths_file 0] -outdir_name_prefix ../OFFSET_LR/OUT -suffix_left _L -suffix_right _R -jpeg_quality 95"]
+set nProcessed [make_offset_lr "$imgParams $fileParams                        \
+                            -tools_paths_file [dualcam_find_toolpaths_file 0] \
+                            -outdir_name_prefix $outdirPathPref               \
+                            -suffix_left _L -suffix_right _R -jpeg_quality 95"]
 
 
 # (7) Return to work-area root directory
