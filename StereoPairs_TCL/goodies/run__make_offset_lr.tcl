@@ -77,7 +77,7 @@ if { 0 == [_set_projection_params_from_preferences subDirFinal] }  {
 set workAreaRootDirName [lindex [file split [pwd]] end]
 ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
 set outDirRootName [format "%s__PROJ" $workAreaRootDirName]
-set outdirPathPref [file join "../" "PROJ_LR" $outDirRootName]
+set outdirPathPref [file join ".." "PROJ_LR" $outDirRootName]
 ################ TODO #############################
 
 # (5) Change directory to that of the final images
