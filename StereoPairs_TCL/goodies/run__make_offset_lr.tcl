@@ -76,8 +76,8 @@ if { 0 == [_set_projection_params_from_preferences subDirFinal] }  {
 # Current dir should be the work-area root, but then we descend 1 level (into SBS)
 set workAreaRootDirName [lindex [file split [pwd]] end]
 ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
-set outDirRootName [format "%s__OFFLR" $workAreaRootDirName]
-set outdirPathPref [file join "../" $outDirRootName "CANV"]
+set outDirRootName [format "%s__PROJ" $workAreaRootDirName]
+set outdirPathPref [file join "../" "PROJ_LR" $outDirRootName]
 ################ TODO #############################
 
 # (5) Change directory to that of the final images

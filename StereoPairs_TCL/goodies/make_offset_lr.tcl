@@ -59,8 +59,8 @@ proc _make_offset_lr_set_defaults {}  {
   set ::STS(outDirNamePrefix) "" ;  # if given, dirNameY=<outDirNamePrefix><suffixY>
   set ::STS(dirL)             "CANV_L" ;  # only used if outDirNamePrefix not given
   set ::STS(dirR)             "CANV_R" ;  # only used if outDirNamePrefix not given
-  set ::STS(suffixL)          "_L"
-  set ::STS(suffixR)          "_R"
+  set ::STS(suffixL)          "_L"  ; # suffix for left  image- AND directory name
+  set ::STS(suffixR)          "_R"  ; # suffix for right image- AND directory name
   set ::STS(extList)          ""
   set ::STS(canvWd)           ""
   set ::STS(canvHt)           ""
@@ -134,8 +134,8 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   -help {"" "print help"}                                                      \
   -tools_paths_file {val	"(for standalone run) path of CSV file with external tool locations - absolute or relative to this script; example: ../ext_tool_dirs.csv"} \
   -outdir_name_prefix {val	"prefix for the names of subdirectories for output left/right images"} \
-  -suffix_left  {val	"suffix for output left  images' names"} \
-  -suffix_right {val	"suffix for output right images' names"} \
+  -suffix_left  {val	"suffix for output left  images' and directory names"} \
+  -suffix_right {val	"suffix for output right images'- AND directory names"} \
   -img_extensions {list "list of extensions of input image files; example: {jpg bmp}"}                      \
   -screen_width  {val "image width  with border - in pixels - multiple of projector's horizontal resolution"} \
   -screen_height {val "image height with border - in pixels - multiple of projector's vertical   resolution"} \
@@ -168,7 +168,7 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg " make_offset_lr \"-screen_width 2560 -screen_height 1440 -offset 200 -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     ok_info_msg "================= Example 2 - full: ============================"
-    ok_info_msg " make_offset_lr \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -subdir_left L -subdir_right R -suffix_left _L -suffix_right _R -jpeg_quality 95\""
+    ok_info_msg " make_offset_lr \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -outdir_name_prefix \"../PROJ_LR/MyHoliday\" -suffix_left _L -suffix_right _R -jpeg_quality 95\""
     ok_info_msg "================================================================"
     return  0
   }
