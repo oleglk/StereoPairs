@@ -159,6 +159,7 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
     ok_info_msg "================================================================"
     ok_info_msg "Splitting stereopairs into L/R images with horizontal offfset."
+    ok_info_msg "Left image is offfset to the right, right image is offset to the left."
     ok_info_msg " (intended for passive 3D polarized projection)"
     ok_info_msg "========= Command line parameters (in random order): ==========="
     ok_info_msg $cmdHelp
