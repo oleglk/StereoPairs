@@ -45,6 +45,7 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(rawExt)           "" ;  # extension of RAW iamges
   set ::STS(inpDirPaths)      [list] ;  # list of inp. dir paths - absolute or relative to the current directory
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
+  set ::STS(tmpDirPath)       "" ;  # absolute or relative to the input directory - to be created or reused
   set ::STS(rotAngle)         -1 ;  # -1 == rotate according to EXIF;  0|90|180|270 - rotation angle clockwise
   set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
   set ::STS(doPreview)        1  ;  # 1 == smaller and faster;  0 == full-size, very slow
@@ -55,11 +56,11 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(wbInpFile)        "" ;  # input  file with per-image white balance coefficients
   set ::STS(wbOutFile)        "" ;  # output file with per-image white balance coefficients
 
-  set _tmpDir TMP
-  # directories for RAW conversions - relative paths - to use under CWD
-  set ::STS(dirNorm) [file join $_tmpDir OUT_NORM]
-  set ::STS(dirLow)  [file join $_tmpDir OUT_LOW]
-  set ::STS(dirHigh) [file join $_tmpDir OUT_HIGH]
+  #~ set _tmpDir TMP
+  #~ # directories for RAW conversions - relative paths - to use under CWD
+  #~ set ::STS(dirNorm) [file join $_tmpDir OUT_NORM]
+  #~ set ::STS(dirLow)  [file join $_tmpDir OUT_LOW]
+  #~ set ::STS(dirHigh) [file join $_tmpDir OUT_HIGH]
 }
 ################################################################################
 _raw_to_hdr_set_defaults ;  # load only;  do call it in a function for repeated invocations
@@ -117,6 +118,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -raw_ext {val "extension of RAW images; example: arw"}                      \
   -inp_dirs {list "list of input directories' paths; absolute or relative to the current directory"} \
   -out_subdir_name {val	"name of output directory (for HDR images); created under the input directory"} \
+  -tmp_dir_path {val	"path of temporary directory; absolute or relative to the current directory - to be created or reused"} \
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -rotate {val "1 means rotate according to EXIF (default);  0|90|180|270 - rotation angle clockwise"} \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
@@ -132,7 +134,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD {                                    \
-    {-final_depth "8"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"}  \
+    {-final_depth "8"} {-tmp_dir_path "TMP"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"}  \
     {-do_skip_existing "0"} {-do_abort_on_low_disk_space 1}               \
     {-do_preview "0"} {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
@@ -236,6 +238,20 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     incr errCnt 1
   } else {
     set ::STS(outDirName)      $cml(-out_subdir_name)
+  }
+  if { 0 == [info exists cml(-tmp_dir_path)] }  {
+    ok_err_msg "Please specify temporary directory path; example: -tmp_dir_path d:\R2HDR_TMP"
+    incr errCnt 1
+  } elseif { (1 == [file exists $cml(-tmp_dir_path)]) && \
+             (0 == [file isdirectory $cml(-tmp_dir_path)]) }  {
+    ok_err_msg "Non-directory '$cml(-tmp_dir_path)' specified as output directory"
+    incr errCnt 1
+  } else {
+    set ::STS(tmpDirPath)      [file normalize $cml(-tmp_dir_path)]
+    # directories for RAW conversions - under tmp-dir
+    set ::STS(dirNorm) [file join $::STS(tmpDirPath) OUT_NORM]
+    set ::STS(dirLow)  [file join $::STS(tmpDirPath) OUT_LOW]
+    set ::STS(dirHigh) [file join $::STS(tmpDirPath) OUT_HIGH]
   }
   if { [info exists cml(-do_raw_conv)] }  {
     if { $::STS(doHDR) == 0 }  {
