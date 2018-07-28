@@ -1,5 +1,14 @@
 # run__raw_to_hdr_on_l_r.tcl - a "sourceable" file that runs raw_to_hdr.tcl on L/ and R/ subdirectories
 
+################################################################################
+## Local configuration variables
+################################################################################
+#set _RAWRC_TMP_PATH "E:/TMP/RAWRC_TMP"
+set _RAWRC_TMP_PATH TMP ;  # the default value
+################################################################################
+## End of local configuration variables
+################################################################################
+
 
 ################################################################################
 ## Local procedures
@@ -115,6 +124,16 @@ if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
 #~ # (location of tool-path file reflects Dualcam-Companion software structure)
 #~ raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 
+
+#~ # (4) Take work-area root directory as the base for temporary directory names
+#~ # but only if the temporary directory is not under work-area root directory
+#~ ###### $_RAWRC_TMP_PATH/<work-area-root>/
+#~ # Current dir should be the work-area root
+#~ set workAreaRootDirName [file tail [pwd]]
+#~ ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
+#~ TODO
+#~ ################ TODO #############################
+
 # TODO: add left suffix in ovrd file unless it's there
 
 # (4) If input white-balance override file exists, tell to use it for L/ directory
@@ -131,7 +150,7 @@ if { [file exists "wb_ovrd_left.csv"] }  {
 #     "wb_ovrd_left.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_left.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1"]}   {
+if { 0 == [raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT -tmp_dir_path $_RAWRC_TMP_PATH -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1"]}   {
   return  0;  # error already printed
 }
 
@@ -147,7 +166,7 @@ if { 0 == [_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 \
 #     "wb_ovrd_right.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_right.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1"] }   {
+if { 0 == [raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -tmp_dir_path $_RAWRC_TMP_PATH -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1"] }   {
   return  0;  # error already printed
 }
 
