@@ -240,18 +240,14 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     set ::STS(outDirName)      $cml(-out_subdir_name)
   }
   if { 0 == [info exists cml(-tmp_dir_path)] }  {
-    ok_err_msg "Please specify temporary directory path; example: -tmp_dir_path d:\R2HDR_TMP"
-    incr errCnt 1
+    set ::STS(tmpDirPath)      [file normalize [file join [pwd] "TMP"]]
+    ok_err_msg "No temporary directory path specified; will use default directory '$::STS(tmpDirPath)'"
   } elseif { (1 == [file exists $cml(-tmp_dir_path)]) && \
              (0 == [file isdirectory $cml(-tmp_dir_path)]) }  {
     ok_err_msg "Non-directory '$cml(-tmp_dir_path)' specified as output directory"
     incr errCnt 1
   } else {
     set ::STS(tmpDirPath)      [file normalize $cml(-tmp_dir_path)]
-    # directories for RAW conversions - under tmp-dir
-    set ::STS(dirNorm) [file join $::STS(tmpDirPath) OUT_NORM]
-    set ::STS(dirLow)  [file join $::STS(tmpDirPath) OUT_LOW]
-    set ::STS(dirHigh) [file join $::STS(tmpDirPath) OUT_HIGH]
   }
   if { [info exists cml(-do_raw_conv)] }  {
     if { $::STS(doHDR) == 0 }  {
@@ -320,6 +316,10 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     return  0
   }
   #ok_info_msg "Command parameters are valid"
+  # directories for RAW conversions - under tmp-dir
+  set ::STS(dirNorm) [file join $::STS(tmpDirPath) OUT_NORM]
+  set ::STS(dirLow)  [file join $::STS(tmpDirPath) OUT_LOW]
+  set ::STS(dirHigh) [file join $::STS(tmpDirPath) OUT_HIGH]
   return  1
 }
 
