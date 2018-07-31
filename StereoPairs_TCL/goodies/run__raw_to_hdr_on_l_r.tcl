@@ -5,8 +5,8 @@
 ################################################################################
 # Temporary directory used for HUGE amount of data
 # Either specify implicit path for temp dir, or unset the variable (use default)
-set _RAWRC_TMP_PATH "E:/TMP/RAWRC_TMP"
-##unset -nocomplain _RAWRC_TMP_PATH ;  # force the default value for temp directory
+##set _RAWRC_TMP_PATH "E:/TMP/RAWRC_TMP"
+unset -nocomplain _RAWRC_TMP_PATH ;  # force the default value for temp directory
 ################################################################################
 ## End of local configuration variables
 ################################################################################

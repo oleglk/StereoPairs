@@ -316,10 +316,6 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
     return  0
   }
   #ok_info_msg "Command parameters are valid"
-  # directories for RAW conversions - under tmp-dir
-  set ::STS(dirNorm) [file join $::STS(tmpDirPath) OUT_NORM]
-  set ::STS(dirLow)  [file join $::STS(tmpDirPath) OUT_LOW]
-  set ::STS(dirHigh) [file join $::STS(tmpDirPath) OUT_HIGH]
   return  1
 }
 
@@ -336,7 +332,7 @@ proc _do_job_in_one_dir {dirPath}  {
   }
   ok_info_msg "Success changing work directory to '$dirPath'"
   if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
-    if { 0 == [_arrange_dirs_in_current_dir] }  {
+    if { 0 == [_arrange_dirs_for_current_dir] }  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
       return  0
     }
@@ -358,8 +354,17 @@ proc _do_job_in_one_dir {dirPath}  {
   return  1
 }
 
-proc _arrange_dirs_in_current_dir {} {
-  set dirList [list $::STS(outDirName) $::STS(dirNorm) $::STS(dirLow) $::STS(dirHigh)]
+
+# Builds ultimate per-input-dir output-directories' names
+# and creates the directories
+proc _arrange_dirs_for_current_dir {} {
+  set currLeafDirName [file tail [pwd]]
+  # directories for RAW conversions - under tmp-dir
+  set ::STS(dirNorm) [file join $::STS(tmpDirPath) $currLeafDirName OUT_NORM]
+  set ::STS(dirLow)  [file join $::STS(tmpDirPath) $currLeafDirName OUT_LOW ]
+  set ::STS(dirHigh) [file join $::STS(tmpDirPath) $currLeafDirName OUT_HIGH]
+  set dirList [list $::STS(outDirName) \
+                    $::STS(dirNorm) $::STS(dirLow) $::STS(dirHigh)]
   set descrList  {"folder-for-final-HDR-images" "folder-for-normal-images" \
                   "folder-for-darker-images" "folder-for-brighter-images" }
   if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
