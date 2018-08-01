@@ -96,7 +96,10 @@ proc preferences_get_initial_values {arrayName}  {
   # user command #2 - full cmd line and button text
   set _prefs(-custom_cmd_2)  [file join "goodies" "trial_tcl.tcl"]
   set _prefs(-custom_btn_2)  "Cust2" ; # custom user command #2 - button text
-  
+
+  # arbitrary custom commands
+  set _prefs(-tmp_dir_for_custom_cmd)  "TMP" ; # custom command uses it if needed
+
 #  set _prefs(-)  ""
 
   
@@ -107,10 +110,12 @@ proc preferences_get_initial_values {arrayName}  {
     -INITIAL_WORK_DIR {"workarea root directory assumed at startup" "%s"} \
     -lr_cam_orient {"L-R camera orientations: bd-bd = all bottom-down; br-bl = left bottom-right, right bottom-left; br-bd = left bottom-right, right bottom-down" "%s"} \
     -custom_btn_1 {"button label of custom command 1; up to 5 characters" "%s"} \
-    -custom_btn_2 {"button label of custom command 2; up to 5 characters" "%s"}
+    -custom_btn_2 {"button label of custom command 2; up to 5 characters" "%s"} \
+    -tmp_dir_for_custom_cmd {"temporary directory for custom commands that need it" "%s"}
     ]
-  set _prefs(COMMON__keysInOrder) [list -INITIAL_WORK_DIR -lr_cam_orient \
-                                        -custom_btn_1 -custom_btn_2]
+  set _prefs(COMMON__keysInOrder) [list -INITIAL_WORK_DIR -lr_cam_orient  \
+                                        -custom_btn_1 -custom_btn_2       \
+                                        -tmp_dir_for_custom_cmd]
   set _prefs(COMMON__keyOnlyArgsList) [list]
   set _prefs(COMMON__hardcodedArgsStr) ""
 ################################################################################

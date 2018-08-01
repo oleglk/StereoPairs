@@ -85,6 +85,11 @@ proc _load_some_preferences {} {
                                         $specLeft $specRight] } {
     set allApplied 0;  # error already printed
   }
+  if { 0 == [preferences_get_val -tmp_dir_for_custom_cmd cystTmpDir]} {
+    ok_info_msg "TODO"
+    set allApplied 0
+  }
+
   if { $allApplied == 1 }  {
     ok_info_msg "Preferences successfully loaded and applied"
     return  1
@@ -128,6 +133,8 @@ if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
 
 
 # (4) Choose the ultimate per-session temporary directory.
+#     Source priority: (a) $_RAWRC_TMP_PATH,
+#                      (b) -tmp_dir_for_custom_cmd in preferences
 ## If temporary directory path is explicitly specified,
 ##      create a subdirectory under it - named after work-area root
 ##      e.g.:  $_RAWRC_TMP_PATH/<work-area-root>/
@@ -144,6 +151,7 @@ if { [info exists ::_RAWRC_TMP_PATH] }  { ;   # use explicitly provided tmp-dir
   set TMP_DIR_ARG__OR_EMPTY "";   # force using the default
   ok_info_msg "Will use the default path for the ultimate temporary directory"
 }
+# TODO: option of -tmp_dir_for_custom_cmd
 
 
 # TODO: add left suffix in ovrd file unless it's there
