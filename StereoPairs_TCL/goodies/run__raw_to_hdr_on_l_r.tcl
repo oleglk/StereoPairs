@@ -148,16 +148,17 @@ if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
 ##      e.g.:  $_RAWRC_TMP_PATH/<work-area-root>/
 ## If temporary directory path is not specified,
 ##      do not provide corresponding parameter - force the default location
+# Current dir should be the work-area root
+set workAreaRootDirName [file tail [pwd]]
+ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
 if { [info exists ::_RAWRC_TMP_PATH] }  { ;   # use explicitly provided tmp-dir
-  # Current dir should be the work-area root
-  set workAreaRootDirName [file tail [pwd]]
-  ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
   set tmpDirPath [file join $::_RAWRC_TMP_PATH $workAreaRootDirName]
   set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $tmpDirPath"
   ok_info_msg "Will use explicit ultimate temporary directory '$tmpDirPath'"
 } elseif { [info exists ::_PREFERENCY_TMP_DIR] }  { ; # use tmp-dir from preferencies
-  set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $::_PREFERENCY_TMP_DIR"
-  ok_info_msg "Will use ultimate temporary directory from preferences '$::_PREFERENCY_TMP_DIR'"
+  set tmpDirPath [file join $::_PREFERENCY_TMP_DIR $workAreaRootDirName]
+  set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $::tmpDirPath"
+  ok_info_msg "Will use ultimate temporary directory from preferences '$::tmpDirPath'"
 } else {                                  ; # let raw2hdr choose default tmp-dir
   set TMP_DIR_ARG__OR_EMPTY "";   # force using the default
   ok_info_msg "Will use the default path for the ultimate temporary directory"
