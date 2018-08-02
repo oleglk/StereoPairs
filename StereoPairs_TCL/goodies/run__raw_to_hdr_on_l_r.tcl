@@ -85,9 +85,13 @@ proc _load_some_preferences {} {
                                         $specLeft $specRight] } {
     set allApplied 0;  # error already printed
   }
-  if { 0 == [preferences_get_val -tmp_dir_for_custom_cmd cystTmpDir]} {
-    ok_info_msg "TODO"
-    set allApplied 0
+  set descr "Temporary directory for custom commands as specified in preferences"
+  if { 0 == [preferences_get_val -tmp_dir_for_custom_cmd custTmpDir]} {
+    unset -nocomplain ::_PREFERENCY_TMP_DIR
+    ok_info_msg "$descr is not included"
+  } else {
+    set ::_PREFERENCY_TMP_DIR $custTmpDir
+    ok_info_msg "$descr is '$'::_PREFERENCY_TMP_DIR"
   }
 
   if { $allApplied == 1 }  {
@@ -121,7 +125,11 @@ source [file join $SCRIPT_DIR__raw_to_hdr ".." "stereopair_naming.tcl"]
 source [file join $SCRIPT_DIR__raw_to_hdr ".." "preferences_mgr.tcl"]
 source [file join $SCRIPT_DIR__raw_to_hdr ".." "dir_file_mgr.tcl"]
 
-# (3) Read image-file naming parameters from Dualcam-Companion preferences file
+unset -nocomplain _PREFERENCY_TMP_DIR ; # placeholder for dir of "-tmp_dir_for_custom_cmd"
+
+# (3) Read from Dualcam-Companion preferences file:
+#     - image-file naming parameters
+#     - temporary directory for custom commands
 if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
   ok_warn_msg "Setting stereopair naming parameters to StereoPhotoMaker-compatible defaults"
   _set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
@@ -132,7 +140,7 @@ if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
 #~ raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 
 
-# (4) Choose the ultimate per-session temporary directory.
+# (4) Choose the ultimate per-session temporary directory .
 #     Source priority: (a) $_RAWRC_TMP_PATH,
 #                      (b) -tmp_dir_for_custom_cmd in preferences
 ## If temporary directory path is explicitly specified,
@@ -146,12 +154,14 @@ if { [info exists ::_RAWRC_TMP_PATH] }  { ;   # use explicitly provided tmp-dir
   ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
   set tmpDirPath [file join $::_RAWRC_TMP_PATH $workAreaRootDirName]
   set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $tmpDirPath"
-  ok_info_msg "Will use ultimate temporary directory '$tmpDirPath'"
+  ok_info_msg "Will use explicit ultimate temporary directory '$tmpDirPath'"
+} elseif { [info exists ::_PREFERENCY_TMP_DIR] }  { ; # use tmp-dir from preferencies
+  set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $::_PREFERENCY_TMP_DIR"
+  ok_info_msg "Will use ultimate temporary directory from preferences '$::_PREFERENCY_TMP_DIR'"
 } else {                                  ; # let raw2hdr choose default tmp-dir
   set TMP_DIR_ARG__OR_EMPTY "";   # force using the default
   ok_info_msg "Will use the default path for the ultimate temporary directory"
 }
-# TODO: option of -tmp_dir_for_custom_cmd
 
 
 # TODO: add left suffix in ovrd file unless it's there
