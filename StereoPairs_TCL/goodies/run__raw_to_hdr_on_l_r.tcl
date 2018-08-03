@@ -5,8 +5,8 @@
 ################################################################################
 # Temporary directory used for HUGE amount of data
 # Either specify implicit path for temp dir, or unset the variable (use default)
-##set _RAWRC_TMP_PATH "E:/TMP/RAWRC_TMP"
 unset -nocomplain _RAWRC_TMP_PATH ;  # force the default value for temp directory
+##set _RAWRC_TMP_PATH "E:/TMP/RAWRC_TMP"; # explicitly specify an _absolute_ path
 ################################################################################
 ## End of local configuration variables
 ################################################################################
@@ -91,7 +91,7 @@ proc _load_some_preferences {} {
     ok_info_msg "$descr is not included"
   } else {
     set ::_PREFERENCY_TMP_DIR $custTmpDir
-    ok_info_msg "$descr is '$'::_PREFERENCY_TMP_DIR"
+    ok_info_msg "$descr is '$::_PREFERENCY_TMP_DIR'"
   }
 
   if { $allApplied == 1 }  {
@@ -157,6 +157,9 @@ if { [info exists ::_RAWRC_TMP_PATH] }  { ;   # use explicitly provided tmp-dir
   ok_info_msg "Will use explicit ultimate temporary directory '$tmpDirPath'"
 } elseif { [info exists ::_PREFERENCY_TMP_DIR] }  { ; # use tmp-dir from preferencies
   set tmpDirPath [file join $::_PREFERENCY_TMP_DIR $workAreaRootDirName]
+  set tmpDirPath [expr {("relative" != [file pathtype $::_PREFERENCY_TMP_DIR])? \
+              [file join $::_PREFERENCY_TMP_DIR $workAreaRootDirName] : \
+              $::_PREFERENCY_TMP_DIR}]
   set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $::tmpDirPath"
   ok_info_msg "Will use ultimate temporary directory from preferences '$::tmpDirPath'"
 } else {                                  ; # let raw2hdr choose default tmp-dir
