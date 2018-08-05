@@ -6,7 +6,7 @@
 # Temporary directory used for HUGE amount of data
 # Either specify implicit path for temp dir, or unset the variable (use default)
 unset -nocomplain _RAWRC_TMP_PATH ;  # force the default value for temp directory
-##set _RAWRC_TMP_PATH "E:/TMP/RAWRC_TMP"; # explicitly specify an _absolute_ path
+#set _RAWRC_TMP_PATH "E:/TMP/RAWRC_TMP"; # explicitly specify an _absolute_ path
 ################################################################################
 ## End of local configuration variables
 ################################################################################
@@ -151,17 +151,20 @@ if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
 # Current dir should be the work-area root
 set workAreaRootDirName [file tail [pwd]]
 ok_info_msg "Work-area root directory name is '$workAreaRootDirName'"
-if { [info exists ::_RAWRC_TMP_PATH] }  { ;   # use explicitly provided tmp-dir
+if { ([info exists ::_RAWRC_TMP_PATH]) && ($::_RAWRC_TMP_PATH != "") }  {
+  # use explicitly provided tmp-dir
   set tmpDirPath [file join $::_RAWRC_TMP_PATH $workAreaRootDirName]
   set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $tmpDirPath"
-  ok_info_msg "Will use explicit ultimate temporary directory '$tmpDirPath'"
-} elseif { [info exists ::_PREFERENCY_TMP_DIR] }  { ; # use tmp-dir from preferencies
+  ok_info_msg "Will use explicitly provided ultimate temporary directory '$tmpDirPath'"
+} elseif { ([info exists ::_PREFERENCY_TMP_DIR]) && \
+                           ($::_PREFERENCY_TMP_DIR != "") }  {
+  # use tmp-dir from preferencies
   set tmpDirPath [file join $::_PREFERENCY_TMP_DIR $workAreaRootDirName]
   set tmpDirPath [expr {("relative" != [file pathtype $::_PREFERENCY_TMP_DIR])? \
               [file join $::_PREFERENCY_TMP_DIR $workAreaRootDirName] : \
               $::_PREFERENCY_TMP_DIR}]
   set TMP_DIR_ARG__OR_EMPTY "-tmp_dir_path $::tmpDirPath"
-  ok_info_msg "Will use ultimate temporary directory from preferences '$::tmpDirPath'"
+  ok_info_msg "Will use ultimate temporary directory from the preferences '$::tmpDirPath'"
 } else {                                  ; # let raw2hdr choose default tmp-dir
   set TMP_DIR_ARG__OR_EMPTY "";   # force using the default
   ok_info_msg "Will use the default path for the ultimate temporary directory"
