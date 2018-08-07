@@ -13,6 +13,10 @@ In brief:
 -- if the commnad has separate window, the latter contains the indication of the command's status
 -- if the commnad doesn't have separate window, all or part of the command's text output is copied into the log box of DualCam-Companion GUI when the command's execution is finished or aborted
 
+
+There's an additional piece of data that DualCam-Companion GUI transfers to a custom command - user-supplied path for a temporary directory ("-tmp_dir_for_custom_cmd" switch in the preferences). This path is just a hint; the command's code may or may not need a temporary directory, and in the former case it may or may not accept the suggested path.
+Besides the above, a custom command is allowed to inspect the preferences and pick whatever value it needs. 
+
 Command lines for the two custom commands are configured under "-custom_cmd_1" and "-custom_cmd_2" switches in the Preferences window.
 The safest practice is to enter only full path to a program file in the Preferences. The program file could be one of the following:
 (a) a real executable binary (.exe on Windows)
