@@ -174,10 +174,13 @@ In order to run TCL based raw-conversion utility from Dualcam-Companion GUI:
 -- (a) full path to 'StereoPairs/StereoPairs_TCL/goodies/wrap__run_tcl_raw_to_hdr.bat'
 -- (b) just type  goodies/run__raw_to_hdr_on_l_r.tcl .
 - add path to the directory with "enfuse" in '<YOUR-HOME-FOLDER>\dualcam_ext_tool_dirs.csv' - open Preferences window, press "Tools..." and use "Enfuse folder" button to choose the directory path
-- optionally provide a full path for the temporary directory - through "-tmp_dir_for_custom_cmd" switch in the preferences; if not given, a subdirectory under the workarea root is used
+- optionally provide a _full_ (absolute) path for the temporary directory - through "-tmp_dir_for_custom_cmd" switch in the preferences; if not given, a "TMP" subdirectory under the workarea root is used
 
 Why explicitly provided temporary directory is important?
-The RAW-conversion flow produces enormous amount of temporary data - around 2 Giga per a stereopair shot with two 20-megapixel cameras. About 80% of it could be redirected to the explicitly given temporary directory. Typical usage scenario: if you have SSD, youd' better not wear it off by excessive writting.
+The RAW-conversion flow produces enormous amount of temporary data - around 2 Giga per a stereopair shot with two 20-megapixel cameras. About 80% of it could be redirected to the explicitly given temporary directory.
+Typical usage scenarios:
+- if you have SSD, you'd better not wear it off by excessive writting
+- if you are working with tablet and using memory card as the storage, RAW conversion is painfully slow; having the temporary directory on USB3 disk brings significant speed-up.
 
 Files involved:
 * StereoPairs\StereoPairs_TCL\goodies\raw_to_hdr.tcl
@@ -205,6 +208,7 @@ raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW 
 --------------------------------------------------------------------------------
 --- arguments '-inp_dirs {L}', '-inp_dirs {R}' tell to run RAW conversion in subdirectories L/ or R/ of the current workarea directory respectively
 --- argument '-out_subdir_name OUT' tells to put ultimate images in subdirectories L/OUT/ and R/OUT/ of the current workarea directory
+--- argument '-tmp_dir_path <PATH>' - the temporary directory path - is packed into "TMP_DIR_ARG__OR_EMPTY" variable; the wrapper sets it according to '- tmp_dir_for_custom_cmd' switch in the Dualcam-Companion preferences; if this switch is absent (the corresponding entry is empty in the GUI), '-tmp_dir_path' argument is ommited; in this case the RAW-conversion script will use its default path (a subdirectory under the workarea root)
 --- argument '-final_depth 8' tells to produce 8-bit-per-channel TIFF images as the output; the alternative is '-final_depth 16' for 16-bit-per-channel TIFF-s
 --- argument '-raw_ext ARW' tells the extension of input RAW images; ARW is Sony-Alpha RAW
 --- the combination of arguments '-wb_out_file NAME2.csv -wb_inp_file NAME1.csv' tells that RAW-conversion should read white-balance parameters (RGB multipliers per an image for dcraw) from file "NAME1.csv" in the current workarea directory, and write the white-balance parameters it used for each image into file "NAME2.csv" in the same directory
