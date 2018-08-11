@@ -212,9 +212,12 @@ proc GUI_UsrCmd1 {}  {
   set cmdLine [join [lrange [ok_split_string_by_whitespace $paramStr] 1 end] " "]
   set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
   if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
+  set timeSecBegin [clock seconds]
   if { 1 == [ok_exec_under_catch [list exec {*}$cmdLine] resultText] }  {
+    set timeSecElapsed [expr [clock seconds] - $timeSecBegin]
     set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-1 output:\n==========\n$truncText\n==========\n"
+    ok_info_msg "Custom-command-1 took $timeSecElapsed second(s)\n"
   }
   #tk_messageBox -message "User-command-1 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
@@ -235,9 +238,12 @@ proc GUI_UsrCmd2 {}  {
   set cmdLine [join [lrange [ok_split_string_by_whitespace $paramStr] 1 end] " "]
   set cmdLine [_GUI_prepend_tcl_interpreter_if_needed_or_complain $cmdLine]
   if { $cmdLine == "" } {_UpdateGuiEndAction; return 0}; # error already reported
+  set timeSecBegin [clock seconds]
   if { 1 == [ok_exec_under_catch [list exec {*}$cmdLine] resultText] }  {
+    set timeSecElapsed [expr [clock seconds] - $timeSecBegin]
     set truncText [ok_truncate_text $resultText 50 30]
     ok_info_msg "Custom-command-2 output:\n==========\n$truncText\n==========\n"
+    ok_info_msg "Custom-command-2 took $timeSecElapsed second(s)\n"
   }
   #tk_messageBox -message "User-command-2 not implemented" -title $APP_TITLE
   _UpdateGuiEndAction
