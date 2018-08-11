@@ -149,7 +149,7 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD {                                        \
-    {-suffix_left "_L"} {-suffix_right "_R"} {-gamma 1.0} {-jpeg_quality "98"} }
+    {-suffix_left "_L"} {-suffix_right "_R"} {-gamma 0.9} {-jpeg_quality "98"} }
   ok_copy_array defCml cml;    # to preset default parameters
   # now parse the user's command line
   if { 0 == [ok_read_cmd_line $cmdLineAsStr cml cmlD] } {
@@ -157,20 +157,23 @@ proc offset_lr_cmd_line {cmdLineAsStr cmlArrName}  {
   }
   if { [info exists cml(-help)] } {
     set cmdHelp [ok_help_on_cmd_line defCml cmlD "\n"]
-    ok_info_msg "================================================================"
+    ok_info_msg "==============================================================================="
     ok_info_msg "Splitting stereopairs into L/R images with horizontal offfset."
     ok_info_msg "Left image is offfset to the right, right image is offset to the left."
     ok_info_msg " (intended for passive 3D polarized projection)"
-    ok_info_msg "========= Command line parameters (in random order): ==========="
+    ok_info_msg "========= Command line parameters (in random order): =========================="
     ok_info_msg $cmdHelp
-    ok_info_msg "================================================================"
+    ok_info_msg "==============================================================================="
     ok_info_msg "  (note TCL-style directory separators in the examples below)"
-    ok_info_msg "================= Example 1 - short: ==========================="
+    ok_info_msg "========= Example 1 - short: =================================================="
     ok_info_msg " make_offset_lr \"-screen_width 2560 -screen_height 1440 -offset 200 -img_extensions {TIF} -tools_paths_file ../ext_tool_dirs.csv\""
-    ok_info_msg "================================================================"
-    ok_info_msg "================= Example 2 - full: ============================"
+    ok_info_msg "==============================================================================="
+    ok_info_msg "========= Example 2 - full (in Dualcam-Companion session workarea): ==========="
     ok_info_msg " make_offset_lr \"-screen_width 3840 -screen_height 2160 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -outdir_name_prefix \"../PROJ_LR/MyHoliday\" -suffix_left _L -suffix_right _R -jpeg_quality 95\""
-    ok_info_msg "================================================================"
+    ok_info_msg "==============================================================================="
+    ok_info_msg "========= Example 3 - full (in an arbitrary directory with source images): ===="
+    ok_info_msg " make_offset_lr \"-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85 -img_extensions {TIF JPG} -tools_paths_file ../ext_tool_dirs.csv -outdir_name_prefix \"PROJ_LR/MyHoliday\" -suffix_left _L -suffix_right _R -jpeg_quality 95\""
+    ok_info_msg "==============================================================================="
     return  0
   }
   if { 0 == [_offset_lr_parse_cmdline cml] }  {
