@@ -387,8 +387,9 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
     return  0
   }
-  if { (0 == [_estimate_free_disk_space_for_raw_conversion $rawPaths [pwd]]) \
-        && $::STS(abortOnLowDiskSpace) }  {
+  if { (0 == [_estimate_free_disk_space_for_raw_conversion $rawPaths    \
+                                            [pwd] $::STS(tmpDirPath)])  \
+                                            && $::STS(abortOnLowDiskSpace) }  {
     return  -1;   # error already printed
   }
   if { "" == $::STS(wbInpFile) }  { 
@@ -753,23 +754,38 @@ proc _ColorMultLineCheckCB {nameAndMultsAsList}  {
 }
 
 
-# Returns 1 if there's enough disk-space under 'outDirPath' to convert 'rawPaths'
+# Returns 1 if there's enough disk-space under 'outDirPath' and 'tmpDirPath'
+# to convert 'rawPaths'
 # Otherwise returns 0.
-proc _estimate_free_disk_space_for_raw_conversion {rawPaths outDirPath} {
-  set _DISK_USAGE_FACTOR 20; # temporary files measured to take ~20x of RAWs
+proc _estimate_free_disk_space_for_raw_conversion {rawPaths \
+                                                   outDirPath tmpDirPath} {
+  set _DISK_USAGE_FACTOR_TMP 20; # temporary files measured to take ~20x of RAWs
+  set _DISK_USAGE_FACTOR_OUT 3.5; # output files measured to take ~3.5x of RAWs
   if { 0 > [set rawKb [ok_get_filelist_disk_space_kb $rawPaths 1]] }  {
     return  0;  # cannot measure usage; assume not-enough; error already printed
   }
-  if { 0 > [set availKb [ok_try_get_free_disk_space_kb $outDirPath]] }  {
-    return  0;  # cannot measure free; assume not-enough; error` already printed
+  if { 0 > [set availOutKb [ok_try_get_free_disk_space_kb $outDirPath]] }  {
+    return  0;  # cannot measure free; assume not-enough; error already printed
   }
-  set outDirList [list $::STS(outDirName) \
-                       $::STS(dirNorm) $::STS(dirLow) $::STS(dirHigh)]
+  if { 0 > [set availTmpKb [ok_try_get_free_disk_space_kb $tmpDirPath]] }  {
+    return  0;  # cannot measure free; assume not-enough; error already printed
+  }
+  set outDirList [list $::STS(outDirName)]
+  set tmpDirList [list $::STS(dirNorm) $::STS(dirLow) $::STS(dirHigh)]
   set existOutKb [ok_dir_list_size $outDirList];  # outputs that may preexist
-  set reqKb [expr {($rawKb * $_DISK_USAGE_FACTOR) - $existOutKb}]
-  if { $availKb < $reqKb }  {
-    set msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; only $availKb Kb available"
-    ok_err_msg  $msg;      return  0
+  set existTmpKb [ok_dir_list_size $tmpDirList];  # tmp-s that may preexist
+  set reqOutKb [expr {($rawKb * $_DISK_USAGE_FACTOR_OUT) - $existOutKb}]
+  set reqTmpKb [expr {($rawKb * $_DISK_USAGE_FACTOR_TMP) - $existTmpKb}]
+  set msg "";  # as if enough space
+  if { $availOutKb < $reqOutKb }  {
+    set msg "~$reqOutKb Kb of free disk space under '$outDirPath' (only $availOutKb Kb available)"
+  }
+  if { $availTmpKb < $reqTmpKb }  {
+    append msg "~$reqTmpKb Kb of free disk space under '$tmpDirPath' (only $availTmpKb Kb available)"
+  }
+  if { $msg != "" } {
+    ok_err_msg  "Converting [llength $rawPaths] RAW(s) requires: $msg"
+    return  0
     #~ if { $::STS(doSkipExisting) == 0 }   {
       #~ ok_err_msg  $msg;      return  0
     #~ } else {
@@ -777,7 +793,8 @@ proc _estimate_free_disk_space_for_raw_conversion {rawPaths outDirPath} {
       #~ return  1
     #~ }
   }
-  ok_info_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqKb Kb of free disk space under '$outDirPath'; $availKb Kb available - should be enough"
+  ok_info_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqOutKb Kb of free disk space under '$outDirPath'; $availOutKb Kb available - should be enough"
+  ok_info_msg "Converting [llength $rawPaths] RAW(s) requires ~$reqTmpKb Kb of free disk space under '$tmpDirPath'; $availTmpKb Kb available - should be enough"
   return  1
 }
 
