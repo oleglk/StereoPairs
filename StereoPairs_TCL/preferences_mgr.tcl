@@ -87,14 +87,17 @@ proc preferences_get_initial_values {arrayName}  {
 
   # workarea restorer
   set _prefs(-workarea_root_dir)  "." ; # results in $_prefs(-INITIAL_WORK_DIR)
+
   # TODO
 
-  # user command #1 - full cmd line and button text
+  # user command #1 - full cmd line, parameters-string, and button text
   set _prefs(-custom_cmd_1)  [file join "goodies" "trial_tcl.tcl"]
+  set _prefs(-custom_arg_1)  "" ;      # custom user command #1 - params-string
   set _prefs(-custom_btn_1)  "Cust1" ; # custom user command #1 - button text
 
-  # user command #2 - full cmd line and button text
+  # user command #2 - full cmd line, parameters-string, and button text
   set _prefs(-custom_cmd_2)  [file join "goodies" "trial_tcl.tcl"]
+  set _prefs(-custom_arg_2)  "" ;      # custom user command #2 - params-string
   set _prefs(-custom_btn_2)  "Cust2" ; # custom user command #2 - button text
 
   # arbitrary custom commands
@@ -218,16 +221,18 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
 ################################################################################
   set _prefs(CUST_1_CMD__keyToDescrAndFormat) [dict create \
     -custom_cmd_1 {"full command line of custom command #1; file-path(s) in TCL convention" "%s"} \
+    -custom_arg_1 {"parameter-string for custom command 1" "%s"} \
   ]
-  set _prefs(CUST_1_CMD__keysInOrder) [list -custom_cmd_1]
+  set _prefs(CUST_1_CMD__keysInOrder) [list -custom_cmd_1 -custom_arg_1]
   set _prefs(CUST_1_CMD__keyOnlyArgsList) [list]
   set _prefs(CUST_1_CMD__hardcodedArgsStr) ""
 ################################################################################
 ################################################################################
   set _prefs(CUST_2_CMD__keyToDescrAndFormat) [dict create \
     -custom_cmd_2 {"full command line of custom command #2; file-path(s) in TCL convention" "%s"} \
+    -custom_arg_2 {"parameter-string for custom command 2" "%s"} \
   ]
-  set _prefs(CUST_2_CMD__keysInOrder) [list -custom_cmd_2]
+  set _prefs(CUST_2_CMD__keysInOrder) [list -custom_cmd_2 -custom_arg_2]
   set _prefs(CUST_2_CMD__keyOnlyArgsList) [list]
   set _prefs(CUST_2_CMD__hardcodedArgsStr) ""
 ################################################################################
