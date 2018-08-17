@@ -127,7 +127,16 @@ source [file join $SCRIPT_DIR__raw_to_hdr ".." "dir_file_mgr.tcl"]
 
 unset -nocomplain _PREFERENCY_TMP_DIR ; # placeholder for dir of "-tmp_dir_for_custom_cmd"
 
-# (3) Read from Dualcam-Companion preferences file:
+# (3) Detect whether preview-mode requested - through DUALCAM_RAW2HDR_PREVIEW environment variable
+if { ([info exists env(DUALCAM_RAW2HDR_PREVIEW)] && \
+      ($env(DUALCAM_RAW2HDR_PREVIEW) != 0) && \
+      ($env(DUALCAM_RAW2HDR_PREVIEW) != "")) }  {
+  set previewArg 1
+} else {
+  set previewArg 0
+}
+
+# (4) Read from Dualcam-Companion preferences file:
 #     - image-file naming parameters
 #     - temporary directory for custom commands
 if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
@@ -135,12 +144,12 @@ if { 0 == [_load_some_preferences] }  {  ; # unless defined by preferences
   _set_naming_parameters ""  ""  "-"  "_l"  "_r";   # for StereoPhotoMaker
 }
 
-#~ # (3) Execute the main procedure of "raw_to_hdr.tcl" script
+#~ # (4) Execute the main procedure of "raw_to_hdr.tcl" script
 #~ # (location of tool-path file reflects Dualcam-Companion software structure)
 #~ raw_to_hdr_main "-inp_dirs {L R} -out_subdir_name OUT -final_depth 8 -raw_ext ARW -wb_out_file wb_dir1.csv -wb_inp_file wb_dir1.csv  -tools_paths_file [file join $SCRIPT_DIR__raw_to_hdr ".." ".." ext_tool_dirs.csv]"
 
 
-# (4) Choose the ultimate per-session temporary directory .
+# (5) Choose the ultimate per-session temporary directory .
 #     Source priority: (a) $_RAWRC_TMP_PATH,
 #                      (b) -tmp_dir_for_custom_cmd in preferences
 ## If temporary directory path is explicitly specified,
@@ -173,7 +182,7 @@ if { ([info exists ::_RAWRC_TMP_PATH]) && ($::_RAWRC_TMP_PATH != "") }  {
 
 # TODO: add left suffix in ovrd file unless it's there
 
-# (5) If input white-balance override file exists, tell to use it for L/ directory
+# (6) If input white-balance override file exists, tell to use it for L/ directory
 #     File names in "wb_ovrd_left.csv" should be those of the left images
 if { [file exists "wb_ovrd_left.csv"] }  {
   set INP_WB_OVRD "-wb_inp_file wb_ovrd_left.csv"
@@ -183,31 +192,30 @@ if { [file exists "wb_ovrd_left.csv"] }  {
   ok_info_msg "No input white-balance override provided"
 }
 
-# (6) Execute the main procedure of "raw_to_hdr.tcl" script in L/ subdirectory
+# (7) Execute the main procedure of "raw_to_hdr.tcl" script in L/ subdirectory
 #     "wb_ovrd_left.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_left.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT $TMP_DIR_ARG__OR_EMPTY -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1"]}   {
+if { 0 == [raw_to_hdr_main "-inp_dirs {L} -out_subdir_name OUT $TMP_DIR_ARG__OR_EMPTY -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_left.csv $INP_WB_OVRD   -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1 -do_preview $previewArg"]}   {
   return  0;  # error already printed
 }
 
 
-# (7) Change image-file names in WB-file created while processing left directory
+# (8) Change image-file names in WB-file created while processing left directory
 #     into names of their right peers
 if { 0 == [_swap_lr_names_in_csv_file "wb_left.csv" "wb_ovrd_right.csv" 0 \
                                                     "white-balance-sync"] }   {
   return  0;  # error already printed
 }
 
-# (8) Execute the main procedure of "raw_to_hdr.tcl" script in R/ subdirectory
+# (9) Execute the main procedure of "raw_to_hdr.tcl" script in R/ subdirectory
 #     "wb_ovrd_right.csv", if exists, provides external override for white-balance
 #     white-balance parameters used for all images are printed into "wb_right.csv"
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT $TMP_DIR_ARG__OR_EMPTY -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1"] }   {
+if { 0 == [raw_to_hdr_main "-inp_dirs {R} -out_subdir_name OUT $TMP_DIR_ARG__OR_EMPTY -final_depth 8 -raw_ext ARW -rotate 0  -wb_out_file wb_right.csv -wb_inp_file wb_ovrd_right.csv  -tools_paths_file [dualcam_find_toolpaths_file 0] -do_skip_existing 1 -do_abort_on_low_disk_space 1 -do_preview $previewArg"] }   {
   return  0;  # error already printed
 }
 
 return  1;  # indicate successfull execution
 ################################################################################
-
 
