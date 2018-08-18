@@ -131,10 +131,9 @@ unset -nocomplain _PREFERENCY_TMP_DIR ; # placeholder for dir of "-tmp_dir_for_c
 if { ([info exists env(DUALCAM_RAW2HDR_PREVIEW)] && \
       ($env(DUALCAM_RAW2HDR_PREVIEW) != 0) && \
       ($env(DUALCAM_RAW2HDR_PREVIEW) != "")) }  {
-  set previewArg 1
-} else {
-  set previewArg 0
+  set previewArg 1 } else {  set previewArg 0
 }
+ok_info_msg "Preview mode is [expr {$previewArg? {requested} : {not requested}}]"
 
 # (4) Read from Dualcam-Companion preferences file:
 #     - image-file naming parameters
