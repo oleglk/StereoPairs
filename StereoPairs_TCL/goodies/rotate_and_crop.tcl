@@ -238,15 +238,21 @@ proc _do_job_in_one_dir {dirPath}  {
     ok_err_msg "Aborting because of failure to create a temporary output directory"
     return  0
   }
+  set nProcessed 0
   foreach ext $::STS(imgExts) {
-    if { -1 == [_rotate_crop_all_in_current_dir $ext] }  {
+    if { -1 == [set nInOneDir [_rotate_crop_all_in_current_dir $ext]] }  {
       return  0;  # errors already printed
     }
+    incr nProcessed $nInOneDir
   }
  
   set tclResult [catch { set res [cd $oldWD] } execResult]
   if { $tclResult != 0 } {
     ok_err_msg "Failed restoring work directory to '$oldWD': $execResult!"
+    return  0
+  }
+  if { $nProcessed == 0 }  {
+    ok_err_msg "No images {$::STS(imgExts)} found in '[pwd]';. Aborting..."
     return  0
   }
   return  1

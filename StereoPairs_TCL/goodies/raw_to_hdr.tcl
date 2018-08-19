@@ -19,12 +19,14 @@ package require img_proc;   namespace import -force ::img_proc::*
 # g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
 ##### "Blend" approach looks the best for varied-exposure RAW conversions ######
 set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3 -6 -g 2.4 12.9";  # EXCLUDING WB
+set g_convertOutfileExt "TIF"
 set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3";  # EXCLUDING WB
 # set g_convertSaveParams "-depth 8 -compress LZW"
 # dcraw params change for preview mode: "-h" (half-size) instead of "-6" (16bit)
 set g_dcrawParamsMain_preview "-v -c -H 2 -o 1 -q 3 -h -g 2.4 12.9";  # EXCLUDING WB
-set g_convertSaveParams_preview "-depth 8 -compress LZW"
+set g_convertOutfileExt_preview "JPG";                  # "TIF"
+set g_convertSaveParams_preview "-depth 8 -quality 98"; # "-depth 8 -compress LZW"
 
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
@@ -34,7 +36,8 @@ set g_convertSaveParams_preview "-depth 8 -compress LZW"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=1%%:95%% --exposure-mu=0.6"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6"
 set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%:95% --exposure-mu=0.7"
-
+set g_fuseSaveParams         "--compression=lzw"
+set g_fuseSaveParams_preview "--compression=98"
 
 
 ################################################################################
@@ -490,9 +493,18 @@ proc _fuse_converted_images_in_current_dir {rawExt}  {
 # TODO: return 1 if converted, 0 if skipped, -1 on error
 proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   upvar $rawNameToRgbMultList rawNameToRgb
+  if { $::STS(doPreview) == 0 }  {
+    set _dcrawParamsMain $::g_dcrawParamsMain;        set descr "RAW-conversion"
+    set _outExt          $::g_convertOutfileExt
+    set _convertSaveParams $::g_convertSaveParams
+  } else {
+    set _dcrawParamsMain $::g_dcrawParamsMain_preview;  set descr "RAW-preview"
+    set _outExt          $::g_convertOutfileExt_preview
+    set _convertSaveParams $::g_convertSaveParams_preview
+  }
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
-  set outPath  [file join $outDir "[file rootname $rawName].TIF"]
+  set outPath  [file join $outDir "[file rootname $rawName].$_outExt"]
   # provide white-balance multipliers
   if { $rawNameToRgb != 0 }  {
     if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
@@ -536,13 +548,6 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
-  if { $::STS(doPreview) == 0 }  {
-    set _dcrawParamsMain $::g_dcrawParamsMain;        set descr "RAW-conversion"
-    set _convertSaveParams $::g_convertSaveParams
-  } else {
-    set _dcrawParamsMain $::g_dcrawParamsMain_preview;  set descr "RAW-preview"
-    set _convertSaveParams $::g_convertSaveParams_preview    
-  }
   ok_info_msg "Start $descr '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
   #eval exec $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::_convertSaveParams $outPath
@@ -559,8 +564,15 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
 
 
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
+  if { $::STS(doPreview) == 0 }  {
+    set _inOutExt          $::g_convertOutfileExt
+    set _fuseSaveParams $::g_fuseSaveParams
+  } else {
+    set _inOutExt          $::g_convertOutfileExt_preview
+    set _fuseSaveParams $::g_fuseSaveParams_preview
+  }
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
-  set outPath  [file join $outDir "$rawName.TIF"]
+  set outPath  [file join $outDir "$rawName.$_inOutExt"]
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
     if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
       ok_info_msg "Image '$outPath' pre-existed; skipped by fusion step"
@@ -571,9 +583,9 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
-  set inPathLow  [file join $::STS(dirLow)  "$rawName.TIF"]
-  set inPathNorm [file join $::STS(dirNorm) "$rawName.TIF"]
-  set inPathHigh [file join $::STS(dirHigh) "$rawName.TIF"]
+  set inPathLow  [file join $::STS(dirLow)  "$rawName.$_inOutExt"]
+  set inPathNorm [file join $::STS(dirNorm) "$rawName.$_inOutExt"]
+  set inPathHigh [file join $::STS(dirHigh) "$rawName.$_inOutExt"]
   foreach p [list $inPathLow $inPathNorm $inPathHigh]  {
     if { ![ok_filepath_is_readable $p] || \
          (0 == [check_image_integrity_by_imagemagick $p]) }  {
@@ -582,7 +594,7 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
     }
   }
   set cmdListFuse [concat $::_ENFUSE  $fuseOpt  --depth=$::STS(finalDepth) \
-                          --compression=lzw "--output=$outPath"  \
+                          $_fuseSaveParams "--output=$outPath"  \
                           "$inPathLow" "$inPathNorm" "$inPathHigh"]
   ok_info_msg "enfuse cmd-line (rawName='$rawName', outDir='$outDir'):  {$cmdListFuse}"
   if { 0 == [ok_run_loud_os_cmd $cmdListFuse _is_enfuse_result_ok] }  {
