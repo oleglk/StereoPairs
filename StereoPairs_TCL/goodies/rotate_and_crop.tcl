@@ -259,10 +259,12 @@ proc _do_job_in_one_dir {dirPath}  {
 }
 
 proc _arrange_dirs_in_current_dir {} {
-  if { 0 == [ok_create_absdirs_in_list \
-          [list $::STS(buDirName)] \
-          {"backup-folder-for-original-images"}] }  {
-    return  0
+  if { $::STS(buDirName) != "" }  {
+    if { 0 == [ok_create_absdirs_in_list \
+            [list $::STS(buDirName)] \
+            {"backup-folder-for-original-images"}] }  {
+      return  0
+    }
   }
   return  1
 }

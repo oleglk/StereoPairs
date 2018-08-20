@@ -123,15 +123,28 @@ if { 0 == [_set_rotcrop_params_from_preferences \
 }
 
 
-# (4) Execute the main procedure of "rotate_and_crop.tcl" script in left images' subdirectory
+
+# (4) Detect whether preview-mode requested - through DUALCAM_RAW2HDR_PREVIEW environment variable
+# In preview mode no backup is done
+if { ([info exists env(DUALCAM_RAW2HDR_PREVIEW)] && \
+      ($env(DUALCAM_RAW2HDR_PREVIEW) != 0) && \
+      ($env(DUALCAM_RAW2HDR_PREVIEW) != "")) }  {
+  set buDirName ""
+  ok_info_msg "Preview mode - no backup of images before rotation"
+} else {
+  set buDirName "BU"
+}
+
+
+# (5) Execute the main procedure of "rotate_and_crop.tcl" script in left images' subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirL -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleL -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirL -bu_subdir_name $buDirName -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"]}   {
   return  0;  # error already printed
 }
 
-# (5) Execute the main procedure of "rotate_and_crop.tcl" script in right images' subdirectory
+# (6) Execute the main procedure of "rotate_and_crop.tcl" script in right images' subdirectory
 # (location of tool-path file reflects Dualcam-Companion software structure)
-if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirR -bu_subdir_name {BU} -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
+if { 0 == [rotate_and_crop_main "-rot_angle $angleR -pad_x $padX -pad_y $padY -crop_ratio $xyRatio -final_depth 8 -inp_dir $subDirR -bu_subdir_name $buDirName -img_extensions {JPG TIF} -jpeg_quality $::g_jpegQuality   -tools_paths_file [dualcam_find_toolpaths_file 0]"] }   {
   return  0;  # error already printed
 }
 ################################################################################
