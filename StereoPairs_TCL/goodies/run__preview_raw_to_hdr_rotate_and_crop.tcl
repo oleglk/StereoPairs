@@ -30,6 +30,9 @@ if { 1 == [source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__raw_t
 } else {
   set res 0;  # failure
 }
+
+# (5) Cleanup - remove DUALCAM_RAW2HDR_PREVIEW environment variable
+unset env(DUALCAM_RAW2HDR_PREVIEW) 
 ################################################################################
 
 return  $res

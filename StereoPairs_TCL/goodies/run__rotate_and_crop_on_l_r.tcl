@@ -129,10 +129,11 @@ if { 0 == [_set_rotcrop_params_from_preferences \
 if { ([info exists env(DUALCAM_RAW2HDR_PREVIEW)] && \
       ($env(DUALCAM_RAW2HDR_PREVIEW) != 0) && \
       ($env(DUALCAM_RAW2HDR_PREVIEW) != "")) }  {
-  set buDirName ""
-  ok_info_msg "Preview mode - no backup of images before rotation"
-} else {
   set buDirName "BU"
+  ok_info_msg "Preview mode - includes backup of images before rotation"
+} else {
+  set buDirName "NONE"
+  ok_info_msg "Ultimate-output mode - no backup of images before rotation"
 }
 
 

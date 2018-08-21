@@ -66,7 +66,7 @@ proc rotate_and_crop_cmd_line {cmdLineAsStr cmlArrName}  {
   -final_depth {val	"color-depth of the final images (bit); 8 or 16"}         \
   -img_extensions {list "list of extensions of image files; example: {jpg bmp}"}                      \
   -inp_dir {val "input directory path; absolute or relative to the current directory"} \
-  -bu_subdir_name {val	"name of backup directory (for original images); created under the input directory; empty string means no backup"} \
+  -bu_subdir_name {val	"name of backup directory (for original images); created under the input directory; 'NONE' means no backup"} \
   -rot_angle   {val "rotation angle - clockwise"}  \
   -pad_x   {val "horizontal padding in % - after rotate"}  \
   -pad_y   {val "vertical   padding in % - after rotate"}  \
@@ -160,12 +160,16 @@ proc _rotate_and_crop_parse_cmdline {cmlArrName}  {
     }
   }
   if { 1 == [info exists cml(-bu_subdir_name)] }  {
-    if { (1 == [file exists $cml(-bu_subdir_name)]) && \
-             (0 == [file isdirectory $cml(-bu_subdir_name)]) }  {
-      ok_err_msg "Non-directory '$cml(-bu_subdir_name)' specified as backup directory"
-      incr errCnt 1
+    if { "NONE" == $cml(-bu_subdir_name) }  {
+      set ::STS(buDirName)      "" ;  # no backup
     } else {
-      set ::STS(buDirName)      $cml(-bu_subdir_name)
+      if { (1 == [file exists $cml(-bu_subdir_name)]) && \
+               (0 == [file isdirectory $cml(-bu_subdir_name)]) }  {
+        ok_err_msg "Non-directory '$cml(-bu_subdir_name)' specified as backup directory"
+        incr errCnt 1
+      } else {
+        set ::STS(buDirName)      $cml(-bu_subdir_name)
+      }
     }
   }
   if { 0 != $cml(-rot_angle) }  { ;  # =0 (default) if not given
