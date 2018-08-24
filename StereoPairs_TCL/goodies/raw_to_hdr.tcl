@@ -50,6 +50,9 @@ proc _raw_to_hdr_set_defaults {}  {
   set ::STS(outDirName)       "" ;  # relative to the input directory - to be created under it
   set ::STS(tmpDirPath)       "" ;  # absolute or relative to the input directory - to be created or reused
   set ::STS(rotAngle)         -1 ;  # -1 == rotate according to EXIF;  0|90|180|270 - rotation angle clockwise
+  set ::STS(padX)             0  ;  # horizontal padding in % - after rotate
+  set ::STS(padY)             0  ;  # vertical   padding in % - after rotate
+  set ::STS(cropRatio)        0  ;  # 0 == no crop; otherwise width/height AFTER rotation
   set ::STS(doHDR)            1  ;  # 1 == multiple RAW conversions then blend;  0 == single RAW conversion
   set ::STS(doPreview)        1  ;  # 1 == smaller and faster;  0 == full-size, very slow
   set ::STS(doRawConv)        1  ;  # whether to perform RAW-conversion step
@@ -124,6 +127,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   -tmp_dir_path {val	"path of temporary directory; absolute or relative to the current directory - to be created or reused"} \
   -do_raw_conv {val "1 means do perform RAW-conversion step; 0 means do not"}  \
   -rotate {val "1 means rotate according to EXIF (default);  0|90|180|270 - rotation angle clockwise"} \
+  -pad_x   {val "horizontal padding in % - after rotate"}  \
+  -pad_y   {val "vertical   padding in % - after rotate"}  \
+  -crop_ratio  {val "width-to-height ratio AFTER rotation; 0 means do not crop"} \
   -do_blend    {val "1 means do perform blending/fusing step; 0 means do not"} \
   -do_skip_existing {val "1 means keep pre-existent outputs untouched; 0 means perform the conversion and override"} \
   -do_abort_on_low_disk_space {val "1 means exit if available free disk space smaller than estimated need; 0 means continue anyway"} \
@@ -137,7 +143,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
   # (if an argument inexistent by default, don't provide dummy value)
   array unset defCml
   ok_set_cmd_line_params defCml cmlD {                                    \
-    {-final_depth "8"} {-tmp_dir_path "TMP"} {-do_raw_conv "1"} {-rotate "-1"} {-do_blend "1"}  \
+    {-final_depth "8"} {-tmp_dir_path "TMP"} {-do_raw_conv "1"} \
+    {-rotate "-1"} {-pad_x "0"} {-pad_y "0"} {-crop_ratio "0"}  \
+    {-do_blend "1"}  \
     {-do_skip_existing "0"} {-do_abort_on_low_disk_space 1}               \
     {-do_preview "0"} {-wb_out_file "wb_out.csv"} }
   ok_copy_array defCml cml;    # to preset default parameters
@@ -166,6 +174,9 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 4 - small size preview with camera-WB; tool paths file in home directory: ======="
     ok_info_msg " raw_to_hdr_main \"-do_preview 1 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ~/dualcam_ext_tool_dirs.csv\""
+    ok_info_msg "================================================================"
+    ok_info_msg "========= Example 5 - rotate then crop with padding: ======="
+    ok_info_msg " raw_to_hdr_main \"-rotate 90 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -264,6 +275,7 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
       }
     }
   } 
+  ## BEGIN: geometry related cmd-line arguments
   if { [info exists cml(-rotate)] }  {
     set permRotAngle [list -1 0 90 180 270]
     if { 0 <= [lsearch -exact $permRotAngle $cml(-rotate)] }  {
@@ -273,6 +285,31 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
       incr errCnt 1
     }
   }
+  if { 0 != $cml(-pad_x) }  { ;  # =0 (default) if not given
+    if { ([ok_isnumeric $cml(-pad_x)]) && ($cml(-pad_x) >= 0) }  {
+      set ::STS(padX) $cml(-pad_x)
+    } else {
+      ok_err_msg "Parameter telling horizontal padding (-pad_x); should be non-negative number"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Horizontal padding not requested"  }
+  if { 0 != $cml(-pad_y) }  { ;  # =0 (default) if not given
+    if { ([ok_isnumeric $cml(-pad_y)]) && ($cml(-pad_y) >= 0) }  {
+      set ::STS(padY) $cml(-pad_y)
+    } else {
+      ok_err_msg "Parameter telling vertical padding (-pad_y); should be non-negative number"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Vertical padding not requested"  }
+  if { 0 != $cml(-crop_ratio) }  { ;  # =0 (default) if not given
+    if { [ok_isnumeric $cml(-crop_ratio)] }  {
+      set ::STS(cropRatio) $cml(-crop_ratio)
+    } else {
+      ok_err_msg "Parameter telling crop ratio (-crop_ratio); should be numeric"
+      incr errCnt 1
+    }
+  }  else {  ok_info_msg "Cropping not requested"  }
+  ## END: geometry related cmd-line arguments
   if { [info exists cml(-do_blend)] }  {
     if { $::STS(doHDR) == 0 }  {
       ok_warn_msg "Argument '-do_blend' ignored in simple RAW conversion mode"
