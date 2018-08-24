@@ -10,6 +10,7 @@ if { [info exists OK_TCLSRC_ROOT] } {;   # assume running as a part of LazyConv
 namespace eval ::img_proc:: {
     namespace export                          \
       rotate_crop_one_img                     \
+      im_make_rotate_crop_cmdline_for_img     \
       im_make_rotate_crop_cmdline             \
       compute_max_crop_for_width_height       \
 }
@@ -80,13 +81,31 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
 
 
 # Generates and returns ImageMagick command-line switches to rotate and/or crop
-# any image of given 'width' and 'height'.
+# image 'imgPath'.
 # 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
-# EXIF orientation tag is ignored!
+# Assumes that EXIF orientation tag is ignored!
 # 'padX'/'padY' == horizontal/vertical padding in % - after rotate
 # 'cropRatio' == width/height
 # 'bgColor' tells background color - in IM covention
-# On error returns "ERRO"
+# On error returns "ERROR"
+proc ::img_proc::im_make_rotate_crop_cmdline_for_img {imgPath \
+                                        rotAngle padX padY cropRatio bgColor} {
+  if { 0 == [get_image_dimensions_by_imagemagick $imgPath width height] }  {
+    return  "ERROR";  # error already printed
+  }
+  return  [im_make_rotate_crop_cmdline {$width $height \
+                                      $rotAngle $padX $padY $cropRatio $bgColor]
+}
+
+
+# Generates and returns ImageMagick command-line switches to rotate and/or crop
+# any image of given 'width' and 'height'.
+# 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
+# Assumes that EXIF orientation tag is ignored!
+# 'padX'/'padY' == horizontal/vertical padding in % - after rotate
+# 'cropRatio' == width/height
+# 'bgColor' tells background color - in IM covention
+# On error returns "ERROR"
 proc ::img_proc::im_make_rotate_crop_cmdline {width height \
                                         rotAngle padX padY cropRatio bgColor} {
   if { ($rotAngle != 0) && ($rotAngle != 90) && \
