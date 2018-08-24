@@ -10,6 +10,7 @@ if { [info exists OK_TCLSRC_ROOT] } {;   # assume running as a part of LazyConv
 namespace eval ::img_proc:: {
     namespace export                          \
       rotate_crop_one_img                     \
+      im_make_rotate_crop_cmdline             \
       compute_max_crop_for_width_height       \
 }
 
@@ -75,6 +76,43 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
 
 	ok_info_msg "Done rotating and/or cropping '$imgPath'"
   return  1
+}
+
+
+# Generates and returns ImageMagick command-line switches to rotate and/or crop
+# any image of given 'width' and 'height'.
+# 'rotAngle' could be 0, 90, 180 or 270; means clockwise.
+# EXIF orientation tag is ignored!
+# 'padX'/'padY' == horizontal/vertical padding in % - after rotate
+# 'cropRatio' == width/height
+# 'bgColor' tells background color - in IM covention
+# On error returns "ERRO"
+proc ::img_proc::im_make_rotate_crop_cmdline {width height \
+                                        rotAngle padX padY cropRatio bgColor} {
+  if { ($rotAngle != 0) && ($rotAngle != 90) && \
+       ($rotAngle != 180) && ($rotAngle != 270) }  {
+    ok_err_msg "Permitted rotation angles are 0, 90, 180, 270 (clockwise)"
+    return  "ERROR"
+  }
+  if { ($rotAngle == 0) || ($rotAngle == 180) }  {
+            set rWd $width; set rHt $height ;   # orientation preserved
+  } else {  set rWd $height; set rHt $width ;   # orientation changed
+  }
+  compute_max_crop_for_width_height $rWd $rHt $cropRatio cropWd cropHt
+  set rcpWd [expr {int((100+$padX) * $cropWd /100.0)}]; # ultimate padded width
+  set rcpHt [expr {int((100+$padY) * $cropHt /100.0)}]; # ultimate padded height
+  ok_info_msg "Crop size computation horizotal: $width ->rotate-> $rWd ->crop-> $cropWd ->pad-> $rcpWd"
+  ok_info_msg "Crop size computation vertical: $height ->rotate-> $rHt ->crop-> $cropHt ->pad-> $rcpHt"
+  set rotateSwitches "-orient undefined -rotate $rotAngle"
+  # extension with background color needed when a dimension lacks size
+  # -extent replaces -crop; see http://www.imagemagick.org/Usage/crop/ :
+  ##    "... the Extent Operator is simply a straight forward Crop
+  ##         with background padded fill, regardless of position. ... "
+  set cropSwitches [format "-gravity center -extent %dx%d+0+0" $rcpWd $rcpHt]
+  ok_info_msg "Rotation and/or cropping params for $width*$height image: rotation=$rotAngle, new-width=$rcpWd, new-height=$rcpHt"
+  set cmdLineArgs "-background $bgColor  $rotateSwitches  +repage  $cropSwitches  +repage"
+  ok_info_msg "Rotation and/or cropping command-line arguments for $width*$height image:  '$cropSwitches'"
+  return  $cropSwitches
 }
 
 
