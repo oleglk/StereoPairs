@@ -35,10 +35,9 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
                                       bgColor imSaveParams buDir} {
   set imgName [file tail $imgPath]
-  if { ($rotAngle != 0) && ($rotAngle != 90) && \
-       ($rotAngle != 180) && ($rotAngle != 270) }  {
-    ok_err_msg "Permitted rotation angles are 0, 90, 180, 270 (clockwise)"
-    return 0
+  if { "ERROR" == [set geomCmdLineArgs [im_make_rotate_crop_cmdline_for_img \
+                        $imgPath $rotAngle $padX $padY $cropRatio $bgColor]] } {
+    return 0;   # error already printed; all geometry checks are done
   }
   if { $buDir != "" } {
     if { 0 == [ok_create_absdirs_in_list [list $buDir]] }  {
@@ -49,28 +48,9 @@ proc ::img_proc::rotate_crop_one_img {imgPath rotAngle padX padY cropRatio \
       return 0;   # error already printed
     }
   }
-  if { 0 == [get_image_dimensions_by_imagemagick $imgPath width height] }  {
-    return  0;  # error already printed
-  }
-  if { ($rotAngle == 0) || ($rotAngle == 180) }  {
-            set rWd $width; set rHt $height ;   # orientation preserved
-  } else {  set rWd $height; set rHt $width ;   # orientation changed
-  }
-  compute_max_crop_for_width_height $rWd $rHt $cropRatio cropWd cropHt
-  set rcpWd [expr {int((100+$padX) * $cropWd /100.0)}]; # ultimate padded width
-  set rcpHt [expr {int((100+$padY) * $cropHt /100.0)}]; # ultimate padded height
-  ok_info_msg "Crop size computation horizotal: $width ->rotate-> $rWd ->crop-> $cropWd ->pad-> $rcpWd"
-  ok_info_msg "Crop size computation vertical: $height ->rotate-> $rHt ->crop-> $cropHt ->pad-> $rcpHt"
-  set rotateSwitches "-orient undefined -rotate $rotAngle"
-  # extension with background color needed when a dimension lacks size
-  # -extent replaces -crop; see http://www.imagemagick.org/Usage/crop/ :
-  ##    "... the Extent Operator is simply a straight forward Crop
-  ##         with background padded fill, regardless of position. ... "
-  set cropSwitches [format "-gravity center -extent %dx%d+0+0" $rcpWd $rcpHt]
-  ok_info_msg "Start rotating and/or cropping '$imgPath' (rotation=$rotAngle, new-width=$rcpWd, new-height=$rcpHt) ..."
-  set cmdListRotCrop [concat $::_IMMOGRIFY  -background $bgColor            \
-                        $rotateSwitches  +repage  $cropSwitches    +repage  \
-                        $imSaveParams  $imgPath]
+  ok_info_msg "Start rotating and/or cropping '$imgPath' (rotation=$rotAngle, cropRatio=$cropRatio) ..."
+  set cmdListRotCrop [concat $::_IMMOGRIFY  $geomCmdLineArgs  \
+                                            $imSaveParams  $imgPath]
   if { 0 == [ok_run_silent_os_cmd $cmdListRotCrop] }  {
     return  0; # error already printed
   }
@@ -93,7 +73,7 @@ proc ::img_proc::im_make_rotate_crop_cmdline_for_img {imgPath \
   if { 0 == [get_image_dimensions_by_imagemagick $imgPath width height] }  {
     return  "ERROR";  # error already printed
   }
-  return  [im_make_rotate_crop_cmdline {$width $height \
+  return  [im_make_rotate_crop_cmdline $width $height \
                                       $rotAngle $padX $padY $cropRatio $bgColor]
 }
 
@@ -120,7 +100,7 @@ proc ::img_proc::im_make_rotate_crop_cmdline {width height \
   compute_max_crop_for_width_height $rWd $rHt $cropRatio cropWd cropHt
   set rcpWd [expr {int((100+$padX) * $cropWd /100.0)}]; # ultimate padded width
   set rcpHt [expr {int((100+$padY) * $cropHt /100.0)}]; # ultimate padded height
-  ok_info_msg "Crop size computation horizotal: $width ->rotate-> $rWd ->crop-> $cropWd ->pad-> $rcpWd"
+  ok_info_msg "Crop size computation horizontal: $width ->rotate-> $rWd ->crop-> $cropWd ->pad-> $rcpWd"
   ok_info_msg "Crop size computation vertical: $height ->rotate-> $rHt ->crop-> $cropHt ->pad-> $rcpHt"
   set rotateSwitches "-orient undefined -rotate $rotAngle"
   # extension with background color needed when a dimension lacks size
@@ -130,8 +110,8 @@ proc ::img_proc::im_make_rotate_crop_cmdline {width height \
   set cropSwitches [format "-gravity center -extent %dx%d+0+0" $rcpWd $rcpHt]
   ok_info_msg "Rotation and/or cropping params for $width*$height image: rotation=$rotAngle, new-width=$rcpWd, new-height=$rcpHt"
   set cmdLineArgs "-background $bgColor  $rotateSwitches  +repage  $cropSwitches  +repage"
-  ok_info_msg "Rotation and/or cropping command-line arguments for $width*$height image:  '$cropSwitches'"
-  return  $cropSwitches
+  ok_info_msg "Rotation and/or cropping command-line arguments for $width*$height image:  '$cmdLineArgs'"
+  return  $cmdLineArgs
 }
 
 
