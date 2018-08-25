@@ -175,8 +175,8 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "========= Example 4 - small size preview with camera-WB; tool paths file in home directory: ======="
     ok_info_msg " raw_to_hdr_main \"-do_preview 1 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ~/dualcam_ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
-    ok_info_msg "========= Example 5 - rotate then crop with padding: ======="
-    ok_info_msg " raw_to_hdr_main \"-rotate 90 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "========= Example 5 - preview; rotate then crop with padding: ======="
+    ok_info_msg " raw_to_hdr_main \"-do_preview -rotate 90 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -542,14 +542,21 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].$_outExt"]
-  # TODO: read RAW attribs here
+  # read all RAW attribs here; use downstream when needed
+  if { 1==[set rawAttrOK [get_image_attributes_by_dcraw $rawPath imgInfoArr]]} {
+    set origWidth  $imgInfoArr($::iMetaWidth);
+    set origHeight $imgInfoArr($::iMetaHeight)
+  } elseif { $::STS(cropRatio) != 0 }   {
+    ok_err_msg "Cannot crop image '$rawName' since failed to read metadata"
+    return  -1
+  }
   # provide white-balance multipliers
   if { $rawNameToRgb != 0 }  {
     if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
       set rgbMultList [dict get $rawNameToRgb $rawName]
       set rgbInputted 1
     } else {                                        # provide output RGB
-      if { [get_image_attributes_by_dcraw $rawPath imgInfoArr] }  {
+      if { $rawAttrOK }  {
         set rgbMultList $imgInfoArr($::iMetaRGBG)
         dict set rawNameToRgb $rawName $rgbMultList
       } else {;  # read error - set init values (camera-wb)
@@ -567,21 +574,20 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
   }
   set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
-  switch -exact $::STS(rotAngle)  {;  # TODO: deactivate
-    -1      { set rotSwitch ""      }
-     0      { set rotSwitch "-t 0"  }
-    90      { set rotSwitch "-t 6"  }
-    180     { set rotSwitch "-t 3"  }
-    270     { set rotSwitch "-t 5"  }
-    default { set rotSwitch ""      }
-  }
-  # provide rotate- and crop command-line parameters
-  #TODO: read width/height by dcraw - above using get_image_attributes_by_dcraw
-  #~ if { "ERROR" == [set geomCmdLineArgs \
-        #~ [im_make_rotate_crop_cmdline $width $height \
-                                 #~ $rotAngle $padX $padY $cropRatio $bgColor]] } {
-    #~ return 0;   # error already printed; all geometry checks are done
+  #~ switch -exact $::STS(rotAngle)  {;  # TODO: deactivate
+    #~ -1      { set rotSwitch ""      }
+     #~ 0      { set rotSwitch "-t 0"  }
+    #~ 90      { set rotSwitch "-t 6"  }
+    #~ 180     { set rotSwitch "-t 3"  }
+    #~ 270     { set rotSwitch "-t 5"  }
+    #~ default { set rotSwitch ""      }
   #~ }
+  # provide rotate- and crop command-line parameters
+  if { "ERROR" == [set geomCmdLineArgs \
+      [im_make_rotate_crop_cmdline $origWidth $origHeight $::STS(rotAngle) \
+                      $::STS(padX) $::STS(padY) $::STS(cropRatio) "white"]] }  {
+    return  -1;   # error already printed; all geometry checks are done
+  }
 
   # check whether the output exists AFTER white-balance multipliers taken care of
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
@@ -598,7 +604,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
 
   #eval exec $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::_convertSaveParams $outPath
   set cmdListRawConv [concat $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd \
-                          $colorSwitches $rotSwitch  $rawPath  \
+                          $colorSwitches $geomCmdLineArgs  $rawPath  \
                           | $::_IMCONVERT ppm:- $_convertSaveParams $outPath]
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
     return  0; # error already printed
@@ -730,7 +736,8 @@ proc _is_enfuse_result_ok {execResultText} {
 proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
   unset -nocomplain ::_IMCONVERT ::_IMIDENTIFY ::_IMMONTAGE ::_DCRAW ::_EXIFTOOL
   if { 0 ==[ok_read_variable_values_from_csv $csvPath "external tool path(s)"]} {
-    return  0;  # error already printed
+    ok_err_msg "Tool locations cannot be read from '$csvPath' (absolute-path: '[file normalize $csvPath]')"
+    return  0
   }
   if { 0 == [info exists ::_IM_DIR] }  {
     ok_err_msg "Imagemagick directory path not assigned to variable _IM_DIR by '$csvPath'"
