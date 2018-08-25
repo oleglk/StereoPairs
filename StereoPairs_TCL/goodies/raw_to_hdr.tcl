@@ -542,6 +542,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   set rawName [file tail $rawPath]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].$_outExt"]
+  # TODO: read RAW attribs here
   # provide white-balance multipliers
   if { $rawNameToRgb != 0 }  {
     if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
@@ -566,7 +567,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
   }
   set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
-  switch -exact $::STS(rotAngle)  {
+  switch -exact $::STS(rotAngle)  {;  # TODO: deactivate
     -1      { set rotSwitch ""      }
      0      { set rotSwitch "-t 0"  }
     90      { set rotSwitch "-t 6"  }
@@ -574,6 +575,14 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     270     { set rotSwitch "-t 5"  }
     default { set rotSwitch ""      }
   }
+  # provide rotate- and crop command-line parameters
+  #TODO: read width/height by dcraw - above using get_image_attributes_by_dcraw
+  #~ if { "ERROR" == [set geomCmdLineArgs \
+        #~ [im_make_rotate_crop_cmdline $width $height \
+                                 #~ $rotAngle $padX $padY $cropRatio $bgColor]] } {
+    #~ return 0;   # error already printed; all geometry checks are done
+  #~ }
+
   # check whether the output exists AFTER white-balance multipliers taken care of
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
     if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {

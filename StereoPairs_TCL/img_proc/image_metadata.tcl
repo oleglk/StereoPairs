@@ -33,10 +33,12 @@ source [file join $UTIL_DIR ".." "ext_tools.tcl"]
 ####  identify -format "%[EXIF:*]" <IMAGE_PATH>
 ################################################################################
 # indices for metadata fields
-set iMetaDate 0
-set iMetaTime 1
-set iMetaISO  2
-set iMetaRGBG 3
+set iMetaDate   0
+set iMetaTime   1
+set iMetaISO    2
+set iMetaRGBG   3
+set iMetaWidth  4
+set iMetaHeight 5
 
 # extensions of standard image files
 set g_stdImageExtensions {.bmp .jpg .png .tif}
@@ -195,6 +197,7 @@ proc ::img_proc::_get_one_image_attribute_by_imagemagick {fullPath attribSpec at
 # Returns 1 if line was recognized, otherwise 0
 proc ::img_proc::_ProcessImIdentifyMetadataLine {line imgInfoArr} {
   global iMetaDate iMetaTime iMetaISO
+
   upvar $imgInfoArr imgInfo
   # example:'2016:02:13 16:41:08'
   set isMatched [regexp {([0-9]+):([0-9]+):([0-9]+) ([0-9]+):([0-9]+):([0-9]+)} $line fullMach \
@@ -350,9 +353,10 @@ proc ::img_proc::_is_exiftool_result_ok {execResultText} {
 
 # Processes the following exif line(s):
 # Timestamp: Sat Aug 23 08:58:21 2014
+# Image size:  6024 x 4024
 # Returns 1 if line was recognized, otherwise 0
 proc ::img_proc::_process_dcraw_metadata_line {line imgInfoArr} {
-  global iMetaDate iMetaTime iMetaISO iMetaRGBG
+  global iMetaDate iMetaTime iMetaISO iMetaRGBG iMetaWidth iMetaHeight
   upvar $imgInfoArr imgInfo
   # Time/date;  example:'Timestamp: Sat Aug 23 08:58:21 2014'
   if { 1 == [regexp {Timestamp: ([a-zA-Z]+) ([a-zA-Z]+) ([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([0-9]+)} $line fullMach \
@@ -362,13 +366,19 @@ proc ::img_proc::_process_dcraw_metadata_line {line imgInfoArr} {
   }
   # ISO;  example:'ISO speed: 800'
   if { 1 == [regexp {ISO speed: ([0-9]+)} $line fullMach isoVal] }  {
-    set imgInfo($isoVal) $isoVal
+    set imgInfo($iMetaISO) $isoVal
   }
   # Color multipliers;  example:'Camera multipliers: 2072.0 1024.0 2152.0 1024.0'
   if { 1 == [regexp {Camera multipliers: ([0-9]+(.[0-9]+)*) ([0-9]+(.[0-9]+)*) ([0-9]+(.[0-9]+)*) ([0-9]+(.[0-9]+)*)} \
                         $line fullMach mR _r mG _g mB _b mG2 _g2] }  {
     set imgInfo($iMetaRGBG) [list $mR $mG $mB $mG2]
   }
+  # Image size;  example: 'Image size:  6024 x 4024'
+  if { 1 == [regexp {Image size:\s+([0-9]+) x ([0-9]+)} $line fullMach \
+                                                              wd ht] }  {
+    set imgInfo($iMetaWidth) $wd;    set imgInfo($iMetaHeight) $ht
+  }
+
   return  1
 }
 
