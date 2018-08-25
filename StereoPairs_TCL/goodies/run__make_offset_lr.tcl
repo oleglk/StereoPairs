@@ -8,7 +8,7 @@
 # Picture-related command-line parameters:
 set imgParams "-screen_width 2560 -screen_height 1440 -offset 200 -gamma 0.85"
 # Image-file-related command-line parameters:
-set fileParams "-img_extensions {TIF JPG} -suffix_left _L -suffix_right _R -jpeg_quality 95"
+set fileParams "-img_extensions {TIF JPG BMP} -suffix_left _L -suffix_right _R -jpeg_quality 95"
 ################################################################################
 
 
