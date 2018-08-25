@@ -69,3 +69,9 @@ alCam_Inp/280516__KishGlen/Fixed/R' is created - why there's an absolute path
 - test input set with different left/right std-image extensions (formats)
 
 - let -left_img_subdir/-right_img_subdir conrol the names of subdirectories in all relevant utilities; currently it works for analyzer, while the pair-matcher has its left/right image subdirectory names hardcoded to "L"/"R"
+
+==============================================================
+Goodies
+==============================================================
+- -tools_paths_file seems to be relative to the current dir instead of script location; at least in standalone runs
+- ?are left/right directories hardcoded to L/R - at least in make_offset_lr ?
