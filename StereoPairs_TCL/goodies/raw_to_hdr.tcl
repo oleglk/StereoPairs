@@ -376,6 +376,7 @@ proc _do_job_in_one_dir {dirPath}  {
       ok_err_msg "Aborting because of failure to create a temporary output directory"
       return  0
     }
+    # TODO: restore dir on error; make new proc ok_safe_chdir
     if { 0 > [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
     }
@@ -464,7 +465,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
   #       but it's just carried out from the 1st directory
   dict for {brightVal outDir} $brightValToAbsOutDir {
     foreach rawPath $rawPaths {
-      if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
+      if { -1 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
                                   rawNamesToWbMults] } {
         return  -1;  # error already printed
       }
@@ -543,11 +544,11 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "[file rootname $rawName].$_outExt"]
   # read all RAW attribs here; use downstream when needed
-  if { 1==[set rawAttrOK [get_image_attributes_by_dcraw $rawPath imgInfoArr]]} {
+  if {0 != [set rawAttrOK [get_image_attributes_by_dcraw $rawPath imgInfoArr]]} {
     set origWidth  $imgInfoArr($::iMetaWidth);
     set origHeight $imgInfoArr($::iMetaHeight)
   } elseif { $::STS(cropRatio) != 0 }   {
-    ok_err_msg "Cannot crop image '$rawName' since failed to read metadata"
+    ok_err_msg "Cannot crop image '$rawName' - failed to read metadata"
     return  -1
   }
   # provide white-balance multipliers
@@ -593,12 +594,12 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
     if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
       ok_info_msg "Image '$outPath' pre-existed; skipped by RAW conversion step"
-      return 1
+      return 0
     }
     ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by RAW conversion step"
   }
   if { 0 == [ok_filepath_is_writable $outPath] }  {
-    ok_err_msg "Cannot write into '$outPath'";    return 0
+    ok_err_msg "Cannot write into '$outPath'";    return -1
   }
   ok_info_msg "Start $descr '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
@@ -607,7 +608,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
                           $colorSwitches $geomCmdLineArgs  $rawPath  \
                           | $::_IMCONVERT ppm:- $_convertSaveParams $outPath]
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
-    return  0; # error already printed
+    return  -1; # error already printed
   }
 
 	ok_info_msg "Done $descr of '$rawPath' into '$outPath'"
