@@ -18,13 +18,14 @@ package require img_proc;   namespace import -force ::img_proc::*
 
 # g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
 ##### "Blend" approach looks the best for varied-exposure RAW conversions ######
-set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3 -6 -g 2.4 12.9";  # EXCLUDING WB
+##### Create unrotated TIFF by dcraw, do the rest in IM-convert           ######
+set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3 -6 -g 2.4 12.9 -T -t 0";  # EXCLUDING WB
 set g_convertOutfileExt "TIF"
 set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3";  # EXCLUDING WB
 # set g_convertSaveParams "-depth 8 -compress LZW"
 # dcraw params change for preview mode: "-h" (half-size) instead of "-6" (16bit)
-set g_dcrawParamsMain_preview "-v -c -H 2 -o 1 -q 3 -h -g 2.4 12.9";  # EXCLUDING WB
+set g_dcrawParamsMain_preview "-v -c -H 2 -o 1 -q 3 -h -g 2.4 12.9 -T -t 0";  # EXCLUDING WB
 set g_convertOutfileExt_preview "JPG";                  # "TIF"
 set g_convertSaveParams_preview "-depth 8 -quality 98"; # "-depth 8 -compress LZW"
 
@@ -551,6 +552,10 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     ok_err_msg "Cannot crop image '$rawName' - failed to read metadata"
     return  -1
   }
+  if { $::STS(doPreview) == 1 }   { ;   # dcraw extracts half the pixels with -h
+    set origWidth  [expr {floor($origWidth  / 2.0)}]
+    set origHeight [expr {floor($origHeight / 2.0)}]
+  }
   # provide white-balance multipliers
   if { $rawNameToRgb != 0 }  {
     if { [dict exists $rawNameToRgb $rawName] }  {  # use input RGB
@@ -598,7 +603,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   #eval exec $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::_convertSaveParams $outPath
   set cmdListRawConv [concat $::_DCRAW \
           $_dcrawParamsMain $dcrawParamsAdd $colorSwitches $rawPath           \
-          | $::_IMCONVERT ppm:- $geomCmdLineArgs  $_convertSaveParams $outPath]
+          | $::_IMCONVERT tiff:- $geomCmdLineArgs  $_convertSaveParams $outPath]
   ok_info_msg "Next RAW-conversion cmd:  {$cmdListRawConv}"
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
     return  -1; # error already printed
