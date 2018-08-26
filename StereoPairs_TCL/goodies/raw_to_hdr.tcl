@@ -176,8 +176,10 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg "========= Example 4 - small size preview with camera-WB; tool paths file in home directory: ======="
     ok_info_msg " raw_to_hdr_main \"-do_preview 1 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ~/dualcam_ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
-    ok_info_msg "========= Example 5 - preview; rotate then crop with padding: ======="
-    ok_info_msg " raw_to_hdr_main \"-do_preview 1 -rotate 90 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "========= Example 5 - preview in L/ subdirectory; rotate then crop with padding: ======="
+    ok_info_msg " raw_to_hdr_main \"-do_preview 1 -rotate 90 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -inp_dirs {L} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg "========= Example 5 - preview in L/ and R/ subdirectories; different rotations: ======="
+    ok_info_msg " set _commonArgs \"-do_preview 1 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\";  raw_to_hdr_main \"-rotate 270 -inp_dirs {L} \$_commonArgs\";  raw_to_hdr_main \"-rotate 90 -inp_dirs {R} \$_commonArgs\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -553,8 +555,8 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     return  -1
   }
   if { $::STS(doPreview) == 1 }   { ;   # dcraw extracts half the pixels with -h
-    set origWidth  [expr {floor($origWidth  / 2.0)}]
-    set origHeight [expr {floor($origHeight / 2.0)}]
+    set origWidth  [expr {ceil($origWidth  / 2.0)}]
+    set origHeight [expr {ceil($origHeight / 2.0)}]
   }
   # provide white-balance multipliers
   if { $rawNameToRgb != 0 }  {
