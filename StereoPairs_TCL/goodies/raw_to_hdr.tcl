@@ -176,7 +176,7 @@ proc raw_to_hdr_cmd_line {cmdLineAsStr cmlArrName}  {
     ok_info_msg " raw_to_hdr_main \"-do_preview 1 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ~/dualcam_ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     ok_info_msg "========= Example 5 - preview; rotate then crop with padding: ======="
-    ok_info_msg " raw_to_hdr_main \"-do_preview -rotate 90 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
+    ok_info_msg " raw_to_hdr_main \"-do_preview 1 -rotate 90 -crop_ratio 1.0 -pad_x 0 -pad_y 30 -final_depth 8 -inp_dirs {L R} -out_subdir_name OUT -raw_ext ARW -tools_paths_file ../ext_tool_dirs.csv\""
     ok_info_msg "================================================================"
     return  0
   }
@@ -575,14 +575,6 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
   }
   set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
-  #~ switch -exact $::STS(rotAngle)  {;  # TODO: deactivate
-    #~ -1      { set rotSwitch ""      }
-     #~ 0      { set rotSwitch "-t 0"  }
-    #~ 90      { set rotSwitch "-t 6"  }
-    #~ 180     { set rotSwitch "-t 3"  }
-    #~ 270     { set rotSwitch "-t 5"  }
-    #~ default { set rotSwitch ""      }
-  #~ }
   # provide rotate- and crop command-line parameters
   if { "ERROR" == [set geomCmdLineArgs \
       [im_make_rotate_crop_cmdline $origWidth $origHeight $::STS(rotAngle) \
@@ -604,9 +596,10 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   ok_info_msg "Start $descr '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
   #eval exec $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::_convertSaveParams $outPath
-  set cmdListRawConv [concat $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd \
-                          $colorSwitches $geomCmdLineArgs  $rawPath  \
-                          | $::_IMCONVERT ppm:- $_convertSaveParams $outPath]
+  set cmdListRawConv [concat $::_DCRAW \
+          $_dcrawParamsMain $dcrawParamsAdd $colorSwitches $rawPath           \
+          | $::_IMCONVERT ppm:- $geomCmdLineArgs  $_convertSaveParams $outPath]
+  ok_info_msg "Next RAW-conversion cmd:  {$cmdListRawConv}"
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
     return  -1; # error already printed
   }
