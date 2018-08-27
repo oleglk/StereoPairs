@@ -22,7 +22,7 @@ set SCRIPT_DIR__raw_to_hdr_rotate_and_crop [file dirname [info script]]
 set env(DUALCAM_RAW2HDR_PREVIEW)  1
 
 # (3) Run the code from "run__raw_to_hdr_on_l_r.tcl" script
-if { 1 == [source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__raw_to_hdr_on_l_r.tcl"]] } {
+if { 1 == [source [file join $SCRIPT_DIR__raw_to_hdr_rotate_and_crop "run__raw_to_hdr_rotate_and_crop.tcl"]] } {
   # ... getting here only if RAW conversion was successfull ...
   set res 1;  # success
 } else {
