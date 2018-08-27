@@ -97,19 +97,27 @@ proc ::img_proc::im_make_rotate_crop_cmdline {width height \
             set rWd $width; set rHt $height ;   # orientation preserved
   } else {  set rWd $height; set rHt $width ;   # orientation changed
   }
-  compute_max_crop_for_width_height $rWd $rHt $cropRatio cropWd cropHt
-  set rcpWd [expr {int((100+$padX) * $cropWd /100.0)}]; # ultimate padded width
-  set rcpHt [expr {int((100+$padY) * $cropHt /100.0)}]; # ultimate padded height
-  ok_info_msg "Crop size computation horizontal: $width ->rotate-> $rWd ->crop-> $cropWd ->pad-> $rcpWd"
-  ok_info_msg "Crop size computation vertical: $height ->rotate-> $rHt ->crop-> $cropHt ->pad-> $rcpHt"
   set rotateSwitches "-orient undefined -rotate $rotAngle"
-  # extension with background color needed when a dimension lacks size
-  # -extent replaces -crop; see http://www.imagemagick.org/Usage/crop/ :
-  ##    "... the Extent Operator is simply a straight forward Crop
-  ##         with background padded fill, regardless of position. ... "
-  set cropSwitches [format "-gravity center -extent %dx%d+0+0" $rcpWd $rcpHt]
+  if { $cropRatio != 0 }  {   ;  # crop is requested
+    compute_max_crop_for_width_height $rWd $rHt $cropRatio cropWd cropHt
+    set rcpWd [expr {int((100+$padX) *$cropWd /100.0)}]; #ultimate padded width
+    set rcpHt [expr {int((100+$padY) *$cropHt /100.0)}]; #ultimate padded height
+    ok_info_msg "Crop size computation horizontal: $width ->rotate-> $rWd ->crop-> $cropWd ->pad-> $rcpWd"
+    ok_info_msg "Crop size computation vertical: $height ->rotate-> $rHt ->crop-> $cropHt ->pad-> $rcpHt"
+    # extension with background color needed when a dimension lacks size
+    # -extent replaces -crop; see http://www.imagemagick.org/Usage/crop/ :
+    ##    "... the Extent Operator is simply a straight forward Crop
+    ##         with background padded fill, regardless of position. ... "
+    set cropSwitches [format "-gravity center -extent %dx%d+0+0" $rcpWd $rcpHt]
+  } else {                    ;  # crop not requested
+    set rcpWd $rWd;   set rcpHt $rHt;   # ultimate width & height - as rotated
+    set cropSwitches ""
+  }
   ok_info_msg "Rotation and/or cropping params for $width*$height image: rotation=$rotAngle, new-width=$rcpWd, new-height=$rcpHt"
-  set cmdLineArgs "-background $bgColor  $rotateSwitches  +repage  $cropSwitches  +repage"
+  set cmdLineArgs "-background $bgColor  $rotateSwitches  +repage"
+  if { $cropSwitches != "" }  {
+    append cmdLineArgs "  $cropSwitches  +repage"
+  }
   ok_info_msg "Rotation and/or cropping command-line arguments for $width*$height image:  '$cmdLineArgs'"
   return  $cmdLineArgs
 }

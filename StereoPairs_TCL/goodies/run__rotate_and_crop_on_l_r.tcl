@@ -37,27 +37,9 @@ proc _set_rotcrop_params_from_preferences {subDirL subDirR \
     ok_err_msg "Missing preference for right-side images subdirectory"
     set allApplied 0
   }
-  if { 0 == [get_lr_postproc_rotation_angles $lrOrientSpec angL angR] } {
-    ok_err_msg "Invalid left- and right cameras' orientation spec '$lrOrientSpec'"
-    set allApplied 0
-  } else {
-    ok_info_msg "DualCam orientation: $lrOrientSpec; rotation needed: left->$angL, right->$angR"
-  }
   # decide on crop ratio and pads
-  if       { (($angL ==0)||($angL ==180)) && (($angR ==0)||($angR ==180)) }   {
-    ok_info_msg "Requested horizontal DualCam orientation"
-    get_crop_params_for_cam_arrangement "Horizontal" xyRat pdX pdY
-  } elseif { (($angL ==90)||($angL ==270)) && (($angR ==90)||($angR ==270)) }  {
-    ok_info_msg "Requested vertical DualCam orientation"
-    get_crop_params_for_cam_arrangement "Vertical" xyRat pdX pdY
-  } elseif { ( (($angL ==0)||($angL ==180)) && (($angR ==90)||($angR ==270)) ) \
-              || \
-             ( (($angR ==0)||($angR ==180)) && (($angL ==90)||($angL ==270)) )} {
-    ok_info_msg "Requested angled DualCam orientation"
-    get_crop_params_for_cam_arrangement "Angled" xyRat pdX pdY
-  } else {
-    ok_err_msg "Requested unknown DualCam rotations: L->$angL R->$angR"
-    return  0
+  if { 0 == [choose_crop_ratio_and_pads $lrOrientSpec xyRat pdX pdY] }  {
+    set allApplied 0;  # error already printed
   }
   if { $allApplied == 1 }  {
     ok_info_msg "Orientation preferences successfully loaded and applied"

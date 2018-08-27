@@ -84,3 +84,36 @@ proc get_crop_params_for_cam_arrangement {lrArrangement xyRatio padX padY} {
   set pdY   [dict get $g_cropPreferences $lrArrangement   pdY   ]
   return  1
 }
+
+
+# Decide on crop-ratio and pads given camera orientation from the preferences
+# lrOrientSpec tells  L-R cameras' orientations:
+#                                       b(ottom)/d(own)|u(p)|l(eft)|r(ight)
+# Returns 1 on success, 0 on error.
+proc choose_crop_ratio_and_pads {lrOrientSpec xyRat pdX pdY}  {
+  upvar $xyRat _xyRat
+  upvar $pdX   _pdX
+  upvar $pdY   _pdY
+  if { 0 == [get_lr_postproc_rotation_angles $lrOrientSpec angL angR] } {
+    ok_err_msg "Invalid left- and right cameras' orientation spec '$lrOrientSpec'"
+    return  0
+  } else {
+    ok_info_msg "DualCam orientation: $lrOrientSpec; rotation needed: left->$angL, right->$angR"
+  }
+  if       { (($angL ==0)||($angL ==180)) && (($angR ==0)||($angR ==180)) }   {
+    ok_info_msg "Requested horizontal DualCam orientation"
+    get_crop_params_for_cam_arrangement "Horizontal" _xyRat _pdX _pdY
+  } elseif { (($angL ==90)||($angL ==270)) && (($angR ==90)||($angR ==270)) }  {
+    ok_info_msg "Requested vertical DualCam orientation"
+    get_crop_params_for_cam_arrangement "Vertical" _xyRat _pdX _pdY
+  } elseif { ( (($angL ==0)||($angL ==180)) && (($angR ==90)||($angR ==270)) ) \
+              || \
+             ( (($angR ==0)||($angR ==180)) && (($angL ==90)||($angL ==270)) )} {
+    ok_info_msg "Requested angled DualCam orientation"
+    get_crop_params_for_cam_arrangement "Angled" _xyRat _pdX _pdY
+  } else {
+    ok_err_msg "Requested unknown DualCam rotations: L->$angL R->$angR"
+    return  0
+  }
+  return  1
+}
