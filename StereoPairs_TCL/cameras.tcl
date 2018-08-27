@@ -30,6 +30,20 @@ set KNOWN_RAW_EXTENSIONS_DICT [dict create \
   "sr2"   Sony        \
                       ]
 
+### Rotation angles derived from cameras' arrangement in DualCam-Companion preferences file
+set g_cropPreferences [dict create]; # per-arrangement cropping parameters
+dict set g_cropPreferences Horizontal  xyRat [expr 4.0 / 3]
+dict set g_cropPreferences Horizontal  pdX   10
+dict set g_cropPreferences Horizontal  pdY   0
+dict set g_cropPreferences Vertical    xyRat 1.0
+dict set g_cropPreferences Vertical    pdX   0
+dict set g_cropPreferences Vertical    pdY   30
+dict set g_cropPreferences Angled      xyRat 1.0
+dict set g_cropPreferences Angled      pdX   10
+dict set g_cropPreferences Angled      pdY   10
+
+################################################################################
+
 # Tells rotation angles for left/right images depending on the rig arrangement
 # lrOrientSpec tells  L-R cameras' orientations:
 #                                       b(ottom)/d(own)|u(p)|l(eft)|r(ight)
@@ -53,3 +67,20 @@ proc get_lr_postproc_rotation_angles {lrOrientSpec angleL angleR} {
   return  1;  # success
 }
 
+
+# Retrieves rotation and cropping parameters for known DualCam arrangement
+# 'lrArrangement' = Horizontal|Vertical|Angled
+proc get_crop_params_for_cam_arrangement {lrArrangement xyRatio padX padY} {
+  upvar $xyRatio xyRat
+  upvar $padX pdX
+  upvar $padY pdY
+  global g_cropPreferences
+  if { 0 == [dict exists $g_cropPreferences $lrArrangement] }  {
+    ok_err_msg "Invalid DualCam arrangement '$lrArrangement'; should be one of {[dict keys $g_cropPreferences]}"
+    return  0
+  }
+  set xyRat [dict get $g_cropPreferences $lrArrangement   xyRat ]
+  set pdX   [dict get $g_cropPreferences $lrArrangement   pdX   ]
+  set pdY   [dict get $g_cropPreferences $lrArrangement   pdY   ]
+  return  1
+}

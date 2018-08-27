@@ -1,39 +1,11 @@
 # run__rotate_and_crop_on_l_r.tcl - a "sourceable" file that runs rotate_and_crop.tcl on L/ and R/ subdirectories
-### Rotation angles derived from cameras' arrangement in DualCam-Companion preferences file
 
-set g_cropPreferences [dict create]; # per-arrangement cropping parameters
-dict set g_cropPreferences Horizontal  xyRat [expr 4.0 / 3]
-dict set g_cropPreferences Horizontal  pdX   10
-dict set g_cropPreferences Horizontal  pdY   0
-dict set g_cropPreferences Vertical    xyRat 1.0
-dict set g_cropPreferences Vertical    pdX   0
-dict set g_cropPreferences Vertical    pdY   30
-dict set g_cropPreferences Angled      xyRat 1.0
-dict set g_cropPreferences Angled      pdX   10
-dict set g_cropPreferences Angled      pdY   10
 
 set g_jpegQuality 99;  # 1..100 forces given JPEG quality; 0 leaves to default
 
 ################################################################################
 ## Local procedures
 ################################################################################
-
-# Retrieves rotation and cropping parameters for known DualCam arrangement
-# 'lrArrangement' = Horizontal|Vertical|Angled
-proc _get_rotcrop_params_for_cam_arrangement {lrArrangement xyRatio padX padY} {
-  upvar $xyRatio xyRat
-  upvar $padX pdX
-  upvar $padY pdY
-  global g_cropPreferences
-  if { 0 == [dict exists $g_cropPreferences $lrArrangement] }  {
-    ok_err_msg "Invalid DualCam arrangement '$lrArrangement'; should be one of {[dict keys $g_cropPreferences]}"
-    return  0
-  }
-  set xyRat [dict get $g_cropPreferences $lrArrangement   xyRat ]
-  set pdX   [dict get $g_cropPreferences $lrArrangement   pdX   ]
-  set pdY   [dict get $g_cropPreferences $lrArrangement   pdY   ]
-  return  1
-}
 
 
 # Reads and applies relevant preferences from DualCam-Companion
@@ -74,15 +46,15 @@ proc _set_rotcrop_params_from_preferences {subDirL subDirR \
   # decide on crop ratio and pads
   if       { (($angL ==0)||($angL ==180)) && (($angR ==0)||($angR ==180)) }   {
     ok_info_msg "Requested horizontal DualCam orientation"
-    _get_rotcrop_params_for_cam_arrangement "Horizontal" xyRat pdX pdY
+    get_crop_params_for_cam_arrangement "Horizontal" xyRat pdX pdY
   } elseif { (($angL ==90)||($angL ==270)) && (($angR ==90)||($angR ==270)) }  {
     ok_info_msg "Requested vertical DualCam orientation"
-    _get_rotcrop_params_for_cam_arrangement "Vertical" xyRat pdX pdY
+    get_crop_params_for_cam_arrangement "Vertical" xyRat pdX pdY
   } elseif { ( (($angL ==0)||($angL ==180)) && (($angR ==90)||($angR ==270)) ) \
               || \
              ( (($angR ==0)||($angR ==180)) && (($angL ==90)||($angL ==270)) )} {
     ok_info_msg "Requested angled DualCam orientation"
-    _get_rotcrop_params_for_cam_arrangement "Angled" xyRat pdX pdY
+    get_crop_params_for_cam_arrangement "Angled" xyRat pdX pdY
   } else {
     ok_err_msg "Requested unknown DualCam rotations: L->$angL R->$angR"
     return  0
