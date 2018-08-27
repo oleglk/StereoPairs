@@ -37,7 +37,7 @@ dict set g_cropPreferences Horizontal  pdX   10
 dict set g_cropPreferences Horizontal  pdY   0
 dict set g_cropPreferences Vertical    xyRat 1.0
 dict set g_cropPreferences Vertical    pdX   0
-dict set g_cropPreferences Vertical    pdY   30
+dict set g_cropPreferences Vertical    pdY   15
 dict set g_cropPreferences Angled      xyRat 1.0
 dict set g_cropPreferences Angled      pdX   10
 dict set g_cropPreferences Angled      pdY   10
