@@ -38,7 +38,8 @@ proc _set_rotcrop_params_from_preferences {subDirL subDirR \
     set allApplied 0
   }
   # decide on crop ratio and pads
-  if { 0 == [choose_crop_ratio_and_pads $lrOrientSpec xyRat pdX pdY] }  {
+  if { 0 == [choose_rot_angle_crop_ratio_and_pads $lrOrientSpec \
+                                                  angL angR xyRat pdX pdY] }  {
     set allApplied 0;  # error already printed
   }
   if { $allApplied == 1 }  {
@@ -79,16 +80,17 @@ if { 0 == [_set_rotcrop_params_from_preferences \
 
 
 # (4) Detect whether preview-mode requested - through DUALCAM_RAW2HDR_PREVIEW environment variable
-# In preview mode no backup is done
-if { ([info exists env(DUALCAM_RAW2HDR_PREVIEW)] && \
-      ($env(DUALCAM_RAW2HDR_PREVIEW) != 0) && \
-      ($env(DUALCAM_RAW2HDR_PREVIEW) != "")) }  {
-  set buDirName "BU"
-  ok_info_msg "Preview mode - includes backup of images before rotation"
-} else {
-  set buDirName "NONE"
-  ok_info_msg "Ultimate-output mode - no backup of images before rotation"
-}
+#~ # In ultimate mode no backup is done
+#~ if { ([info exists env(DUALCAM_RAW2HDR_PREVIEW)] && \
+      #~ ($env(DUALCAM_RAW2HDR_PREVIEW) != 0) && \
+      #~ ($env(DUALCAM_RAW2HDR_PREVIEW) != "")) }  {
+  #~ set buDirName "BU"
+  #~ ok_info_msg "Preview mode - includes backup of images before rotation"
+#~ } else {
+  #~ set buDirName "NONE"
+  #~ ok_info_msg "Ultimate-output mode - no backup of images before rotation"
+#~ }
+set buDirName "BU";   # OK_TMP?
 
 
 # (5) Execute the main procedure of "rotate_and_crop.tcl" script in left images' subdirectory

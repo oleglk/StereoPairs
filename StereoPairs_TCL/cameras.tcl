@@ -86,14 +86,16 @@ proc get_crop_params_for_cam_arrangement {lrArrangement xyRatio padX padY} {
 }
 
 
-# Decide on crop-ratio and pads given camera orientation from the preferences
+# Decide on rotation-angles, crop-ratio and pads
+# given camera orientation from the preferences
 # lrOrientSpec tells  L-R cameras' orientations:
 #                                       b(ottom)/d(own)|u(p)|l(eft)|r(ight)
 # Returns 1 on success, 0 on error.
-proc choose_crop_ratio_and_pads {lrOrientSpec xyRat pdX pdY}  {
+proc choose_rot_angle_crop_ratio_and_pads {lrOrientSpec \
+                                           angleL angleR xyRat pdX pdY}  {
+  upvar $angleL angL;   upvar $angleR angR
   upvar $xyRat _xyRat
-  upvar $pdX   _pdX
-  upvar $pdY   _pdY
+  upvar $pdX   _pdX;    upvar $pdY   _pdY
   if { 0 == [get_lr_postproc_rotation_angles $lrOrientSpec angL angR] } {
     ok_err_msg "Invalid left- and right cameras' orientation spec '$lrOrientSpec'"
     return  0
