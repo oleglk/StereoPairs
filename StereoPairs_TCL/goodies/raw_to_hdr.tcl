@@ -27,7 +27,7 @@ set g_convertSaveParams "-depth 16 -compress LZW"
 # dcraw params change for preview mode: "-h" (half-size) instead of "-6" (16bit)
 set g_dcrawParamsMain_preview "-v -c -H 2 -o 1 -q 3 -h -g 2.4 12.9 -T -t 0";  # EXCLUDING WB
 set g_convertOutfileExt_preview "JPG";                  # "TIF"
-set g_convertSaveParams_preview "-depth 8 -quality 98"; # "-depth 8 -compress LZW"
+set g_convertSaveParams_preview "-depth 8 -quality 96"; # "-depth 8 -compress LZW"
 
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=0%%:100%% --exposure-mu=0.5"
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.2 --contrast-weight=0 --exposure-cutoff=3%%:90%% --exposure-mu=0.6"
@@ -38,7 +38,7 @@ set g_convertSaveParams_preview "-depth 8 -quality 98"; # "-depth 8 -compress LZ
 # set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%%:95%% --exposure-mu=0.6"
 set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%:95% --exposure-mu=0.7"
 set g_fuseSaveParams         "--compression=lzw"
-set g_fuseSaveParams_preview "--compression=98"
+set g_fuseSaveParams_preview "--compression=96"
 
 
 ################################################################################
