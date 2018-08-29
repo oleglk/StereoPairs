@@ -131,7 +131,7 @@ proc preferences_get_initial_values {arrayName}  {
     -name_format_left  {"name spec for left images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_left" "%s"} \
     -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
     -min_success_rate {"min percentage of successfull matches to permit image-file operations" "%d"} \
-    -out_dir {"output directory" "%s"} \
+    -out_dir {"directory for data- and log files" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"} \
   ]
   set _prefs(PAIR_MATCHER__keysInOrder) [list -time_diff -orig_img_dir \
@@ -156,7 +156,7 @@ proc preferences_get_initial_values {arrayName}  {
     -orig_img_dir {"directory with image files whose settings are dealt with; left (right) images expected in 'orig_img_dir'/L ('orig_img_dir'/R)" "%s"} \
     -name_format_left  {"name spec for left images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_left" "%s"} \
     -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
-    -out_dir {"output directory" "%s"} \
+    -out_dir {"directory for data- and log files" "%s"} \
     -backup_dir {"directory to move overriden settings files to" "%s"} \
     -copy_from {"'left' == copy settings from left to right, 'right' == from right to left" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
@@ -175,7 +175,7 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   -right_img_subdir {"subdirectory for right images; right images expected in 'img_dir'/'right_img_subdir'" "%s"} \
   -ext_left {"file extension of left images; standard type only (tif/jpg/etc.)" "%s"} \
   -ext_right {"file extension of right images; standard type only (tif/jpg/etc.)" "%s"} \
-  -out_dir {"output directory" "%s"} \
+  -out_dir {"directory for data- and log files" "%s"} \
   -warn_color_diff_above {"minimal left-right color difference (%) to warn on" "%d"} ]
   set _prefs(COLOR_ANALYZER__keysInOrder) [list -img_dir \
                   -name_format_left -name_format_right \
@@ -191,7 +191,7 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
     -name_format_left  {"name spec for left images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_left" "%s"} \
     -name_format_right {"name spec for right images - <prefix>\[LeftName\]<delimeter>\[RightId\]<suffix>; example: \[LeftName\]-\[RightId\]_right" "%s"} \
     -final_img_dir {"directory with ultimate stereopair images" "%s"} \
-    -out_dir {"output directory" "%s"} \
+    -out_dir {"directory for data- and log files" "%s"} \
     -backup_dir {"directory to move overriden settings files to" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
@@ -207,7 +207,7 @@ set _prefs(COLOR_ANALYZER__keyToDescrAndFormat) [dict create \
   # -global_img_settings_dir is implied - full paths encoded in the backup
   set _prefs(WORKAREA_RESTORER__keyToDescrAndFormat) [dict create \
     -workarea_root_dir {"full path of the directory where to unhide/restore files to" "%s"} \
-    -out_dir {"output directory" "%s"} \
+    -out_dir {"directory for data- and log files" "%s"} \
     -simulate_only {"YES/NO; YES means no file changes performed, only decide and report what should be done" "%s"}
   ]
   set _prefs(WORKAREA_RESTORER__keysInOrder) [list -workarea_root_dir \
