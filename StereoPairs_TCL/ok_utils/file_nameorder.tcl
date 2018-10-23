@@ -1,4 +1,4 @@
-# file_nameorder.tcl -  making creation order match name order
+4kst# file_nameorder.tcl -  making creation order match name order
 
 namespace eval ::ok_utils:: {
 
@@ -11,7 +11,9 @@ namespace eval ::ok_utils:: {
 # Returns list of filenames in 'dirPath' in lexicographic name order.
 # On error returns "ERROR"
 proc ::ok_utils::ok_list_files_in_nameorder {dirPath} {
-  # TODO
+  set lst [glob -nocomplain -tails -directory $dirPath *]
+  # TODO: sort 'lst'
+  return $lst
 }
 
 
