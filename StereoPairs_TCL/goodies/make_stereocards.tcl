@@ -53,6 +53,11 @@ proc make_cards_in_current_dir {ext pairWidthCm origWhRatio}  {
 
 
 proc _read_and_check_ext_tool_paths {}  {
+  # if tool-paths are already defined, do nothing
+  if { 1 == [verify_external_tools] }  {
+    ok_info_msg "Stereocards will use pre-existent external tools' definitions"
+    return  1
+  }
   if { 0 == [set extToolPathsFilePath [dualcam_find_toolpaths_file 0]] }   {
     #standalone invocaion
     set extToolPathsFilePath [file join $::SCRIPT_DIR__cards \
@@ -86,6 +91,10 @@ proc _sort_cards_in_current_dir {ext}  {
     }
     incr quadCnt 1
     lappend lastQuadList $inpImgPath
+    #ok_trace_msg "Image '$inpImgPath' added as #$quadCnt to card #$cardCnt"
+  }
+  if { ($quadCnt == 4) && ([llength $imgFiles] == 4) }  { ;  # single card
+    lappend listOfQuads $lastQuadList;    # store the only card
   }
   # all input images are distributed; make the last quadruple complete
   if { ($quadCnt > 0) && ($quadCnt < 4) }  {
@@ -94,6 +103,7 @@ proc _sort_cards_in_current_dir {ext}  {
       foreach inpImgPath [lreverse $imgFiles] {
         incr quadCnt 1
         lappend lastQuadList $inpImgPath
+        #ok_trace_msg "Image '$inpImgPath' added as #$quadCnt to card #$cardCnt"
         if { $quadCnt == 4 }  { ;   # done
           incr cardCnt 1
           lappend listOfQuads $lastQuadList
@@ -104,6 +114,7 @@ proc _sort_cards_in_current_dir {ext}  {
   }
   if { 0 < [llength $imgFiles] }  {
     ok_info_msg "Distributed [llength $imgFiles] '*.$ext' input image(s) into $cardCnt card(s) of 4"
+    #ok_trace_msg "@@@ listOfQuads = {$listOfQuads}"
     ok_trace_msg "Image distribution:"
     foreach line [_format_card_spec $listOfQuads]  {
       ok_trace_msg $line
@@ -151,7 +162,14 @@ proc _generate_cards_by_spec {listOfQuads outDir geomDict}  {
   if { $errCnt > 0 }  {
     ok_err_msg "Failed to generate $errCnt card(s) under '$outDir'"
   }
+  
+  file delete -force -- [_cards_tmp_dir_path $outDir]; # no error if inexistent
   return  [expr $cardCnt-$errCnt]
+}
+
+
+proc _cards_tmp_dir_path {outDir}  {
+  return  [file join $outDir "TMP"]
 }
 
 
@@ -218,7 +236,7 @@ proc _compute_layout {dpi pairWidthCm origWhRatio}  {
 
 # TODO: pair-width should be kept precise, height less important
 proc _generate_one_card {cardImgList cardFilePath geomDict}  {
-  set tmpDir [file join [file dirname $cardFilePath] "TMP"]
+  set tmpDir [_cards_tmp_dir_path [file dirname $cardFilePath]]
   file mkdir $tmpDir;  # if directory exists, no action and no error returned
   #~ for %f in (*.tif) DO  %CNV% %f -density 300 -adaptive-resize 709x473 -depth 8 -compress LZW Small\%~nf_sm.tif 
   #~ %MNT% Small\*_sm.tif -background black -bordercolor black -tile 2x2 -geometry +80+80 -density 300 ppm: | %CNV%  ppm: -background black -bordercolor black -border 17x17 -splice 210x0 -quality 98 Ready\ToPri_%d_2x2_b.jpg 
