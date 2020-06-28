@@ -143,6 +143,7 @@ proc _format_card_spec {listOfQuads}  {
 
 
 # Builds cards' images according to list of file-path quadruples in 'listOfQuads'
+# For each created card generates .txt file with list of included image file names
 # Returns number of successfully generated cards.
 proc _generate_cards_by_spec {listOfQuads outDir geomDict}  {
   file mkdir $outDir;  # if directory exists, no action and no error returned
@@ -151,9 +152,14 @@ proc _generate_cards_by_spec {listOfQuads outDir geomDict}  {
     incr cardCnt 1
     set cardFilePath [file join $outDir [format "%s%s.%s" \
                                         $::CARD_NAME_PREFFIX $cardCnt "TIF"]]
+    set cardListFilePath [format {%s.txt} [file rootname $cardFilePath]]
     ok_info_msg "Making card $cardCnt out of [llength $listOfQuads]; path '$cardFilePath'"
     if { 0 == [_generate_one_card $cardImgList $cardFilePath $geomDict] }  {
       incr errCnt 1;  # error already printed
+    } else {
+      if { 0 == [ok_write_list_into_file $cardImgList $cardListFilePath] }  {
+        incr errCnt 1;  # error already printed
+      }
     }
   }
   if { $cardCnt > $errCnt }  {
