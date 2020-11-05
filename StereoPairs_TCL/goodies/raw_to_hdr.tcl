@@ -18,13 +18,13 @@ package require img_proc;   namespace import -force ::img_proc::*
 
 # g_dcrawParamsMain and g_convertSaveParams control intermediate files - 8b or 16b
 ##### "Blend" approach looks the best for varied-exposure RAW conversions ######
-set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3 -6 -g 2.4 12.9";  # EXCLUDING WB
+set g_dcrawParamsMain "-v -c -H 0 -o 1 -q 3 -6 -g 2.4 12.9";  # EXCLUDING WB
 set g_convertOutfileExt "TIF"
 set g_convertSaveParams "-depth 16 -compress LZW"
 # set g_dcrawParamsMain "-v -c -H 2 -o 1 -q 3";  # EXCLUDING WB
 # set g_convertSaveParams "-depth 8 -compress LZW"
 # dcraw params change for preview mode: "-h" (half-size) instead of "-6" (16bit)
-set g_dcrawParamsMain_preview "-v -c -H 2 -o 1 -q 3 -h -g 2.4 12.9";  # EXCLUDING WB
+set g_dcrawParamsMain_preview "-v -c -H 0 -o 1 -q 3 -h -g 2.4 12.9";  # EXCLUDING WB
 set g_convertOutfileExt_preview "JPG";                  # "TIF"
 set g_convertSaveParams_preview "-depth 8 -quality 98"; # "-depth 8 -compress LZW"
 
