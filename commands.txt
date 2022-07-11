@@ -10,3 +10,10 @@ foreach f [glob {L/*.jpg}] { set oF "$f.dummy_sts";  ::ok_utils::ok_write_list_i
  
 # TCL command to create dummy settings files for all left Camera-JPEGs in the global settings directory
 set gDir [file join ".." "DUMMY_GLOBAL_SETTINGS_DIR"];    foreach f [glob {L/*.jpg}] { set oF [file join $gDir "[file tail $f].dummy_gl_sts"];  ::ok_utils::ok_write_list_into_file [list "Dummy settings for [file tail $f]" "Filename [file tail $oF]"] $oF }
+
+
+# TCL command to develop all RAW files in a directory
+cd [file normalize {<WINDOWS-PATH>}]
+source c:/Oleg/Work/stereopairs/StereoPairs_TCL/goodies/setup_goodies.tcl
+raw_to_hdr_main "-final_depth 8 -inp_dirs {RAW} -out_subdir_name OUT -raw_ext ARW -tools_paths_file  c:/Oleg/Work/Stereopairs/ext_tool_dirs__Yoga.csv"
+
