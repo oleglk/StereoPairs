@@ -13,7 +13,7 @@ set gDir [file join ".." "DUMMY_GLOBAL_SETTINGS_DIR"];    foreach f [glob {L/*.j
 
 
 # TCL command to develop all RAW files in a directory
-cd [file normalize {<WINDOWS-PATH>}]
 source c:/Oleg/Work/stereopairs/StereoPairs_TCL/goodies/setup_goodies.tcl
-raw_to_hdr_main "-final_depth 8 -inp_dirs {RAW} -out_subdir_name OUT -raw_ext ARW -tools_paths_file  c:/Oleg/Work/Stereopairs/ext_tool_dirs__Yoga.csv"
-
+cd [file normalize {<WINDOWS-PATH-WITH-RAW>}]
+raw_to_hdr_main "-final_depth 8 -inp_dirs {.} -out_subdir_name OUT -raw_ext ARW -tools_paths_file  c:/Oleg/Work/Stereopairs/ext_tool_dirs__Yoga.csv"
+# alternatively cd to <WINDOWS-PATH-ROOTDIR>, then specify -inp_dirs {RAW}
