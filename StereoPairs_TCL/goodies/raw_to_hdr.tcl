@@ -1,5 +1,12 @@
 # raw_to_hdr.tcl - pseudo-HDR RAW conversion script - processes all RAWs in current dir
 
+################################################################################
+# Sample invocation on all .arw files in current dir (will create output dir-s):
+################################################################################
+## source c:/Oleg/Work/stereopairs/StereoPairs_TCL/goodies/raw_to_hdr.tcl
+## raw_to_hdr_main "-final_depth 8 -inp_dirs {.} -out_subdir_name OUT -raw_ext ARW -tools_paths_file  c:/Oleg/Work/Stereopairs/ext_tool_dirs__Yoga.csv"
+################################################################################
+
 set SCRIPT_DIR [file dirname [info script]]
 
 # TODO: make locally arrangements to find the package(s) instead
@@ -548,12 +555,13 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
   if { 0 == [ok_filepath_is_writable $outPath] }  {
     ok_err_msg "Cannot write into '$outPath'";    return 0
   }
-  ok_info_msg "Start $descr '$rawPath';  colors: $colorInfo; output into '$outPath'..."
+  #ok_info_msg "Start $descr '$rawPath';  colors: $colorInfo; output into '$outPath'..."
 
   #eval exec $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd $colorSwitches  $rawPath | $::_IMCONVERT ppm:- $::_convertSaveParams $outPath
   set cmdListRawConv [concat $::_DCRAW  $_dcrawParamsMain $dcrawParamsAdd \
                           $colorSwitches $rotSwitch  $rawPath  \
                           | $::_IMCONVERT ppm:- $_convertSaveParams $outPath]
+  ok_info_msg "Start $descr '$rawPath':    $cmdListRawConv"
   if { 0 == [ok_run_loud_os_cmd $cmdListRawConv "_is_dcraw_result_ok"] }  {
     return  0; # error already printed
   }
