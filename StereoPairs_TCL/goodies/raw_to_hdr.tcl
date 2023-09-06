@@ -719,31 +719,71 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
 }
 
 
+# proc _OLD__raw_to_hdr_verify_external_tools {} {
+#   set errCnt 0
+#   if { 0 == [file isdirectory $::_IM_DIR] }  {
+#     ok_err_msg "Inexistent or invalid Imagemagick directory '$::_IM_DIR'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_IMCONVERT " {}"]] }  {
+#     ok_err_msg "Inexistent ImageMagick 'convert' tool '$::_IMCONVERT'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
+#     ok_err_msg "Inexistent ImageMagick 'mogrify' tool '$::_IMMOGRIFY'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_IMIDENTIFY " {}"]] }  {
+#     ok_err_msg "Inexistent ImageMagick 'identify' tool '$::_IMIDENTIFY'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
+#     ok_err_msg "Inexistent 'dcraw' tool '$::_DCRAW'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_ENFUSE " {}"]] }  {
+#     ok_err_msg "Inexistent 'enfuse' tool '$::_ENFUSE'"
+#     incr errCnt 1
+#   }
+#   if { $errCnt == 0 }  {
+#     ok_info_msg "All external tools are present"
+#     return  1
+#   } else {
+#     ok_err_msg "Some or all external tools are missing"
+#     return  0
+#   }
+# }
+
+
 proc _raw_to_hdr_verify_external_tools {} {
   set errCnt 0
   if { 0 == [file isdirectory $::_IM_DIR] }  {
     ok_err_msg "Inexistent or invalid Imagemagick directory '$::_IM_DIR'"
     incr errCnt 1
   }
-  if { 0 == [file exists [string trim $::_IMCONVERT " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'convert' tool '$::_IMCONVERT'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'mogrify' tool '$::_IMMOGRIFY'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_IMIDENTIFY " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'identify' tool '$::_IMIDENTIFY'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
-    ok_err_msg "Inexistent 'dcraw' tool '$::_DCRAW'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_ENFUSE " {}"]] }  {
-    ok_err_msg "Inexistent 'enfuse' tool '$::_ENFUSE'"
-    incr errCnt 1
+  set pathToDescr [dict create  \
+    ::_IMCONVERT   [list $::_IMCONVERT  "ImageMagick 'convert' tool"]  \
+    ::_IMMOGRIFY   [list $::_IMMOGRIFY  "ImageMagick 'mogrify' tool"]  \
+    ::_IMIDENTIFY  [list $::_IMIDENTIFY "ImageMagick 'identify' tool"] \
+    ::_DCRAW       [list $::_DCRAW      "'dcraw' tool"]                \
+    ::_ENFUSE      [list $::_ENFUSE     "'enfuse' tool"]               \
+                  ]
+
+  dict for {varName rec} $pathToDescr  {
+    lassign $rec  toolPath toolDescr
+    set tp [string trim $toolPath " {}"]
+    if { 0 == [file exists $tp] }  {
+      set tpNoExt [file rootname $tp]
+      if { 0 == [file exists $tpNoExt] }  {
+        ok_err_msg "Inexistent $toolDescr ($varName) '$toolPath' (neither '$tpNoExt')"
+        incr errCnt 1
+      } else {
+        ok_info_msg "Overriden $toolDescr ($varName): from '$toolPath' into '$tpNoExt'"
+        set $varName $tpNoExt
+      }
+    } else {
+      ok_info_msg "Verified $toolDescr ($varName): as '$toolPath'"
+    }
   }
   if { $errCnt == 0 }  {
     ok_info_msg "All external tools are present"
