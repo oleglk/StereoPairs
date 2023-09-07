@@ -333,7 +333,8 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 # Does conversion and blending for all inputs in 'dirPath' - if ::STS(doHDR)==1
 # Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
 # Assumes 'dirPath' is a valid directory
-proc _do_job_in_one_dir {dirPath}  {
+# Performs raw-conversion for all inputs, then blending for all inputs
+proc _do_job_in_one_dir__by_steps {dirPath}  {
   set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
   set tclResult [catch { set res [cd $dirPath] } execResult]
   if { $tclResult != 0 } {
@@ -354,6 +355,44 @@ proc _do_job_in_one_dir {dirPath}  {
     # assume that RAW conversions are done and thus the directories prepared
     if { 0 == [_fuse_converted_images_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
+    }
+  }
+  set tclResult [catch { set res [cd $oldWD] } execResult]
+  if { $tclResult != 0 } {
+    ok_err_msg "Failed restoring work directory to '$oldWD': $execResult!"
+    return  0
+  }
+  return  1
+}
+
+
+# Does conversion and blending for all inputs in 'dirPath' - if ::STS(doHDR)==1
+# Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
+# Assumes 'dirPath' is a valid directory
+# Performs raw-conversion then immediately blending for all inputs
+TODO  proc _do_job_in_one_dir__by_inputs {dirPath}  {
+  set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
+  set tclResult [catch { set res [cd $dirPath] } execResult]
+  if { $tclResult != 0 } {
+    ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
+    return  0
+  }
+  ok_info_msg "Success changing work directory to '$dirPath'"
+  FOREACJH INPUT IN DIRECTORY dirPath {
+    if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
+      if { 0 == [_arrange_dirs_for_current_dir] }  {
+        ok_err_msg "Aborting because of failure to create a temporary output directory"
+        return  0
+      }
+      if { 0 > [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
+        return  0;  # errors already printed
+      }
+    }
+    if { ($::STS(doBlend)) && ($::STS(doHDR) == 1) } {
+      # assume that RAW conversions are done and thus the directories prepared
+      if { 0 == [_fuse_converted_images_in_current_dir $::STS(rawExt)] }  {
+        return  0;  # errors already printed
+      }
     }
   }
   set tclResult [catch { set res [cd $oldWD] } execResult]
@@ -386,6 +425,55 @@ proc _arrange_dirs_for_current_dir {} {
   }
   return  1
 }
+
+
+TODO  proc _prepare_for_processing_in_current_dir {rawExt \
+                                     rawNamesToWbMults brightValToAbsOutDir} {
+  upvar $rawNamesToWbMults    _rawNamesToWbMults
+  upvar $brightValToAbsOutDir _brightValToAbsOutDir
+  puts "====== Begin RAW conversions in '[pwd]' ========"
+  set rawPaths [glob -nocomplain "*.$rawExt"]
+  if { 0 == [llength $rawPaths] }  {
+    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+    return  0
+  }
+  # if { (0 == [_estimate_free_disk_space_for_raw_conversion $rawPaths    \
+  #                                           [pwd] $::STS(tmpDirPath)])  \
+  #                                           && $::STS(abortOnLowDiskSpace) }  {
+  #   return  -1;   # error already printed
+  # }
+  if { "" == $::STS(wbInpFile) }  { 
+    set _rawNamesToWbMults  [dict create]
+  } else {
+    array unset _rawToWbArr
+    if { [file exists $::STS(wbInpFile)] }  {
+      if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                              $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
+        return  -1;  # error already printed
+      }
+    } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
+      ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
+      return  -1
+    } else {
+      ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
+    }
+    set _rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
+    ok_trace_msg "Input color multipliers: {$_rawNamesToWbMults}"
+  }
+  if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
+    set _brightValToAbsOutDir [dict create \
+                            1.0 [file join [pwd] $::STS(outDirName)]]
+  } else {                     ;  # per-brightness temporary directories needed
+    set _brightValToAbsOutDir [dict create \
+                            0.3 [file join [pwd] $::STS(dirLow)] \
+                            1.0 [file join [pwd] $::STS(dirNorm)] \
+                            1.7 [file join [pwd] $::STS(dirHigh)]]
+  }
+  # note: source of WB params is picked when converting 1st directory;
+  #       in consequent directories it appears like override,
+  #       but it's just carried out from the 1st directory
+}
+
 
 # Makes RAW conversions; returns num of processed files, 0 if none, -1 on error.
 # If '$::STS(wbInpFile)' keeps a file-path, takes WB multipliers from it.
