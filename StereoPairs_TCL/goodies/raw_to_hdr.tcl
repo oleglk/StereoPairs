@@ -95,17 +95,35 @@ proc raw_to_hdr_main {cmdLineAsStr {doHDR 1}}  {
   ok_reset_start_time_if_needed ;   # the timer to track long activity periods
 
   set nInpDirs [llength $::STS(inpDirPaths)]
-  ok_info_msg "Start processing RAW file(s) under $nInpDirs input directory(ies)"
-  set cntDone 0
-  foreach inDir $::STS(inpDirPaths) {
-    incr cntDone 1
-    if { 0 == [_do_job_in_one_dir $inDir] }  {
-      ok_err_msg "RAW processing aborted at directory #$cntDone out of $nInpDirs"
-      return  0
+  if { $::_WORK_BY_DIRS }  {
+    set cntDone 0
+    ok_info_msg "Start processing RAW file(s) under $nInpDirs input directory(ies)"
+    foreach inDir $::STS(inpDirPaths) {
+      incr cntDone 1
+      if { 0 == [_do_job_in_one_dir__by_steps $inDir] }  {
+        ok_err_msg "RAW processing aborted at directory #$cntDone out of $nInpDirs"
+        return  0
+      }
+      ok_info_msg "Done RAW processing in directory #$cntDone out of $nInpDirs"
     }
-    ok_info_msg "Done RAW processing in directory #$cntDone out of $nInpDirs"
+    ok_info_msg "Done processing RAW file(s) under $cntDone out of $nInpDirs input directory(ies)"
+  } else { # one RAW at a time
+    set rawPaths [list]
+    foreach inDir $::STS(inpDirPaths) {
+      set rawPathsInDir [glob -nocomplain -directory "$inDir"  "*.$rawExt"]
+      if { 0 == [llength $rawPathsInDir] }  {
+        ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+      }
+      lappend rawPaths $rawPathsInDir
+    }
+    if { 0 == [set numRaws [llength $rawPaths]] }  {
+      ok_warn_msg "No RAW images (*.$rawExt) found in directories {$::STS(inpDirPaths)}"
+      return 0
+    }
+    ok_info_msg "Start processing RAW file(s) under $nInpDirs input directory(ies)"
+    set cntDoneRaws [_do_job__by_inputs $rawPaths]
+    ok_info_msg "Done processing RAW file(s) under $nInpDirs input directory(ies); $cntDoneRaws processed out of $numRaws"
   }
-  ok_info_msg "Done processing RAW file(s) under $cntDone out of $nInpDirs input directory(ies)"
   return  1
 }
 
@@ -370,21 +388,28 @@ proc _do_job_in_one_dir__by_steps {dirPath}  {
 # Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
 # Assumes 'dirPath' is a valid directory
 # Performs raw-conversion then immediately blending for all inputs
-TODO  proc _do_job_in_one_dir__by_inputs {dirPath}  {
-  set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
-  set tclResult [catch { set res [cd $dirPath] } execResult]
-  if { $tclResult != 0 } {
-    ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
-    return  0
-  }
-  ok_info_msg "Success changing work directory to '$dirPath'"
-  FOREACJH INPUT IN DIRECTORY dirPath {
-    if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
-      if { 0 == [_arrange_dirs_for_current_dir] }  {
-        ok_err_msg "Aborting because of failure to create a temporary output directory"
+proc _do_job__by_inputs {rawPaths}  {
+  foreach rawPath $rawPaths {
+    set dirPath [file normalize [file dirname $rawPath]]
+    # save the old cwd, cd to dirPath, restore before return
+    set oldWD [file normalize [pwd]]
+    # most probably RAWs grouped by directories
+    if { $dirPath != $oldWD }  {
+      set tclResult [catch { set res [cd $dirPath] } execResult]
+      if { $tclResult != 0 } {
+        ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
         return  0
       }
-      if { 0 > [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
+      ok_info_msg "Success changing work directory to '$dirPath' - at RAW input '$rawPath'"
+      if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
+        if { 0 == [_arrange_dirs_for_current_dir] }  {
+          ok_err_msg "Aborting because of failure to create a temporary output directory"
+          return  0
+        }
+      }
+    }
+    if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
+      TODO if { 0 > [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
         return  0;  # errors already printed
       }
     }
