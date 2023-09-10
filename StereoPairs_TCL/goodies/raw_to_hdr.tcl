@@ -378,12 +378,19 @@ TODO  proc _do_job_in_one_dir__by_inputs {dirPath}  {
     return  0
   }
   ok_info_msg "Success changing work directory to '$dirPath'"
-  FOREACJH INPUT IN DIRECTORY dirPath {
+  set rawPaths [glob -nocomplain "*.$rawExt"]
+  if { 0 == [llength $rawPaths] }  {
+    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+    return  0
+  }
+  if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
+    if { 0 == [_arrange_dirs_for_current_dir] }  {
+      ok_err_msg "Aborting because of failure to create a temporary output directory"
+      return  0
+    }
+  }
+  foreach rawPath $rawPaths {
     if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
-      if { 0 == [_arrange_dirs_for_current_dir] }  {
-        ok_err_msg "Aborting because of failure to create a temporary output directory"
-        return  0
-      }
       if { 0 > [_convert_all_raws_in_current_dir $::STS(rawExt)] }  {
         return  0;  # errors already printed
       }
@@ -490,38 +497,57 @@ proc _convert_all_raws_in_current_dir {rawExt} {
                                             && $::STS(abortOnLowDiskSpace) }  {
     return  -1;   # error already printed
   }
-  if { "" == $::STS(wbInpFile) }  { 
-    set rawNamesToWbMults  [dict create]
-  } else {
-    array unset _rawToWbArr
-    if { [file exists $::STS(wbInpFile)] }  {
-      if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
-                              $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
-        return  -1;  # error already printed
-      }
-    } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
-      ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
-      return  -1
+  set prevRawPath 0
+  while { 0 < [set res [_convert_next_raw_in_current_dir $rawExt prevRawPath]]} {
+  }
+  if { $res < 0 }  {
+    ok_err_msg "Failed RAW conversions in '[pwd]'"
+    return  $res
+  }
+  puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
+  return  [llength $rawPaths]
+}
+
+
+proc _convert_next_raw_in_current_dir {rawExt prevRawPath}  {
+  upvar $prevRawPath prevRaw
+  if { $prevRaw == 0 }  {;  # first RAW in the current directory
+    if { "" == $::STS(wbInpFile) }  { 
+      set rawNamesToWbMults  [dict create]
     } else {
-      ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
+      array unset _rawToWbArr
+      if { [file exists $::STS(wbInpFile)] }  {
+        if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                     $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
+          return  -1;  # error already printed
+        }
+      } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
+        ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
+        return  -1
+      } else {
+        ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
+      }
+      set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
+      ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
     }
-    set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
-    ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
-  }
-  if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
-    set brightValToAbsOutDir [dict create \
-                            1.0 [file join [pwd] $::STS(outDirName)]]
-  } else {                     ;  # per-brightness temporary directories needed
-    set brightValToAbsOutDir [dict create \
-                            0.3 [file join [pwd] $::STS(dirLow)] \
-                            1.0 [file join [pwd] $::STS(dirNorm)] \
-                            1.7 [file join [pwd] $::STS(dirHigh)]]
-  }
+    if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
+      set brightValToAbsOutDir [dict create \
+                                  1.0 [file join [pwd] $::STS(outDirName)]]
+    } else {                     ;  # per-brightness temporary directories needed
+      set brightValToAbsOutDir [dict create \
+                                  0.3 [file join [pwd] $::STS(dirLow)] \
+                                  1.0 [file join [pwd] $::STS(dirNorm)] \
+                                  1.7 [file join [pwd] $::STS(dirHigh)]]
+    }
+  };#_END_OF__current_directory_preparation_at_first_RAW
+  
   # note: source of WB params is picked when converting 1st directory;
   #       in consequent directories it appears like override,
   #       but it's just carried out from the 1st directory
-  dict for {brightVal outDir} $brightValToAbsOutDir {
-    foreach rawPath $rawPaths {
+  set rawPaths [glob -nocomplain "*.$rawExt"]; # assune existence already checked
+  if { 0 != [set rawPath [TODO__ok_get_next_elem_in_list $rawPaths $prevRaw]] }  {
+    ok_info_msg "Processing RAW input '$rawPath'"
+    dict for {brightVal outDir} $brightValToAbsOutDir {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
                                   rawNamesToWbMults] } {
         return  -1;  # error already printed
@@ -531,26 +557,28 @@ proc _convert_all_raws_in_current_dir {rawExt} {
       ok_pause_and_reset_start_time_if_needed ;   # allow periodical resting
     }
   }
-  if { "" != $::STS(wbOutFile) }  { 
-    array unset _rawToWbArr;    array unset _rawToWbArrNew
-    #(unsafe)  array set _rawToWbArrNew $rawNamesToWbMults
-    if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArrNew] } {
-      set _rawToWbArrNew("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
-      if { [file exists $::STS(wbOutFile)] }  {; # merge new data with old data
-        if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
-                             $::STS(wbOutFile) "," 1 _ColorMultLineCheckCB] }  {
-          # TODO: print warning and make a copy of the old file
+  ok_trace_msg "Done RAW-conversion stage for RAW input '$rawPath'"
+  if { $rawPath == [lindex $rawPaths end]}  {; # it was last RAW in current dir
+    if { "" != $::STS(wbOutFile) }  { 
+      array unset _rawToWbArr;    array unset _rawToWbArrNew
+      #(unsafe)  array set _rawToWbArrNew $rawNamesToWbMults
+      if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArrNew] } {
+        set _rawToWbArrNew("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
+        if { [file exists $::STS(wbOutFile)] }  {; # merge new data with old data
+          if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                       $::STS(wbOutFile) "," 1 _ColorMultLineCheckCB] }  {
+            # TODO: print warning and make a copy of the old file
+          }
         }
+        # merge if old data was read, otherwise preserve old values
+        array set _rawToWbArr [array get _rawToWbArrNew]
+        ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
+          "RawName" ",";   # error, if any, printed
       }
-      # merge if old data was read, otherwise preserve old values
-      array set _rawToWbArr [array get _rawToWbArrNew]
-      ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
-                                       "RawName" ",";   # error, if any, printed
     }
   }
-
-  puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
-  return  [llength $rawPaths]
+  set prevRaw $rawPath
+  return  0
 }
 
 
