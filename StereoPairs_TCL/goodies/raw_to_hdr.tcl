@@ -16,6 +16,7 @@ source [file join $SCRIPT_DIR "setup_goodies.tcl"]
 package require ok_utils;   namespace import -force ::ok_utils::*
 package require img_proc;   namespace import -force ::img_proc::*
 
+set ::_WORK_BY_STAGE 0;  # 1 = RAW-convert all, then fuse all
 
 # set ENFUSE "C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
 # set IM_DIR "C:\Program Files (x86)\ImageMagick-6.8.7-3"
@@ -99,7 +100,9 @@ proc raw_to_hdr_main {cmdLineAsStr {doHDR 1}}  {
   set cntDone 0
   foreach inDir $::STS(inpDirPaths) {
     incr cntDone 1
-    if { 0 == [_do_job_in_one_dir $inDir] }  {
+    set dirOK [expr {$::_WORK_BY_STAGE? [_do_job_in_one_dir__by_stages $inDir] \
+                                      : [_do_job_in_one_dir__by_inputs $inDir]}]
+    if { $dirOK == 0 }  {
       ok_err_msg "RAW processing aborted at directory #$cntDone out of $nInpDirs"
       return  0
     }
@@ -334,7 +337,7 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 # Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
 # Assumes 'dirPath' is a valid directory
 # Performs raw-conversion for all inputs, then blending for all inputs
-proc _do_job_in_one_dir__by_steps {dirPath}  {
+proc _do_job_in_one_dir__by_stages {dirPath}  {
   set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
   set tclResult [catch { set res [cd $dirPath] } execResult]
   if { $tclResult != 0 } {
@@ -370,7 +373,7 @@ proc _do_job_in_one_dir__by_steps {dirPath}  {
 # Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
 # Assumes 'dirPath' is a valid directory
 # Performs raw-conversion then immediately blending for all inputs
-TODO  proc _do_job_in_one_dir__by_inputs {dirPath}  {
+proc _do_job_in_one_dir__by_inputs {dirPath}  {
   set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
   set tclResult [catch { set res [cd $dirPath] } execResult]
   if { $tclResult != 0 } {
@@ -378,9 +381,10 @@ TODO  proc _do_job_in_one_dir__by_inputs {dirPath}  {
     return  0
   }
   ok_info_msg "Success changing work directory to '$dirPath'"
-  set rawPaths [glob -nocomplain "*.$rawExt"]
+  set rawPaths [glob -nocomplain "*.$::STS(rawExt)"]
   if { 0 == [llength $rawPaths] }  {
-    ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+    ok_warn_msg "No RAW images (*.$::STS(rawExt)) found in '[pwd]'"
+    # OK_TODO: consider returning to directory 'oldWD'
     return  0
   }
   set outDir [file join [pwd] $::STS(outDirName)];  # abs path for msg clarity
@@ -394,7 +398,8 @@ TODO  proc _do_job_in_one_dir__by_inputs {dirPath}  {
   for {set rawIdx 0}  {$rawIdx < [llength $rawPaths]}  {incr rawIdx 1}  {
     # perform 1 or 3 conversions of the current RAW
     if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
-      if { 0 > [set res [_convert_next_raw_in_current_dir $rawExt $rawIdx]] }  {
+      set res [_convert_one_raw_in_current_dir $::STS(rawExt) $rawIdx]
+      if { $res < 0 }  {
         ok_err_msg "Failed RAW conversions in '[pwd]' at index $rawIdx"
         return  $res
       }
@@ -409,7 +414,9 @@ TODO  proc _do_job_in_one_dir__by_inputs {dirPath}  {
       }
     }
     # perform cleanup of the 3 conversions of the current RAW
-    # TODO
+    _choose_inputs_for_fusing $rawName _inOutExt pathLow pathNorm pathHigh
+    ok_warn_msg "TODO: clean 3 conversions {'$pathLow' '$pathNorm' '$pathHigh'}"
+    # TODO: delete  pathLow pathNorm pathHigh
   }
   set tclResult [catch { set res [cd $oldWD] } execResult]
   if { $tclResult != 0 } {
@@ -507,7 +514,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
     return  -1;   # error already printed
   }
   for {set rawIdx 0}  {$rawIdx < [llength $rawPaths]}  {incr rawIdx 1}  {
-    if { 0 > [set res [_convert_next_raw_in_current_dir $rawExt $rawIdx]] }  {
+    if { 0 > [set res [_convert_one_raw_in_current_dir $rawExt $rawIdx]] }  {
       ok_err_msg "Failed RAW conversions in '[pwd]' at index $rawIdx"
       return  $res
     }
@@ -517,7 +524,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
 }
 
 
-proc _convert_next_raw_in_current_dir {rawExt nextRawIndex}  {
+proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
   if { $nextRawIndex == 0 }  {;  # first RAW in the current directory
     if { "" == $::STS(wbInpFile) }  { 
       set rawNamesToWbMults  [dict create]
@@ -566,7 +573,7 @@ proc _convert_next_raw_in_current_dir {rawExt nextRawIndex}  {
     }
   }
   ok_trace_msg "Done RAW-conversion stage for RAW input '$rawPath'"
-  if { $nextRawIndex == [expr [lllength $rawPaths] -1] }  {
+  if { $nextRawIndex == [expr [llength $rawPaths] -1] }  {
     # it was the last RAW in current dir
     if { "" != $::STS(wbOutFile) }  { 
       array unset _rawToWbArr;    array unset _rawToWbArrNew
@@ -696,13 +703,9 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
 
 
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
-  if { $::STS(doPreview) == 0 }  {
-    set _inOutExt          $::g_convertOutfileExt
-    set _fuseSaveParams $::g_fuseSaveParams
-  } else {
-    set _inOutExt          $::g_convertOutfileExt_preview
-    set _fuseSaveParams $::g_fuseSaveParams_preview
-  }
+  _choose_inputs_for_fusing $rawName _inOutExt pathLow pathNorm pathHigh
+  set _fuseSaveParams [expr {($::STS(doPreview) == 0)? \
+                           $::g_fuseSaveParams  :  $::g_fuseSaveParams_preview}]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "$rawName.$_inOutExt"]
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
@@ -748,29 +751,15 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
 }
 
 
-TODO proc _choose_inputs_for_fusing {rawName outDir fuseOpt \
-                                  pathLow pathNorm pathHigh} {
-  upvar $pathLow  inpathLow
-  upvar $pathNorm inpathNorm
-  upvar $pathHigh inpathHigh
+proc _choose_inputs_for_fusing {rawName inOutExt pathLow pathNorm pathHigh} {
+  upvar $inOutExt _inOutExt
+  upvar $pathLow  inPathLow
+  upvar $pathNorm inPathNorm
+  upvar $pathHigh inPathHigh
   if { $::STS(doPreview) == 0 }  {
     set _inOutExt          $::g_convertOutfileExt
-    set _fuseSaveParams $::g_fuseSaveParams
   } else {
     set _inOutExt          $::g_convertOutfileExt_preview
-    set _fuseSaveParams $::g_fuseSaveParams_preview
-  }
-  if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
-  set outPath  [file join $outDir "$rawName.$_inOutExt"]
-  if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
-    if { 1 == [check_image_integrity_by_imagemagick $outPath] }  {
-      ok_info_msg "Image '$outPath' pre-existed; skipped by fusion step"
-      return 1
-    }
-    ok_info_msg "Invalid/corrupted image '$outPath' pre-existed; will be overriden by fusion step"
-  }
-  if { 0 == [ok_filepath_is_writable $outPath] }  {
-    ok_err_msg "Cannot write into '$outPath'";    return 0
   }
   set inPathLow  [file join $::STS(dirLow)  "$rawName.$_inOutExt"]
   set inPathNorm [file join $::STS(dirNorm) "$rawName.$_inOutExt"]
