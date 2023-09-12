@@ -49,6 +49,14 @@ set g_fuseSaveParams_preview "--compression=98"
 
 
 ################################################################################
+# Runtime global variables to be initialized upon 1st RAW in a directory
+# TODO: unset at end
+set ::g_rawNamesToWbMults     0
+set ::g_brightValToAbsOutDir  0
+################################################################################
+
+
+################################################################################
 
 proc _raw_to_hdr_set_defaults {}  {
   set ::STS(toolsPathsFile)   "" ;  # full path or relative to this script
@@ -525,10 +533,10 @@ proc _convert_all_raws_in_current_dir {rawExt} {
 
 
 proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
-  set brightValToAbsOutDir 0;  # init upon the 1st RAW
+  global g_rawNamesToWbMults g_brightValToAbsOutDir
   if { $nextRawIndex == 0 }  {;  # first RAW in the current directory
     if { "" == $::STS(wbInpFile) }  { 
-      set rawNamesToWbMults  [dict create]
+      set g_rawNamesToWbMults  [dict create]
     } else {
       array unset _rawToWbArr
       if { [file exists $::STS(wbInpFile)] }  {
@@ -542,21 +550,21 @@ proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
       } else {
         ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
       }
-      set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
-      ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
+      set g_rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
+      ok_trace_msg "Input color multipliers: {$g_rawNamesToWbMults}"
+    }
+
+    # decide on output directory(ies) based on whether HDR requested
+    if { $::STS(doHDR) == 0 }  { ; # only the ultimate output directory needed
+      set g_brightValToAbsOutDir [dict create \
+                                  1.0 [file join [pwd] $::STS(outDirName)]]
+    } else {                     ; # per-brightness temporary directories needed
+      set g_brightValToAbsOutDir [dict create \
+                                  0.3 [file join [pwd] $::STS(dirLow)] \
+                                  1.0 [file join [pwd] $::STS(dirNorm)] \
+                                  1.7 [file join [pwd] $::STS(dirHigh)]]
     }
   };#_END_OF__current_directory_preparation_at_first_RAW
-
-  # decide on output directory(ies) based on whether HDR requested
-  if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
-    set brightValToAbsOutDir [dict create \
-                                1.0 [file join [pwd] $::STS(outDirName)]]
-  } else {                     ;  # per-brightness temporary directories needed
-    set brightValToAbsOutDir [dict create \
-                                0.3 [file join [pwd] $::STS(dirLow)] \
-                                1.0 [file join [pwd] $::STS(dirNorm)] \
-                                1.7 [file join [pwd] $::STS(dirHigh)]]
-  }
 
   # note: source of WB params is picked when converting 1st directory;
   #       in consequent directories it appears like override,
@@ -564,11 +572,10 @@ proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
   set rawPaths [glob -nocomplain "*.$rawExt"]; # assune existence already checked
   if { $nextRawIndex < [llength $rawPaths] }  {
     set rawPath [lindex $rawPaths $nextRawIndex]
-    set rawNamesToWbMults [dict create]
     ok_info_msg "Processing RAW input '$rawPath'"
-    dict for {brightVal outDir} $brightValToAbsOutDir {
+    dict for {brightVal outDir} $g_brightValToAbsOutDir {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
-                                  rawNamesToWbMults] } {
+                                  ::g_rawNamesToWbMults] } {
         return  -1;  # error already printed
       }
       ##$::_DCRAW  $::g_dcrawParamsMain -w -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
@@ -581,8 +588,8 @@ proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
     # it was the last RAW in current dir
     if { "" != $::STS(wbOutFile) }  { 
       array unset _rawToWbArr;    array unset _rawToWbArrNew
-      #(unsafe)  array set _rawToWbArrNew $rawNamesToWbMults
-      if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArrNew] } {
+      #(unsafe)  array set _rawToWbArrNew $g_rawNamesToWbMults
+      if { 1 == [ok_list_to_array $g_rawNamesToWbMults _rawToWbArrNew] } {
         set _rawToWbArrNew("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
         if { [file exists $::STS(wbOutFile)] }  {; # merge new data with old data
           if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
@@ -591,7 +598,13 @@ proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
           }
         }
         # merge if old data was read, otherwise preserve old values
+        set oldCntWbRec [array size _rawToWbArr];                # incl header
+        set addCntWbRec [expr [array size _rawToWbArrNew] - 1];  # -1 for header
         array set _rawToWbArr [array get _rawToWbArrNew]
+        #parray _rawToWbArr
+        set newCntWbRec [array size _rawToWbArr]
+        incr newCntWbRec [expr {($oldCntWbRec > 0)? -2 : -1}]; # maybe 2 headers
+        ok_info_msg "Appended $addCntWbRec record(s) to white-balance output file '$::STS(wbOutFile)' for directory '[pwd]'. New count of records: $newCntWbRec";  # -1 for header; -2 when duplicated
         ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
           "RawName" ",";   # error, if any, printed
       }
@@ -669,6 +682,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     }
   } else {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
+    set rgbInputted 0
   }
   set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
   switch -exact $::STS(rotAngle)  {
