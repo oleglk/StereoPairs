@@ -525,6 +525,7 @@ proc _convert_all_raws_in_current_dir {rawExt} {
 
 
 proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
+  set brightValToAbsOutDir 0;  # init upon the 1st RAW
   if { $nextRawIndex == 0 }  {;  # first RAW in the current directory
     if { "" == $::STS(wbInpFile) }  { 
       set rawNamesToWbMults  [dict create]
@@ -544,23 +545,26 @@ proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
       set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
       ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
     }
-    if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
-      set brightValToAbsOutDir [dict create \
-                                  1.0 [file join [pwd] $::STS(outDirName)]]
-    } else {                     ;  # per-brightness temporary directories needed
-      set brightValToAbsOutDir [dict create \
-                                  0.3 [file join [pwd] $::STS(dirLow)] \
-                                  1.0 [file join [pwd] $::STS(dirNorm)] \
-                                  1.7 [file join [pwd] $::STS(dirHigh)]]
-    }
   };#_END_OF__current_directory_preparation_at_first_RAW
-  
+
+  # decide on output directory(ies) based on whether HDR requested
+  if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
+    set brightValToAbsOutDir [dict create \
+                                1.0 [file join [pwd] $::STS(outDirName)]]
+  } else {                     ;  # per-brightness temporary directories needed
+    set brightValToAbsOutDir [dict create \
+                                0.3 [file join [pwd] $::STS(dirLow)] \
+                                1.0 [file join [pwd] $::STS(dirNorm)] \
+                                1.7 [file join [pwd] $::STS(dirHigh)]]
+  }
+
   # note: source of WB params is picked when converting 1st directory;
   #       in consequent directories it appears like override,
   #       but it's just carried out from the 1st directory
   set rawPaths [glob -nocomplain "*.$rawExt"]; # assune existence already checked
   if { $nextRawIndex < [llength $rawPaths] }  {
     set rawPath [lindex $rawPaths $nextRawIndex]
+    set rawNamesToWbMults [dict create]
     ok_info_msg "Processing RAW input '$rawPath'"
     dict for {brightVal outDir} $brightValToAbsOutDir {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
