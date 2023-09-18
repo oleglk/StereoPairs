@@ -404,27 +404,34 @@ proc _do_job_in_one_dir__by_inputs {dirPath}  {
     }
   }
   for {set rawIdx 0}  {$rawIdx < [llength $rawPaths]}  {incr rawIdx 1}  {
+    set lastRawPath [lindex $rawPaths $rawIdx]
+    set descr "RAW input \[$rawIdx\] - '$lastRawPath'"
     # perform 1 or 3 conversions of the current RAW
     if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
       set res [_convert_one_raw_in_current_dir $::STS(rawExt) $rawIdx]
       if { $res < 0 }  {
-        ok_err_msg "Failed RAW conversions in '[pwd]' at index $rawIdx"
+        ok_err_msg "Failed RAW conversions in '[pwd]' at $descr"
         return  $res
       }
     }
-    set lastRawPath [lindex $rawPaths $rawIdx]
     # perform fusing of the 3 conversions of the current RAW
     if { ($::STS(doBlend)) && ($::STS(doHDR) == 1) } {
       # assume that RAW conversions are done and thus the directories prepared
       set rawName [file rootname [file tail $lastRawPath]]
       if { 0 == [_fuse_one_hdr $rawName $outDir $::g_fuseOpt] }  {
-        return  -1
+        return  0
       }
     }
     # perform cleanup of the 3 conversions of the current RAW
     _choose_inputs_for_fusing $rawName _inOutExt pathLow pathNorm pathHigh
-    ok_warn_msg "TODO: clean 3 conversions {'$pathLow' '$pathNorm' '$pathHigh'}"
-    # TODO: delete  pathLow pathNorm pathHigh
+    set tmpConversions [list $pathLow $pathNorm $pathHigh]
+    foreach tmpF $tmpConversions  {
+      if { 0 == [ok_delete_file $tmpF] }  {
+        ok_err_msg "Aborting because cleanup failed for $descr."
+        return  0
+      }
+    }
+    ok_info_msg "Performed cleanup for $descr: {'$pathLow' '$pathNorm' '$pathHigh'}"
   }
   set tclResult [catch { set res [cd $oldWD] } execResult]
   if { $tclResult != 0 } {
@@ -572,7 +579,7 @@ proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
   set rawPaths [glob -nocomplain "*.$rawExt"]; # assune existence already checked
   if { $nextRawIndex < [llength $rawPaths] }  {
     set rawPath [lindex $rawPaths $nextRawIndex]
-    ok_info_msg "Processing RAW input '$rawPath'"
+    ok_info_msg "Processing RAW input \[$nextRawIndex\] - '$rawPath'"
     dict for {brightVal outDir} $g_brightValToAbsOutDir {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
                                   ::g_rawNamesToWbMults] } {
@@ -585,7 +592,7 @@ proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
   }
   ok_trace_msg "Done RAW-conversion stage for RAW input '$rawPath'"
   if { $nextRawIndex == [expr [llength $rawPaths] -1] }  {
-    # it was the last RAW in current dir
+    # store WB multipliers of all processed RAWs upon the last RAW in current dir
     if { "" != $::STS(wbOutFile) }  { 
       array unset _rawToWbArr;    array unset _rawToWbArrNew
       #(unsafe)  array set _rawToWbArrNew $g_rawNamesToWbMults
