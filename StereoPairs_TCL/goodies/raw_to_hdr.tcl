@@ -16,6 +16,7 @@ source [file join $SCRIPT_DIR "setup_goodies.tcl"]
 package require ok_utils;   namespace import -force ::ok_utils::*
 package require img_proc;   namespace import -force ::img_proc::*
 
+set ::_WORK_BY_STAGE 0;  # 1 = RAW-convert all, then fuse all
 
 # set ENFUSE "C:\Program Files\enblend-enfuse-4.1.4\bin\enfuse.exe"
 # set IM_DIR "C:\Program Files (x86)\ImageMagick-6.8.7-3"
@@ -45,6 +46,14 @@ set g_convertSaveParams_preview "-depth 8 -quality 98"; # "-depth 8 -compress LZ
 set g_fuseOpt "--exposure-weight=1 --saturation-weight=0.01 --contrast-weight=0 --exposure-cutoff=0%:95% --exposure-mu=0.7"
 set g_fuseSaveParams         "--compression=lzw"
 set g_fuseSaveParams_preview "--compression=98"
+
+
+################################################################################
+# Runtime global variables to be initialized upon 1st RAW in a directory
+# TODO: unset at end
+set ::g_rawNamesToWbMults     0
+set ::g_brightValToAbsOutDir  0
+################################################################################
 
 
 ################################################################################
@@ -99,7 +108,9 @@ proc raw_to_hdr_main {cmdLineAsStr {doHDR 1}}  {
   set cntDone 0
   foreach inDir $::STS(inpDirPaths) {
     incr cntDone 1
-    if { 0 == [_do_job_in_one_dir $inDir] }  {
+    set dirOK [expr {$::_WORK_BY_STAGE? [_do_job_in_one_dir__by_stages $inDir] \
+                                      : [_do_job_in_one_dir__by_inputs $inDir]}]
+    if { $dirOK == 0 }  {
       ok_err_msg "RAW processing aborted at directory #$cntDone out of $nInpDirs"
       return  0
     }
@@ -333,7 +344,8 @@ proc _raw_to_hdr_parse_cmdline {cmlArrName}  {
 # Does conversion and blending for all inputs in 'dirPath' - if ::STS(doHDR)==1
 # Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
 # Assumes 'dirPath' is a valid directory
-proc _do_job_in_one_dir {dirPath}  {
+# Performs raw-conversion for all inputs, then blending for all inputs
+proc _do_job_in_one_dir__by_stages {dirPath}  {
   set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
   set tclResult [catch { set res [cd $dirPath] } execResult]
   if { $tclResult != 0 } {
@@ -355,6 +367,71 @@ proc _do_job_in_one_dir {dirPath}  {
     if { 0 == [_fuse_converted_images_in_current_dir $::STS(rawExt)] }  {
       return  0;  # errors already printed
     }
+  }
+  set tclResult [catch { set res [cd $oldWD] } execResult]
+  if { $tclResult != 0 } {
+    ok_err_msg "Failed restoring work directory to '$oldWD': $execResult!"
+    return  0
+  }
+  return  1
+}
+
+
+# Does conversion and blending for all inputs in 'dirPath' - if ::STS(doHDR)==1
+# Does simple conversion only for all inputs in 'dirPath'  - if ::STS(doHDR)==0
+# Assumes 'dirPath' is a valid directory
+# Performs raw-conversion then immediately blending for all inputs
+proc _do_job_in_one_dir__by_inputs {dirPath}  {
+  set oldWD [pwd];  # save the old cwd, cd to dirPath, restore before return
+  set tclResult [catch { set res [cd $dirPath] } execResult]
+  if { $tclResult != 0 } {
+    ok_err_msg "Failed changing work directory to '$dirPath': $execResult!"
+    return  0
+  }
+  ok_info_msg "Success changing work directory to '$dirPath'"
+  set rawPaths [glob -nocomplain "*.$::STS(rawExt)"]
+  if { 0 == [llength $rawPaths] }  {
+    ok_warn_msg "No RAW images (*.$::STS(rawExt)) found in '[pwd]'"
+    # OK_TODO: consider returning to directory 'oldWD'
+    return  0
+  }
+  set outDir [file join [pwd] $::STS(outDirName)];  # abs path for msg clarity
+  
+  if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
+    if { 0 == [_arrange_dirs_for_current_dir] }  {
+      ok_err_msg "Aborting because of failure to create a temporary output directory"
+      return  0
+    }
+  }
+  for {set rawIdx 0}  {$rawIdx < [llength $rawPaths]}  {incr rawIdx 1}  {
+    set lastRawPath [lindex $rawPaths $rawIdx]
+    set descr "RAW input \[$rawIdx\] - '$lastRawPath'"
+    # perform 1 or 3 conversions of the current RAW
+    if { $::STS(doRawConv) || ($::STS(doHDR) == 0) } {
+      set res [_convert_one_raw_in_current_dir $::STS(rawExt) $rawIdx]
+      if { $res < 0 }  {
+        ok_err_msg "Failed RAW conversions in '[pwd]' at $descr"
+        return  $res
+      }
+    }
+    # perform fusing of the 3 conversions of the current RAW
+    if { ($::STS(doBlend)) && ($::STS(doHDR) == 1) } {
+      # assume that RAW conversions are done and thus the directories prepared
+      set rawName [file rootname [file tail $lastRawPath]]
+      if { 0 == [_fuse_one_hdr $rawName $outDir $::g_fuseOpt] }  {
+        return  0
+      }
+    }
+    # perform cleanup of the 3 conversions of the current RAW
+    _choose_inputs_for_fusing $rawName _inOutExt pathLow pathNorm pathHigh
+    set tmpConversions [list $pathLow $pathNorm $pathHigh]
+    foreach tmpF $tmpConversions  {
+      if { 0 == [ok_delete_file $tmpF] }  {
+        ok_err_msg "Aborting because cleanup failed for $descr."
+        return  0
+      }
+    }
+    ok_info_msg "Performed cleanup for $descr: {'$pathLow' '$pathNorm' '$pathHigh'}"
   }
   set tclResult [catch { set res [cd $oldWD] } execResult]
   if { $tclResult != 0 } {
@@ -387,6 +464,55 @@ proc _arrange_dirs_for_current_dir {} {
   return  1
 }
 
+
+# TODO  proc _prepare_for_processing_in_current_dir {rawExt \
+#                                      rawNamesToWbMults brightValToAbsOutDir} {
+#   upvar $rawNamesToWbMults    _rawNamesToWbMults
+#   upvar $brightValToAbsOutDir _brightValToAbsOutDir
+#   puts "====== Begin RAW conversions in '[pwd]' ========"
+#   set rawPaths [glob -nocomplain "*.$rawExt"]
+#   if { 0 == [llength $rawPaths] }  {
+#     ok_warn_msg "No RAW images (*.$rawExt) found in '[pwd]'"
+#     return  0
+#   }
+#   # if { (0 == [_estimate_free_disk_space_for_raw_conversion $rawPaths    \
+#   #                                           [pwd] $::STS(tmpDirPath)])  \
+#   #                                           && $::STS(abortOnLowDiskSpace) }  {
+#   #   return  -1;   # error already printed
+#   # }
+#   if { "" == $::STS(wbInpFile) }  { 
+#     set _rawNamesToWbMults  [dict create]
+#   } else {
+#     array unset _rawToWbArr
+#     if { [file exists $::STS(wbInpFile)] }  {
+#       if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+#                               $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
+#         return  -1;  # error already printed
+#       }
+#     } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
+#       ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
+#       return  -1
+#     } else {
+#       ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
+#     }
+#     set _rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
+#     ok_trace_msg "Input color multipliers: {$_rawNamesToWbMults}"
+#   }
+#   if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
+#     set _brightValToAbsOutDir [dict create \
+#                             1.0 [file join [pwd] $::STS(outDirName)]]
+#   } else {                     ;  # per-brightness temporary directories needed
+#     set _brightValToAbsOutDir [dict create \
+#                             0.3 [file join [pwd] $::STS(dirLow)] \
+#                             1.0 [file join [pwd] $::STS(dirNorm)] \
+#                             1.7 [file join [pwd] $::STS(dirHigh)]]
+#   }
+#   # note: source of WB params is picked when converting 1st directory;
+#   #       in consequent directories it appears like override,
+#   #       but it's just carried out from the 1st directory
+# }
+
+
 # Makes RAW conversions; returns num of processed files, 0 if none, -1 on error.
 # If '$::STS(wbInpFile)' keeps a file-path, takes WB multipliers from it.
 # If '$::STS(wbOutFile)' keeps a file-path, prints WB multipliers into it.
@@ -402,40 +528,61 @@ proc _convert_all_raws_in_current_dir {rawExt} {
                                             && $::STS(abortOnLowDiskSpace) }  {
     return  -1;   # error already printed
   }
-  if { "" == $::STS(wbInpFile) }  { 
-    set rawNamesToWbMults  [dict create]
-  } else {
-    array unset _rawToWbArr
-    if { [file exists $::STS(wbInpFile)] }  {
-      if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
-                              $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
-        return  -1;  # error already printed
-      }
-    } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
-      ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
-      return  -1
-    } else {
-      ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
+  for {set rawIdx 0}  {$rawIdx < [llength $rawPaths]}  {incr rawIdx 1}  {
+    if { 0 > [set res [_convert_one_raw_in_current_dir $rawExt $rawIdx]] }  {
+      ok_err_msg "Failed RAW conversions in '[pwd]' at index $rawIdx"
+      return  $res
     }
-    set rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
-    ok_trace_msg "Input color multipliers: {$rawNamesToWbMults}"
   }
-  if { $::STS(doHDR) == 0 }  { ;  # only the ultimate output directory is needed
-    set brightValToAbsOutDir [dict create \
-                            1.0 [file join [pwd] $::STS(outDirName)]]
-  } else {                     ;  # per-brightness temporary directories needed
-    set brightValToAbsOutDir [dict create \
-                            0.3 [file join [pwd] $::STS(dirLow)] \
-                            1.0 [file join [pwd] $::STS(dirNorm)] \
-                            1.7 [file join [pwd] $::STS(dirHigh)]]
-  }
+  puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
+  return  [llength $rawPaths]
+}
+
+
+proc _convert_one_raw_in_current_dir {rawExt nextRawIndex}  {
+  global g_rawNamesToWbMults g_brightValToAbsOutDir
+  if { $nextRawIndex == 0 }  {;  # first RAW in the current directory
+    if { "" == $::STS(wbInpFile) }  { 
+      set g_rawNamesToWbMults  [dict create]
+    } else {
+      array unset _rawToWbArr
+      if { [file exists $::STS(wbInpFile)] }  {
+        if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                     $::STS(wbInpFile) "," 1 _ColorMultLineCheckCB] } {
+          return  -1;  # error already printed
+        }
+      } elseif { 0 == [ok_dirpath_equal $::STS(wbInpFile) $::STS(wbOutFile)] }  {
+        ok_err_msg "Missing WB-override file '$::STS(wbInpFile)'"
+        return  -1
+      } else {
+        ok_info_msg "No WB-override file for directory '[pwd]' - will use camera-WB there"
+      }
+      set g_rawNamesToWbMults  [array get _rawToWbArr];   # dict == list
+      ok_trace_msg "Input color multipliers: {$g_rawNamesToWbMults}"
+    }
+
+    # decide on output directory(ies) based on whether HDR requested
+    if { $::STS(doHDR) == 0 }  { ; # only the ultimate output directory needed
+      set g_brightValToAbsOutDir [dict create \
+                                  1.0 [file join [pwd] $::STS(outDirName)]]
+    } else {                     ; # per-brightness temporary directories needed
+      set g_brightValToAbsOutDir [dict create \
+                                  0.3 [file join [pwd] $::STS(dirLow)] \
+                                  1.0 [file join [pwd] $::STS(dirNorm)] \
+                                  1.7 [file join [pwd] $::STS(dirHigh)]]
+    }
+  };#_END_OF__current_directory_preparation_at_first_RAW
+
   # note: source of WB params is picked when converting 1st directory;
   #       in consequent directories it appears like override,
   #       but it's just carried out from the 1st directory
-  dict for {brightVal outDir} $brightValToAbsOutDir {
-    foreach rawPath $rawPaths {
+  set rawPaths [glob -nocomplain "*.$rawExt"]; # assune existence already checked
+  if { $nextRawIndex < [llength $rawPaths] }  {
+    set rawPath [lindex $rawPaths $nextRawIndex]
+    ok_info_msg "Processing RAW input \[$nextRawIndex\] - '$rawPath'"
+    dict for {brightVal outDir} $g_brightValToAbsOutDir {
       if { 0 == [_convert_one_raw $rawPath $outDir "-b $brightVal" \
-                                  rawNamesToWbMults] } {
+                                  ::g_rawNamesToWbMults] } {
         return  -1;  # error already printed
       }
       ##$::_DCRAW  $::g_dcrawParamsMain -w -b 0.3 %%f |$::_IMCONVERT ppm:- %g_convertSaveParams% $::g_dirLow\%%~nf.TIF
@@ -443,26 +590,34 @@ proc _convert_all_raws_in_current_dir {rawExt} {
       ok_pause_and_reset_start_time_if_needed ;   # allow periodical resting
     }
   }
-  if { "" != $::STS(wbOutFile) }  { 
-    array unset _rawToWbArr;    array unset _rawToWbArrNew
-    #(unsafe)  array set _rawToWbArrNew $rawNamesToWbMults
-    if { 1 == [ok_list_to_array $rawNamesToWbMults _rawToWbArrNew] } {
-      set _rawToWbArrNew("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
-      if { [file exists $::STS(wbOutFile)] }  {; # merge new data with old data
-        if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
-                             $::STS(wbOutFile) "," 1 _ColorMultLineCheckCB] }  {
-          # TODO: print warning and make a copy of the old file
+  ok_trace_msg "Done RAW-conversion stage for RAW input '$rawPath'"
+  if { $nextRawIndex == [expr [llength $rawPaths] -1] }  {
+    # store WB multipliers of all processed RAWs upon the last RAW in current dir
+    if { "" != $::STS(wbOutFile) }  { 
+      array unset _rawToWbArr;    array unset _rawToWbArrNew
+      #(unsafe)  array set _rawToWbArrNew $g_rawNamesToWbMults
+      if { 1 == [ok_list_to_array $g_rawNamesToWbMults _rawToWbArrNew] } {
+        set _rawToWbArrNew("RawName") [list "Rmult" "Gmult" "Bmult" "G2mult"]
+        if { [file exists $::STS(wbOutFile)] }  {; # merge new data with old data
+          if { 0 == [ok_read_csv_file_into_array_of_lists _rawToWbArr \
+                       $::STS(wbOutFile) "," 1 _ColorMultLineCheckCB] }  {
+            # TODO: print warning and make a copy of the old file
+          }
         }
+        # merge if old data was read, otherwise preserve old values
+        set oldCntWbRec [array size _rawToWbArr];                # incl header
+        set addCntWbRec [expr [array size _rawToWbArrNew] - 1];  # -1 for header
+        array set _rawToWbArr [array get _rawToWbArrNew]
+        #parray _rawToWbArr
+        set newCntWbRec [array size _rawToWbArr]
+        incr newCntWbRec [expr {($oldCntWbRec > 0)? -2 : -1}]; # maybe 2 headers
+        ok_info_msg "Appended $addCntWbRec record(s) to white-balance output file '$::STS(wbOutFile)' for directory '[pwd]'. New count of records: $newCntWbRec";  # -1 for header; -2 when duplicated
+        ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
+          "RawName" ",";   # error, if any, printed
       }
-      # merge if old data was read, otherwise preserve old values
-      array set _rawToWbArr [array get _rawToWbArrNew]
-      ok_write_array_of_lists_into_csv_file _rawToWbArr $::STS(wbOutFile) \
-                                       "RawName" ",";   # error, if any, printed
     }
   }
-
-  puts "====== Finished RAW conversions in '[pwd]'; [llength $rawPaths] RAWs processed ========"
-  return  [llength $rawPaths]
+  return  0
 }
 
 
@@ -534,6 +689,7 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
     }
   } else {
     set mR ""; set mG ""; set mB "";  set colorSwitches "-w";  # init to cam-wb
+    set rgbInputted 0
   }
   set colorInfo [expr {($rgbInputted)? "{$mR $mG $mB}" : "as-shot"}]
   switch -exact $::STS(rotAngle)  {
@@ -572,13 +728,9 @@ proc _convert_one_raw {rawPath outDir dcrawParamsAdd {rawNameToRgbMultList 0}} {
 
 
 proc _fuse_one_hdr {rawName outDir fuseOpt} {
-  if { $::STS(doPreview) == 0 }  {
-    set _inOutExt          $::g_convertOutfileExt
-    set _fuseSaveParams $::g_fuseSaveParams
-  } else {
-    set _inOutExt          $::g_convertOutfileExt_preview
-    set _fuseSaveParams $::g_fuseSaveParams_preview
-  }
+  _choose_inputs_for_fusing $rawName _inOutExt pathLow pathNorm pathHigh
+  set _fuseSaveParams [expr {($::STS(doPreview) == 0)? \
+                           $::g_fuseSaveParams  :  $::g_fuseSaveParams_preview}]
   if { 0 == [file exists $outDir]  }  {  file mkdir $outDir  }
   set outPath  [file join $outDir "$rawName.$_inOutExt"]
   if { $::STS(doSkipExisting) && (1 == [file exists $outPath]) }  {
@@ -621,6 +773,22 @@ proc _fuse_one_hdr {rawName outDir fuseOpt} {
 ##  $::_IMMOGRIFY -alpha off -depth %::STS(finalDepth)% -compress LZW $::g_dirHDR\%%~nf.TIF
  ok_info_msg "Success fusing HDR image '$outPath'"
  return  1
+}
+
+
+proc _choose_inputs_for_fusing {rawName inOutExt pathLow pathNorm pathHigh} {
+  upvar $inOutExt _inOutExt
+  upvar $pathLow  inPathLow
+  upvar $pathNorm inPathNorm
+  upvar $pathHigh inPathHigh
+  if { $::STS(doPreview) == 0 }  {
+    set _inOutExt          $::g_convertOutfileExt
+  } else {
+    set _inOutExt          $::g_convertOutfileExt_preview
+  }
+  set inPathLow  [file join $::STS(dirLow)  "$rawName.$_inOutExt"]
+  set inPathNorm [file join $::STS(dirNorm) "$rawName.$_inOutExt"]
+  set inPathHigh [file join $::STS(dirHigh) "$rawName.$_inOutExt"]
 }
 
 
@@ -719,31 +887,71 @@ proc _raw_to_hdr_set_ext_tool_paths_from_csv {csvPath}  {
 }
 
 
+# proc _OLD__raw_to_hdr_verify_external_tools {} {
+#   set errCnt 0
+#   if { 0 == [file isdirectory $::_IM_DIR] }  {
+#     ok_err_msg "Inexistent or invalid Imagemagick directory '$::_IM_DIR'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_IMCONVERT " {}"]] }  {
+#     ok_err_msg "Inexistent ImageMagick 'convert' tool '$::_IMCONVERT'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
+#     ok_err_msg "Inexistent ImageMagick 'mogrify' tool '$::_IMMOGRIFY'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_IMIDENTIFY " {}"]] }  {
+#     ok_err_msg "Inexistent ImageMagick 'identify' tool '$::_IMIDENTIFY'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
+#     ok_err_msg "Inexistent 'dcraw' tool '$::_DCRAW'"
+#     incr errCnt 1
+#   }
+#   if { 0 == [file exists [string trim $::_ENFUSE " {}"]] }  {
+#     ok_err_msg "Inexistent 'enfuse' tool '$::_ENFUSE'"
+#     incr errCnt 1
+#   }
+#   if { $errCnt == 0 }  {
+#     ok_info_msg "All external tools are present"
+#     return  1
+#   } else {
+#     ok_err_msg "Some or all external tools are missing"
+#     return  0
+#   }
+# }
+
+
 proc _raw_to_hdr_verify_external_tools {} {
   set errCnt 0
   if { 0 == [file isdirectory $::_IM_DIR] }  {
     ok_err_msg "Inexistent or invalid Imagemagick directory '$::_IM_DIR'"
     incr errCnt 1
   }
-  if { 0 == [file exists [string trim $::_IMCONVERT " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'convert' tool '$::_IMCONVERT'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_IMMOGRIFY " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'mogrify' tool '$::_IMMOGRIFY'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_IMIDENTIFY " {}"]] }  {
-    ok_err_msg "Inexistent ImageMagick 'identify' tool '$::_IMIDENTIFY'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_DCRAW " {}"]] }  {
-    ok_err_msg "Inexistent 'dcraw' tool '$::_DCRAW'"
-    incr errCnt 1
-  }
-  if { 0 == [file exists [string trim $::_ENFUSE " {}"]] }  {
-    ok_err_msg "Inexistent 'enfuse' tool '$::_ENFUSE'"
-    incr errCnt 1
+  set pathToDescr [dict create  \
+    ::_IMCONVERT   [list $::_IMCONVERT  "ImageMagick 'convert' tool"]  \
+    ::_IMMOGRIFY   [list $::_IMMOGRIFY  "ImageMagick 'mogrify' tool"]  \
+    ::_IMIDENTIFY  [list $::_IMIDENTIFY "ImageMagick 'identify' tool"] \
+    ::_DCRAW       [list $::_DCRAW      "'dcraw' tool"]                \
+    ::_ENFUSE      [list $::_ENFUSE     "'enfuse' tool"]               \
+                  ]
+
+  dict for {varName rec} $pathToDescr  {
+    lassign $rec  toolPath toolDescr
+    set tp [string trim $toolPath " {}"]
+    if { 0 == [file exists $tp] }  {
+      set tpNoExt [file rootname $tp]
+      if { 0 == [file exists $tpNoExt] }  {
+        ok_err_msg "Inexistent $toolDescr ($varName) '$toolPath' (neither '$tpNoExt')"
+        incr errCnt 1
+      } else {
+        ok_info_msg "Overriden $toolDescr ($varName): from '$toolPath' into '$tpNoExt'"
+        set $varName $tpNoExt
+      }
+    } else {
+      ok_info_msg "Verified $toolDescr ($varName): as '$toolPath'"
+    }
   }
   if { $errCnt == 0 }  {
     ok_info_msg "All external tools are present"
