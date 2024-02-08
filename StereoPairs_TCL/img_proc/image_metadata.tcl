@@ -355,7 +355,7 @@ proc ::img_proc::_process_dcraw_metadata_line {line imgInfoArr} {
   global iMetaDate iMetaTime iMetaISO iMetaRGBG
   upvar $imgInfoArr imgInfo
   # Time/date;  example:'Timestamp: Sat Aug 23 08:58:21 2014'
-  if { 1 == [regexp {Timestamp: ([a-zA-Z]+) ([a-zA-Z]+) ([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([0-9]+)} $line fullMach \
+    if { 1 == [regexp {Timestamp: ([a-zA-Z]+) ([a-zA-Z]+)[ ]+([0-9]+) ([0-9]+):([0-9]+):([0-9]+) ([0-9]+)} $line fullMach \
                        weekday month day hours minutes seconds year] }  {
     set imgInfo($iMetaDate) [list $year $month $day]
     set imgInfo($iMetaTime) [list $hours $minutes $seconds]
